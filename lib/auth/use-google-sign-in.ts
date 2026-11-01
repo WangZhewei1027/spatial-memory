@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth/client";
 import { formatAuthError } from "@/lib/auth/auth-error";
 import { safeNext } from "@/lib/safe-next";
 
-export function useGoogleSignIn(next: string) {
+export function useGoogleSignIn(next: string, errorReturn?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ export function useGoogleSignIn(next: string) {
       const result = await authClient.signIn.social({
         provider: "google",
         callbackURL,
-        errorCallbackURL: `/auth/login?next=${encodeURIComponent(callbackURL)}&error=google`,
+        errorCallbackURL: errorReturn ? safeNext(errorReturn) : `/auth/login?next=${encodeURIComponent(callbackURL)}&error=google`,
       });
       if (result.error) throw result.error;
       // The auth client redirects to Google; keep the button disabled until then.

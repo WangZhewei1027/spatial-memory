@@ -92,6 +92,34 @@ SMS, issuing/checking tickets, creating accounts or resetting passwords.
 Legacy email confirmation needs SMTP (`lib/email.ts`). Google/phone registration
 and SMS password recovery do not depend on SMTP.
 
+### CLI browser sign-in
+
+`spatial-memory auth login --provider google` opens `/auth/cli` in the system
+browser. The page reuses Google sign-in and the existing
+`/api/auth/callback/google` callback, then asks the signed-in user to allow the
+local CLI to use their existing application permissions. Google cancellation
+returns to this page. No additional Google client credentials or callback
+registration are required.
+
+`lib/auth/cli-login.server.ts` is a Better Auth plugin. Its authenticated
+`POST /api/auth/cli/authorize` issues a 120-second single-use code, storing its
+hash and the user/PKCE challenge/loopback binding in `auth.verification`.
+`POST /api/auth/cli/exchange` verifies the code and S256 proof, atomically consumes
+the grant, creates an independent session and sets the normal signed application
+cookies. It never returns the browser session or Google tokens. No new tables,
+Bearer authentication, CORS rules or trusted origins are needed.
+
+The CLI listens only on `127.0.0.1` at a random nonprivileged port with the fixed
+`/callback` path, verifies a random state, and exchanges the code directly with
+the configured service. Redirect URI validation rejects other hosts, paths,
+credentials, queries and fragments. Browser authorization requires a same-origin
+request and a valid session. The CLI uses HTTPS except for local development,
+keeps the verifier in memory, and saves cookies only after checking the resulting
+identity through `/api/users/me`. Denial, timeout and interruption preserve any
+previous CLI session. `auth logout` revokes the CLI session independently of the
+browser. This follows the external-browser and PKCE approach in
+[RFC 8252](https://www.rfc-editor.org/rfc/rfc8252).
+
 
 ## 存储
 

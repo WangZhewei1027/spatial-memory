@@ -807,6 +807,18 @@
     "phoneHint": "手机号无法修改"
   },
   "auth": {
+    "cli": {
+      "title": "登录 Spatial Memory CLI",
+      "description": "通过浏览器登录，将账号连接到本机的命令行工具。",
+      "confirmLocal": "仅在你刚刚从本机终端发起登录时继续。",
+      "account": "当前账号",
+      "permissions": "CLI 将拥有此账号现有的素材、场景和团队操作权限。",
+      "authorize": "允许 CLI 登录",
+      "authorizing": "正在连接 CLI…",
+      "invalid": "登录链接无效，请回到终端重新运行登录命令。",
+      "sessionExpired": "当前登录已过期，请重新使用 Google 登录后再试。",
+      "failed": "未能完成 CLI 授权，请重试。若终端已退出，请重新运行登录命令。"
+    },
     "welcomeBack": "欢迎回来",
     "showPassword": "显示密码",
     "hidePassword": "隐藏密码",

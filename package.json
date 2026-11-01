@@ -15,6 +15,7 @@
     "test:scene-renderer": "npm --prefix packages/scene-renderer test",
     "test:integration": "node --import tsx --conditions react-server scripts/test-content-model-services.ts && node --import tsx --conditions react-server scripts/test-team-workbench-routes.ts && node --import tsx --conditions react-server scripts/test-upload-dedup.ts && node --import tsx --conditions react-server scripts/test-activities.ts",
     "test:cross-runtime": "tsx scripts/test-three-editor.ts && tsx scripts/test-scene-playback-parity.ts && tsx scripts/test-scene-performance-parity.ts",
+    "test:cli-auth": "node --import tsx --conditions react-server scripts/test-cli-auth-client.mjs",
     "check:fast": "npm run typecheck && npm run lint && npm test",
     "check": "npm run check:fast && npm run build",
     "hooks:install": "git config --local core.hooksPath .githooks",

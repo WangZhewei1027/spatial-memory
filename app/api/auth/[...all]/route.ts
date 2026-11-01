@@ -8,5 +8,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return toNextJsHandler(getAuth()).POST(request);
+  const response = await toNextJsHandler(getAuth()).POST(request);
+  if (["/api/auth/cli/authorize", "/api/auth/cli/exchange"].includes(new URL(request.url).pathname)) {
+    // Include validation, origin, session and rate-limit failures rejected before the endpoint.
+    response.headers.set("Cache-Control", "no-store");
+    response.headers.set("Pragma", "no-cache");
+  }
+  return response;
 }

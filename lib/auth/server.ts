@@ -7,6 +7,7 @@ import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { sendMail, isMailConfigured } from "@/lib/email";
 import { googleRelay } from "@/lib/auth/google-relay.server";
+import { cliLogin } from "@/lib/auth/cli-login.server";
 
 // Better Auth is the session + email/password provider that replaced Supabase
 // Auth. Tables live in the `auth` schema (db/schema.sql); the `fields` maps
@@ -137,6 +138,7 @@ function createAuth() {
       },
     },
     plugins: [
+      cliLogin(),
       ...(process.env.GOOGLE_RELAY_URL
         ? [googleRelay(process.env.GOOGLE_RELAY_URL, process.env.GOOGLE_RELAY_SECRET ?? "")]
         : []),

@@ -807,6 +807,18 @@
     "phoneHint": "Phone number cannot be changed"
   },
   "auth": {
+    "cli": {
+      "title": "Sign in to Spatial Memory CLI",
+      "description": "Use your browser to connect your account to the command-line tool on this computer.",
+      "confirmLocal": "Continue only if you just started this sign-in from your own terminal.",
+      "account": "Current account",
+      "permissions": "The CLI will have your account’s existing permissions for assets, scenes and teams.",
+      "authorize": "Allow CLI sign-in",
+      "authorizing": "Connecting to the CLI…",
+      "invalid": "This sign-in link is invalid. Run the login command again in your terminal.",
+      "sessionExpired": "Your session has expired. Sign in with Google again, then retry.",
+      "failed": "CLI authorization could not be completed. Try again, or restart the login command if your terminal has exited."
+    },
     "welcomeBack": "Welcome back",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
