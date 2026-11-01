@@ -1,6 +1,6 @@
 {
   "name": "@spatial-memory/scene-authoring",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "description": "Pure scene document editing, inspection and deterministic sampling",
   "type": "module",

@@ -15,6 +15,7 @@ const tests = [
   "test-content-model-legacy-anchor.ts",
   "test-content-model-legacy-animations.ts",
   "test-scene-core.ts",
+  "test-scene-placement.ts",
   "test-scene-authoring.ts",
   "test-scene-unbounded.ts",
   "test-scene-performance.ts",

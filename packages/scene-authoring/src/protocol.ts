@@ -5,6 +5,8 @@ export const SCENE_FLAT_SCHEMA_VERSION = 4 as const;
 export const SCENE_PERFORMANCE_SCHEMA_VERSION = 7 as const;
 /** Scalar automation and spatial audio require the matching player. */
 export const SCENE_AUTOMATION_SCHEMA_VERSION = 8 as const;
+/** Authored viewer position requires a player that aligns it with the tracked camera. */
+export const SCENE_VIEWER_SCHEMA_VERSION = 9 as const;
 export const SCENE_DOCUMENT_VERSION = 6 as const;
 
 export interface CompositionAssetRef {
@@ -130,13 +132,15 @@ export interface CompositionContent<Ref = CompositionAssetRef> {
   durationSeconds: number | null;
   loop: boolean;
   assets: Record<string, Ref>;
+  /** Viewer position in scene-local meters; omitted uses [0, 1.5, 2]. X/Z cannot both be zero. */
+  viewerPosition?: [number, number, number];
   /** Instance order is the timeline track order; group members are contiguous. */
   instances: CompositionInstance[];
   groups?: CompositionGroup[];
 }
 
 export interface SceneDefinition {
-  schemaVersion: typeof SCENE_SCHEMA_VERSION | typeof SCENE_FLAT_SCHEMA_VERSION | typeof SCENE_PERFORMANCE_SCHEMA_VERSION | typeof SCENE_AUTOMATION_SCHEMA_VERSION;
+  schemaVersion: typeof SCENE_SCHEMA_VERSION | typeof SCENE_FLAT_SCHEMA_VERSION | typeof SCENE_PERFORMANCE_SCHEMA_VERSION | typeof SCENE_AUTOMATION_SCHEMA_VERSION | typeof SCENE_VIEWER_SCHEMA_VERSION;
   content: CompositionContent;
 }
 

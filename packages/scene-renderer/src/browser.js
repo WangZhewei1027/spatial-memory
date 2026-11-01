@@ -1,7 +1,7 @@
 import { AmbientLight, Box3, Color, DirectionalLight, Frustum, Matrix4, Mesh, PerspectiveCamera, Vector3, WebGLRenderer } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { createSceneCore, mediaTime, samplePresentation } from '@spatial-memory/scene-core';
+import { createSceneCore, mediaTime, samplePresentation, DEFAULT_SCENE_VIEWER_POSITION } from '@spatial-memory/scene-core';
 import { Editor } from '../../../vendor/three-editor/Editor.js';
 import { EditorModels } from '../../../app/manage/scenes/components/three-editor/models';
 import { ModelPool } from '../../../app/manage/scenes/components/three-editor/model-pool';
@@ -44,6 +44,8 @@ async function load(input) {
   active?.dispose();
   const { document: doc, resources, options = {} } = input;
   if (!doc?.content || !Array.isArray(doc.content.instances)) throw new Error('Expected a scene document');
+  const viewerPosition = doc.content.viewerPosition ?? DEFAULT_SCENE_VIEWER_POSITION;
+  if (!Array.isArray(viewerPosition) || viewerPosition.length !== 3 || !viewerPosition.every(Number.isFinite) || !Math.hypot(viewerPosition[0], viewerPosition[2])) throw new Error('Scene viewer position must be a finite XYZ triple with a positive horizontal distance');
   await document.fonts.ready;
   const core = await createSceneCore({ content: doc.content });
   const editor = new Editor({ config: { getKey: () => 'en', setKey() {} }, history: { execute() {}, clear() {} } });
@@ -63,7 +65,7 @@ async function load(input) {
     resolveResource: instance => instance.asset ? resources[instance.asset] : undefined,
     onClips: (id, value) => { clips[id] = value; }, onError: message => errors.push(message),
     onSelect() {}, onTransform() {}, selectedId: null, preview: true, language: 'en',
-    cameraSettings: { distance: 2, height: 1.4, yaw: 0, pitch: 0, fov: 60 },
+    cameraSettings: { distance: Math.hypot(viewerPosition[0], viewerPosition[2]), height: viewerPosition[1], yaw: Math.atan2(viewerPosition[0], viewerPosition[2]) * 180 / Math.PI, pitch: 0, fov: 60 },
   };
   const models = new EditorModels(editor, () => props, () => false, () => {}, new ModelPool(url => loader.loadAsync(url)));
   const state = { core, editor, renderer, models, doc, resources, clips, errors, timeout: options.timeoutMs ?? 60000,
@@ -110,7 +112,7 @@ function corners(box) {
   return result;
 }
 
-function makeCamera(spec, bounds, width, height) {
+function makeCamera(spec, bounds, width, height, viewerPosition) {
   const presets = ['audience', 'map', 'qr', 'front', 'top', 'side'];
   if (typeof spec === 'string' && !presets.includes(spec)) throw new Error(`Unknown camera preset: ${spec}`);
   if (typeof spec !== 'string' && (!spec || typeof spec !== 'object' || Array.isArray(spec))) throw new Error('Camera must be a preset or settings object');
@@ -133,8 +135,7 @@ function makeCamera(spec, bounds, width, height) {
   let position, target = center.clone(), up = new Vector3(0, 1, 0);
   if (name === 'top') { position = center.clone().add(new Vector3(0, distance, 0)); up.set(0, 0, -1); }
   else if (name === 'side') position = center.clone().add(new Vector3(distance, 0, 0));
-  else if (name === 'audience' || name === 'map') { position = new Vector3(0, 1.4, 2); target = new Vector3(0, 1.4, 0); }
-  else if (name === 'qr') { position = new Vector3(0, 0, 2); target = new Vector3(0, 0, 0); }
+  else if (['audience', 'map', 'qr'].includes(name)) { position = vector(viewerPosition); target = new Vector3(0, position.y, 0); }
   else position = center.clone().add(new Vector3(0, 0, distance));
   if (settings.position) position = vector(settings.position);
   if (settings.target) target = vector(settings.target);
@@ -190,12 +191,12 @@ function projectBounds(box, camera, width, height) {
 }
 
 async function frame({ time, camera: view, overlays = false }) {
-  const { core, models, renderer, editor, clips } = await seek(time);
+  const { core, models, renderer, editor, clips, doc } = await seek(time);
   const bounds = new Box3();
   const isVisible = entry => entry.root.visible && !entry.surface?.audioMarker && samplePresentation(entry.instance, core.time, core.duration).opacity > 0;
   for (const entry of models.entries.values()) if (isVisible(entry)) bounds.union(new Box3().setFromObject(entry.root, true));
   const width = renderer.domElement.width, height = renderer.domElement.height;
-  const { camera, settings } = makeCamera(view, bounds, width, height);
+  const { camera, settings } = makeCamera(view, bounds, width, height, doc.content.viewerPosition ?? DEFAULT_SCENE_VIEWER_POSITION);
   const frustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
   const overlay = document.querySelector('#overlay'); overlay.width = width; overlay.height = height;
   const ctx = overlay.getContext('2d'); ctx.clearRect(0, 0, width, height);

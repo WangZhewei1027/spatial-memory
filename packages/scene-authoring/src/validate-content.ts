@@ -62,7 +62,7 @@ function validateAnimation(
 export function validateCompositionContent(
   issues: IssueList,
   content: Record<string, unknown>,
-  options: { groups: boolean; presentation?: boolean; automation?: boolean; visibility?: boolean } = { groups: true, presentation: true, automation: true, visibility: true },
+  options: { groups: boolean; presentation?: boolean; automation?: boolean; visibility?: boolean; viewerPosition?: boolean } = { groups: true, presentation: true, automation: true, visibility: true, viewerPosition: true },
 ): void {
   rejectUnknownKeys(issues, "content", content, [
     "kind",
@@ -72,9 +72,17 @@ export function validateCompositionContent(
     "assets",
     "instances",
     "groups",
+    "viewerPosition",
   ]);
   if (content.units !== "meters") issues.error("content.units", '必须是 "meters"');
   requireBoolean(issues, "content.loop", content.loop);
+  if (content.viewerPosition !== undefined) {
+    if (!options.viewerPosition) issues.error("content.viewerPosition", "观察位置需要 schemaVersion 9 播放清单");
+    if (requireNumberTuple(issues, "content.viewerPosition", content.viewerPosition, 3)) {
+      const [x, , z] = content.viewerPosition as number[];
+      if (x === 0 && z === 0) issues.error("content.viewerPosition", "观察位置的水平距离必须大于 0");
+    }
+  }
 
   // assets: alias → { assetId }
   const aliasToAssetId = new Map<string, string>();

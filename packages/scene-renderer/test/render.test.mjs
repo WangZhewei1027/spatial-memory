@@ -38,6 +38,31 @@ test('real editor snapshots expose clipping, corrective edits, stable image arti
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
+test('viewer position drives audience, map and QR cameras while explicit views remain independent', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'scene-viewer-position-'));
+  try {
+    const doc = document([instance('title', { position: [0, 1.5, 0], text: { content: 'Viewer height', color: '#103db0', fontSize: .2, width: 1, align: 'center' } })]);
+    const views = ['audience', 'map', 'qr'];
+    const defaults = await renderScene({ document: doc, times: [0], cameras: views, outputDir: join(directory, 'default'), options: { width: 240, height: 320 } });
+    for (const frame of defaults.frames) {
+      assert.deepEqual(frame.camera.position, [0, 1.5, 2]);
+      assert.deepEqual(frame.camera.target, [0, 1.5, 0]);
+      assert.equal(frame.nodes.title.inFrustum, true);
+    }
+    doc.content.viewerPosition = [2, 2, 3];
+    const custom = await renderScene({ document: doc, times: [0], cameras: views, outputDir: join(directory, 'custom'), options: { width: 240, height: 320 } });
+    for (const frame of custom.frames) {
+      assert.deepEqual(frame.camera.position, [2, 2, 3]);
+      assert.deepEqual(frame.camera.target, [0, 2, 0]);
+    }
+    assert.notEqual(defaults.images[0].sha256, custom.images[0].sha256, 'saved viewer position changes the actual rendered image');
+    const explicit = await renderScene({ document: doc, times: [0], cameras: [{ name: 'audience', position: [0, 3, 4], target: [0, 1, 0], fov: 75 }], outputDir: join(directory, 'explicit'), options: { width: 240, height: 320 } });
+    assert.deepEqual(explicit.frames[0].camera.position, [0, 3, 4]);
+    assert.deepEqual(explicit.frames[0].camera.target, [0, 1, 0]);
+    assert.equal(explicit.frames[0].camera.fov, 75);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('image probe waits for the actual texture and reports source dimensions', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'scene-probe-test-'));
   try {

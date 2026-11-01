@@ -3,6 +3,27 @@
 // asset loading and frame scheduling; disposing a player releases every binding.
 const CHANNELS = ['position.x', 'position.y', 'position.z', 'rotation.x', 'rotation.y', 'rotation.z', 'scale.x', 'scale.y', 'scale.z'];
 const vector = a => ({ x: a[0], y: a[1], z: a[2] });
+const DEFAULT_SCENE_VIEWER_POSITION = Object.freeze([0, 1.5, 2]);
+/** Align the authored viewer with a tracked camera while keeping the scene ground level. */
+function scenePlacementFromCamera(cameraPosition, cameraForward, viewerPosition = DEFAULT_SCENE_VIEWER_POSITION) {
+  for (const value of [cameraPosition, cameraForward, viewerPosition]) {
+    if (!Array.isArray(value) || value.length !== 3 || !value.every(Number.isFinite)) throw new Error('Scene placement requires finite three-component vectors');
+  }
+  if (cameraForward[0] === 0 && cameraForward[2] === 0) throw new Error('Camera forward must have a horizontal direction');
+  if (viewerPosition[0] === 0 && viewerPosition[2] === 0) throw new Error('Viewer position must have a nonzero horizontal distance');
+  const phoneYaw = Math.atan2(-cameraForward[0], -cameraForward[2]);
+  const referenceYaw = Math.atan2(viewerPosition[0], viewerPosition[2]);
+  const yaw = (phoneYaw - referenceYaw) || 0;
+  const cosine = Math.cos(yaw), sine = Math.sin(yaw);
+  return {
+    position: [
+      cameraPosition[0] - (cosine * viewerPosition[0] + sine * viewerPosition[2]),
+      cameraPosition[1] - viewerPosition[1],
+      cameraPosition[2] - (-sine * viewerPosition[0] + cosine * viewerPosition[2]),
+    ],
+    yaw,
+  };
+}
 function instanceValues(instance) {
   return { position: vector(instance.position), rotation: vector(instance.rotation), scale: vector(instance.scale) };
 }
@@ -159,4 +180,4 @@ function createSceneCore({ content }) {
   };
   return core;
 }
-module.exports = { createSceneCore, instanceValues, applyTransform, clipTime, sampleTrack, sampleInstance, sampleFade, sampleOpacity, sampleVolume, samplePresentation, sampleSpatialAudio, mediaTime, mediaPreloadIds, MEDIA_PRELOAD_SECONDS, MEDIA_PRELOAD_UPCOMING_LIMIT };
+module.exports = { createSceneCore, instanceValues, applyTransform, clipTime, sampleTrack, sampleInstance, sampleFade, sampleOpacity, sampleVolume, samplePresentation, sampleSpatialAudio, mediaTime, mediaPreloadIds, MEDIA_PRELOAD_SECONDS, MEDIA_PRELOAD_UPCOMING_LIMIT, DEFAULT_SCENE_VIEWER_POSITION, scenePlacementFromCamera };

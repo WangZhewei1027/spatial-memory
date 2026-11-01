@@ -479,6 +479,8 @@ export interface SceneDocumentJson {
     durationSeconds: number | null;
     loop: boolean;
     assets: Record<string, AssetRef>;
+    /** Scene-local viewing position in meters; omitted uses [0, 1.5, 2]. */
+    viewerPosition?: [number, number, number];
     instances: unknown[];
     groups?: unknown[];
   };

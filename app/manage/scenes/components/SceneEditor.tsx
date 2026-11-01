@@ -28,7 +28,7 @@ import { SceneModelDropZone } from "./SceneModelDropZone";
 import { SceneToolbar } from "./SceneToolbar";
 import { SceneViewport } from "./SceneViewport";
 import { SceneCameraPreview } from "./SceneCameraPreview";
-import { DEFAULT_SCENE_CAMERA } from "./three-editor/spatial-reference";
+import { sceneCameraSettings, sceneViewerPosition, type SceneCameraSettings } from "./three-editor/spatial-reference";
 import type { SceneResource } from "./types";
 import { useSceneDocument } from "./useSceneDocument";
 import "./scene-editor.css";
@@ -48,7 +48,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const [preview, setPreview] = useState(false);
   const [grid, setGrid] = useState(true);
   const [labels, setLabels] = useState(true);
-  const [cameraSettings, setCameraSettings] = useState({ ...DEFAULT_SCENE_CAMERA });
+  const [cameraLens, setCameraLens] = useState({ pitch: 0, fov: 60 });
   const [headerElement, setHeaderElement] = useState<HTMLDivElement | null>(null);
   const nativeToolsRef = useRef<HTMLDivElement>(null);
   const shadingRef = useRef<HTMLDivElement>(null);
@@ -63,6 +63,13 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   useSceneEditorShortcuts(editor);
   if (!session || !document) return <main className="scene-workspace-theme scene-editor-status fixed inset-0 z-50 flex items-center justify-center bg-background"><div className="max-w-lg space-y-4 p-6"><Text as="h1" variant="headingMd">{t("sceneEditor.heading")}</Text><Text as="p" variant="bodyMd" tone={editor.error ? "critical" : "subdued"}>{editor.error || t("sceneEditor.loading")}</Text>{editor.error && <Button onClick={editor.retry}>{t("sceneEditor.retry")}</Button>}</div></main>;
   const { instances, groups, assets, loop } = document.definition.content;
+  const cameraSettings = sceneCameraSettings(document.definition.content.viewerPosition, cameraLens);
+  const changeCamera = (next: SceneCameraSettings) => {
+    setCameraLens({ pitch: next.pitch, fov: next.fov });
+    if (readOnly || playing || (next.distance === cameraSettings.distance && next.height === cameraSettings.height && next.yaw === cameraSettings.yaw)) return;
+    const viewerPosition = sceneViewerPosition(next);
+    commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, viewerPosition } } }));
+  };
   const duration = document.definition.content.durationSeconds ?? 10;
   const sceneOrganizationId = detail?.organization_id ?? organizationId;
   const canAdd = !readOnly && !playing;
@@ -134,8 +141,8 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
             <SceneViewport placementRef={placementRef} session={session} instances={instances} groups={groups} resolveUrl={item => resourceOf(item)?.url} resolveResource={resourceOf} onClips={editor.onClips} fitRef={fitRef} originRef={originRef} previewRef={previewRef} cameraSettings={cameraSettings} selectedId={selectedId} onSelect={select} grid={grid} labels={labels} toolsRef={nativeToolsRef} shadingRef={shadingRef} language={i18n.language} preview={preview} onError={editor.setError} editable={!readOnly && !playing} onTransform={(id, group, value) => tracks.edit(id, node => editTransform(node, group, session.time, value))} />
           </ViewportBoundary>
         </SceneModelDropZone>
-        <div className="scene-tools-anchor"><SceneSidebar nativeToolsRef={nativeToolsRef} shadingRef={shadingRef} grid={grid} labels={labels} onLabels={() => setLabels(value => !value)} onGrid={() => setGrid(!grid)} onFit={() => fitRef.current?.()} onOrigin={() => originRef.current?.()} cameraSettings={cameraSettings} onCameraChange={setCameraSettings} onPreview={() => setPreview(true)} /></div>
-        <SceneCameraPreview open={preview} frameRef={previewRef} settings={cameraSettings} onChange={setCameraSettings} onClose={() => setPreview(false)} />
+        <div className="scene-tools-anchor"><SceneSidebar nativeToolsRef={nativeToolsRef} shadingRef={shadingRef} grid={grid} labels={labels} onLabels={() => setLabels(value => !value)} onGrid={() => setGrid(!grid)} onFit={() => fitRef.current?.()} onOrigin={() => originRef.current?.()} cameraSettings={cameraSettings} onCameraChange={changeCamera} positionDisabled={readOnly || playing} onPreview={() => setPreview(true)} /></div>
+        <SceneCameraPreview open={preview} frameRef={previewRef} settings={cameraSettings} onChange={changeCamera} positionDisabled={readOnly || playing} onClose={() => setPreview(false)} />
         {selectedNode && !(compact && panelOpen) && <aside className="scene-inspector-island scene-island"><SceneInstancePanel key={selectedId} node={selectedNode} hiddenByParent={!!selectedNode.parent && hidden.has(selectedNode.parent)} name={nameOf(selectedNode)} resource={selectedResource} assetHref={teamHref(`/manage/assets/${selectedResource?.assetId}`, sceneOrganizationId)} clips={instance ? clips[instance.id] : undefined} readOnly={readOnly} playing={playing} time={time} duration={duration} onChange={updateInstance} onEdit={edit => selectedId && tracks.edit(selectedId, edit)} onRename={name => selectedId && tracks.rename(selectedId, name)} onClose={() => select(null)} onAnimation={animation => updateInstance({ animation })} onUngroup={() => selectedId && tracks.ungroup(selectedId)} /></aside>}
         {!instances.length && <div className="scene-stage-empty"><Text as="p" variant="bodySm" tone="subdued">{text("拖入素材或添加文字", "Drop an asset or add text")}</Text></div>}
         {grid && labels && <div className="scene-stage-hint"><Text as="span" variant="bodyXs" tone="subdued">{text("每格 1 米", "1 m per cell")}</Text></div>}

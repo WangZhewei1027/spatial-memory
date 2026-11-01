@@ -1,10 +1,11 @@
 import type { ModelAnimationInfo } from "@/lib/content-model/contracts";
 import { compileVisibility } from "./visibility";
-import { SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, isSceneResourceKind, type SceneAssetManifest, type SceneDocument } from "./protocol";
+import { SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, SCENE_VIEWER_SCHEMA_VERSION, isSceneResourceKind, type SceneAssetManifest, type SceneDocument } from "./protocol";
 
 /**
  * Preserve schema 4/5 for old model scenes; presentation timing, media and text
  * require schema 7 so an older player rejects before trying to load a media file as GLB.
+ * Explicit viewer positions require schema 9 to avoid silently placing content at the wrong height.
  */
 export function compileSceneManifest(
   publicId: string,
@@ -22,7 +23,7 @@ export function compileSceneManifest(
     || Object.values(resources).some(resource => resource.kind && resource.kind !== "model");
   return {
     assetId: publicId,
-    schemaVersion: automation ? SCENE_AUTOMATION_SCHEMA_VERSION : performance ? SCENE_PERFORMANCE_SCHEMA_VERSION : document.content.groups?.length ? SCENE_SCHEMA_VERSION : SCENE_FLAT_SCHEMA_VERSION,
+    schemaVersion: content.viewerPosition !== undefined ? SCENE_VIEWER_SCHEMA_VERSION : automation ? SCENE_AUTOMATION_SCHEMA_VERSION : performance ? SCENE_PERFORMANCE_SCHEMA_VERSION : document.content.groups?.length ? SCENE_SCHEMA_VERSION : SCENE_FLAT_SCHEMA_VERSION,
     content: flatten(content),
     resources,
   };

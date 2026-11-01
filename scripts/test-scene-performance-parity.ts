@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { Box3, type Material, type Mesh, type Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createSceneCore } from '@spatial-memory/scene-core';
+import { createSceneCore, DEFAULT_SCENE_VIEWER_POSITION } from '@spatial-memory/scene-core';
 import type { CompositionContent, CompositionInstance } from '../lib/scene/protocol';
 import { compileSceneManifest } from '../lib/scene/compile';
 import { hiddenNodeIds } from '../lib/scene/visibility';
@@ -94,7 +94,7 @@ async function main() {
     const miniGLB = await new Promise((resolve, reject) => new THREE.GLTFLoader().parse(bytes.slice(0), '', resolve, reject));
     const cache = new ModelCache(hosts.canvas, 8, async () => miniGLB);
     const manifest = compileSceneManifest('parity', { schemaVersion: 6, content }, Object.fromEntries(Object.entries(resources).map(([alias, resource]) => [alias, { assetId: resource.assetId, url: resource.url!, kind: resource.kind }])));
-    const listenerCamera = new THREE.PerspectiveCamera(); listenerCamera.position.set(0, 0, 2);
+    const listenerCamera = new THREE.PerspectiveCamera(); listenerCamera.position.fromArray(DEFAULT_SCENE_VIEWER_POSITION);
     const player = createCompositionPlayer(manifest, { modelCache: cache, canvas: hosts.canvas, getListenerCamera: () => listenerCamera });
     const session = createSceneCore({ content });
     const editor = new Editor({ config: { getKey: () => 'en', setKey() {} }, history: { clear() {}, execute() {} } });

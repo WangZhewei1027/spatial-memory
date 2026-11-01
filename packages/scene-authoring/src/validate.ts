@@ -1,4 +1,4 @@
-import { SCENE_DOCUMENT_VERSION, SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, type SceneDefinition, type SceneDocument, type ValidationResult } from "./protocol";
+import { SCENE_DOCUMENT_VERSION, SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, SCENE_VIEWER_SCHEMA_VERSION, type SceneDefinition, type SceneDocument, type ValidationResult } from "./protocol";
 import { IssueList, rejectUnknownKeys, requireObject } from "./validate-utils";
 import { validateCompositionContent } from "./validate-content";
 
@@ -14,12 +14,14 @@ export function validateSceneDefinition(def: unknown): ValidationResult {
   if (root) {
     rejectUnknownKeys(issues, "$", root, ["schemaVersion", "content"]);
     const flat = root.schemaVersion === SCENE_FLAT_SCHEMA_VERSION;
-    const automation = root.schemaVersion === SCENE_AUTOMATION_SCHEMA_VERSION;
+    const viewerPosition = root.schemaVersion === SCENE_VIEWER_SCHEMA_VERSION;
+    const automation = viewerPosition || root.schemaVersion === SCENE_AUTOMATION_SCHEMA_VERSION;
     const performance = automation || root.schemaVersion === SCENE_PERFORMANCE_SCHEMA_VERSION;
-    if (!flat && !performance && root.schemaVersion !== SCENE_SCHEMA_VERSION) issues.error("schemaVersion", "播放清单必须是 schemaVersion 4、5、7 或 8");
+    if (!flat && !performance && root.schemaVersion !== SCENE_SCHEMA_VERSION) issues.error("schemaVersion", "播放清单必须是 schemaVersion 4、5、7、8 或 9");
     const content = requireObject(issues, "content", root.content);
+    if (viewerPosition && content?.viewerPosition === undefined) issues.error("content.viewerPosition", "schemaVersion 9 播放清单必须指定观察位置");
     // Schema 4 is the flat format released mini-programs play; groups need schema 5.
-    if (content?.kind === "composition") validateCompositionContent(issues, content, { groups: !flat, presentation: performance, automation });
+    if (content?.kind === "composition") validateCompositionContent(issues, content, { groups: !flat, presentation: performance, automation, viewerPosition });
     else if (content) issues.error("content.kind", "场景素材仅支持 composition");
   }
   return { ok: !issues.hasErrors, issues: issues.issues };

@@ -10,6 +10,18 @@ function document(instances = [node('a')], groups = []) { const value = createDo
 function ok(result) { assert.equal(result.ok, true, JSON.stringify(result)); return result; }
 const near = (actual, expected) => { assert.equal(actual.length, expected.length); actual.forEach((value, index) => assert.ok(Math.abs(value - expected[index]) < 1e-7, `${actual} != ${expected}`)); };
 
+test('viewer position survives scene operations and invalid positions roll back', () => {
+  const input = document();
+  const updated = ok(apply(input, [{ type: 'scene.update', patch: { viewerPosition: [2, 1.8, 3] } }])).document;
+  assert.deepEqual(updated.content.viewerPosition, [2, 1.8, 3]);
+  assert.deepEqual(ok(apply(createDocument(), [{ type: 'document.replace', document: updated }])).document.content.viewerPosition, [2, 1.8, 3]);
+  assert.equal(ok(apply(updated, [{ type: 'scene.update', patch: {}, unset: ['/viewerPosition'] }])).document.content.viewerPosition, undefined);
+  for (const viewerPosition of [[0, 1.5, 0], [0, NaN, 2], [0, 1.5], null]) {
+    const result = apply(updated, [{ type: 'scene.update', patch: { viewerPosition } }]);
+    assert.equal(result.ok, false); assert.deepEqual(updated.content.viewerPosition, [2, 1.8, 3]);
+  }
+});
+
 test('atomic batch rolls back input and reports the actual failed operation', () => {
   const original = document(), snapshot = structuredClone(original);
   const result = apply(original, [{ type: 'node.update', id: 'a', patch: { name: 'Changed' } }, { type: 'node.update', id: 'missing', patch: { name: 'No' } }]);

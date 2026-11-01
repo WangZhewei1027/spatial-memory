@@ -1,10 +1,14 @@
 export type Vector = { x: number; y: number; z: number };
+export type VectorTuple = readonly [number, number, number];
+export const DEFAULT_SCENE_VIEWER_POSITION: readonly [0, 1.5, 2];
+/** Positions use meters; yaw is radians around world +Y. Throws for invalid vectors or undefined horizontal headings. */
+export function scenePlacementFromCamera(cameraPosition: VectorTuple, cameraForward: VectorTuple, viewerPosition?: VectorTuple): { position: [number, number, number]; yaw: number };
 export type TransformValues = { position: Vector; rotation: Vector; scale: Vector };
 export type TransformChannel = `${keyof TransformValues}.${keyof Vector}`;
 export type AutomationChannel = TransformChannel | 'opacity' | 'volume';
 export type Keyframe = { time: number; value: number; handles: [number, number, number, number]; connectedRight: boolean };
 export type Instance = { id: string; position: number[]; rotation: number[]; scale: number[]; tracks?: Partial<Record<AutomationChannel, Keyframe[]>> };
-export type Content = { durationSeconds: number | null; loop: boolean; instances: Instance[]; groups?: Instance[] };
+export type Content = { durationSeconds: number | null; loop: boolean; instances: Instance[]; groups?: Instance[]; viewerPosition?: VectorTuple };
 export type TransformRoot = { position: { set(x: number, y: number, z: number): unknown }; rotation: { set(x: number, y: number, z: number, order?: 'XYZ'): unknown }; scale: { set(x: number, y: number, z: number): unknown } };
 export function instanceValues(instance: Instance): TransformValues;
 export function sampleInstance(instance: Instance, time: number): TransformValues;

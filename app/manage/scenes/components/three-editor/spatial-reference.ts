@@ -1,15 +1,23 @@
 import { AxesHelper, BufferGeometry, CanvasTexture, GridHelper, Group, LineBasicMaterial, LineSegments, MathUtils, Mesh, MeshBasicMaterial, PerspectiveCamera, RingGeometry, Sprite, SpriteMaterial, Vector3, type Material, type Texture } from 'three';
+import { DEFAULT_SCENE_VIEWER_POSITION } from '@spatial-memory/scene-core';
 
-/** Editor-only viewing parameters. Distances are meters; angles are degrees. */
+/** Position is saved with the scene; pitch and lens are preview-only. */
 export interface SceneCameraSettings { distance: number; height: number; yaw: number; pitch: number; fov: number }
-export const DEFAULT_SCENE_CAMERA: Readonly<SceneCameraSettings> = { distance: 2, height: 0, yaw: 0, pitch: 0, fov: 60 };
-export const MAP_SCENE_CAMERA: Readonly<SceneCameraSettings> = { ...DEFAULT_SCENE_CAMERA, height: 1.4 };
+export const DEFAULT_SCENE_CAMERA: Readonly<SceneCameraSettings> = sceneCameraSettings();
 export const SCENE_CAMERA_ASPECT = 9 / 16;
 
-/** Mini-program placement is horizontal: map eye height must not tilt the camera at the origin. */
+export function sceneCameraSettings(position: readonly [number, number, number] = DEFAULT_SCENE_VIEWER_POSITION, lens = { pitch: 0, fov: 60 }): SceneCameraSettings {
+  return { distance: Math.hypot(position[0], position[2]), height: position[1], yaw: MathUtils.radToDeg(Math.atan2(position[0], position[2])), ...lens };
+}
+export function sceneViewerPosition(settings: SceneCameraSettings): [number, number, number] {
+  const yaw = MathUtils.degToRad(settings.yaw);
+  return [Math.sin(yaw) * settings.distance, settings.height, Math.cos(yaw) * settings.distance];
+}
+
+/** Mini-program placement is horizontal: eye height must not tilt the camera at the origin. */
 export function configurePreviewCamera(camera: PerspectiveCamera, settings: SceneCameraSettings, aspect = SCENE_CAMERA_ASPECT) {
   const yaw = MathUtils.degToRad(settings.yaw);
-  camera.position.set(Math.sin(yaw) * settings.distance, settings.height, Math.cos(yaw) * settings.distance);
+  camera.position.fromArray(sceneViewerPosition(settings));
   // YXZ first turns around the vertical axis, then pitches locally. Positive pitch looks up.
   camera.rotation.set(MathUtils.degToRad(settings.pitch), yaw, 0, 'YXZ');
   camera.fov = settings.fov; camera.aspect = aspect > 0 && Number.isFinite(aspect) ? aspect : SCENE_CAMERA_ASPECT;

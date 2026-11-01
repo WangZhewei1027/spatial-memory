@@ -19,6 +19,7 @@ import { createDocument, validate, apply, inspect, sample, diff } from '@spatial
 
 const document = createDocument();
 const next = apply(document, [
+  { type: 'scene.update', patch: { viewerPosition: [0, 1.5, 2] } },
   { type: 'asset.set', alias: 'statue', assetId: '11111111-1111-4111-8111-111111111111' },
   { type: 'node.add', kind: 'instance', node: {
     id: 'statue_1', asset: 'statue', animation: null,
@@ -68,6 +69,15 @@ Every operation uses the `type` discriminator. `Operation` is exported with comp
 
 Patches recursively merge objects, replace arrays, and retain unspecified fields. `unset` takes relative RFC 6901 pointers such as `/media/spatial` or `/tracks/position.x`; unsetting a missing path fails. `null` is a value, not deletion. `node.update` cannot change stable identity or node kind. Use full replacement for an intentionally different document shape. Arbitrary script, light, camera and geometry fields are not schema-6 content.
 
+`content.viewerPosition` is an optional `[x, y, z]` in scene-local meters. All three
+values must be finite and X/Z cannot both be zero. Omitting it uses Scene Core's shared
+`[0, 1.5, 2]` default. `scene.update` can set it, or `unset: ["/viewerPosition"]` restores
+the shared default. This position drives the audience/map/QR preview and aligns the
+scene with the phone in AR; changing it never moves authored instances. The reference
+looks horizontally toward `[0, y, 0]`. Preview-only pitch/FOV and explicit renderer
+camera overrides do not alter it. Explicit viewer positions compile to playback schema
+9, which requires a player that understands this placement reference.
+
 Static transforms are parent-local meters, Euler XYZ radians and scale factors. `space` defaults to `local`; `write` defaults to `base`. `write:"key"` always requires a time and keys every axis of each supplied transform field, preserving existing custom Bezier handles. World operations always require `time` and sample animated ancestors at that time. World-position-only changes can be represented under sheared parents; other unrepresentable world transforms return `NON_TRS_*` errors. Reparenting preserves either local values or a pose at one specified time; it does not bake an entire world trajectory. A keyed node needs `write:"key"` when preserving world pose. Base edits under existing tracks report `BASE_SHADOWED_BY_TRACK`.
 
 `track.remove` without `retainAt` restores the existing base value; with `retainAt`, it first records that sampled value as the base. Removing a final individual key restores the pre-existing base value. Key times are exact numbers, without the editor gesture's millisecond snapping or matching tolerance. Bezier curves and hold flags are retained unless explicitly changed.
@@ -84,4 +94,4 @@ Sampling composes every parent's transform at the requested time and returns a w
 
 There are no 8-resource/24-instance/600-second/2400-keyframe/coordinate-size quotas. Validation retains schema structure, finite numbers, positive dimensions and scale, nonnegative times, reference validity, cycle prevention, scalar 0–1 values and monotonic Bezier time handles. Runtime memory, transport and decoder constraints belong to adapters and must report concrete failures rather than rewriting the document.
 
-The persistence adapter owns document hashes, revisions, atomic file writes, idempotency and `expectedLockVersion`. A dry run executes exactly the same `apply` and skips persistence. Store and edit document schema 6; playback manifests 4/5/7/8 are compiled outputs and must not replace an authoring document.
+The persistence adapter owns document hashes, revisions, atomic file writes, idempotency and `expectedLockVersion`. A dry run executes exactly the same `apply` and skips persistence. Store and edit document schema 6; playback manifests 4/5/7/8/9 are compiled outputs and must not replace an authoring document.

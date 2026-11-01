@@ -18,7 +18,7 @@ test('Web scene factories and parsers directly expose the canonical authoring sc
   assert.equal(validateSceneDocument, sharedValidate);
   const document = createBlankSceneDocument();
   assert.deepEqual(validate(document).ok, validateSceneDocument(document).ok);
-  for (const schemaVersion of [4, 5, 7, 8]) {
+  for (const schemaVersion of [4, 5, 7, 8, 9]) {
     assert.equal(validate({ ...document, schemaVersion }).ok, false);
     assert.throws(() => parseSceneDocument({ ...document, schemaVersion }), /schemaVersion 6/);
   }
@@ -27,7 +27,7 @@ test('Web scene factories and parsers directly expose the canonical authoring sc
 test('CLI authoring output survives the actual Web editor import/export and playback compiler', () => {
   const document = createBlankSceneDocument();
   const authored = apply(document, [
-    { type: 'scene.update', patch: { durationSeconds: 7200 } },
+    { type: 'scene.update', patch: { durationSeconds: 7200, viewerPosition: [2, 1.8, 3] } },
     { type: 'asset.set', alias: 'media', assetId },
     { type: 'node.add', kind: 'group', node: { id: 'rig', name: 'Moving rig', position: [1000, 0, 0], rotation: [0, 0, 0], scale: [200, 200, 200], tracks: { 'position.x': [key(0, 1000), key(10, 2000)] } } },
     { type: 'node.add', kind: 'instance', node: instance() },
@@ -41,7 +41,8 @@ test('CLI authoring output survives the actual Web editor import/export and play
   assert.equal(parsed.content.instances[0].media?.trimStartSeconds, 1, 'patching spatial settings retains source trimming');
   assert.equal(parsed.content.instances[0].tracks?.['position.x']?.[0].time, 1005, 'spatial key time moves together with presentation');
   const manifest = compileSceneManifest('preview', parsed, { media: { assetId, kind: 'video', url: 'https://fixture.example/video.mp4' } });
-  assert.equal(manifest.schemaVersion, 8);
+  assert.equal(manifest.schemaVersion, 9);
+  assert.deepEqual(manifest.content.viewerPosition, [2, 1.8, 3]);
   assert.equal(manifest.content.instances[0].opacity, 0, 'hidden authoring state compiles to playback opacity');
   assert.equal(manifest.content.instances[0].tracks?.opacity, undefined);
   assert.ok(parsed.content.instances[0].tracks?.opacity, 'compiling does not erase authoring curves');

@@ -11,6 +11,18 @@ No tracks means the instance's static transform. The editor displays rotation in
 Optional `groups` share the instance ID space and are sampled the same way; values are local
 to the parent group, and hosts build the Object3D hierarchy from each node's `parent`.
 
+`DEFAULT_SCENE_VIEWER_POSITION` is the frozen scene-local tuple `[0, 1.5, 2]` in meters.
+An explicit `content.viewerPosition` overrides it for both preview and AR placement.
+`scenePlacementFromCamera(cameraPosition, cameraForward, viewerPosition?)` returns a
+scene-root `{position: [x, y, z], yaw}` that maps the authored viewer onto the tracked
+phone position. Yaw is in radians around world +Y; camera pitch does not tilt the ground.
+The authored viewing direction points horizontally toward `[0, viewerPosition[1], 0]`.
+Inputs must be finite three-component tuples; the viewer's X/Z and the camera forward's
+X/Z cannot both be zero. Invalid inputs throw. Hosts own tracking readiness and any
+last-known heading when the phone points straight up or down. This helper does not
+alter instance coordinates or infer physical floor height: the configured viewer Y
+sets how far below the phone the scene's ground lies.
+
 Use `play`, `pause`, `seek`, `advance(seconds)`, `sync(content)`, `sample(id)` and
 `bind(id, object3D)`. `dispose` stops playback and clears all callbacks and object bindings.
 GLB clips remain Three.AnimationMixer's responsibility; `clipTime` shares their time mapping.
@@ -37,7 +49,9 @@ an audio context or converts local transforms to world coordinates. Distances an
 retain their configured finite values, without additional runtime caps.
 
 Performance scenes compile to playback schema 7; opacity, scalar tracks or spatial audio
-require schema 8. Both current adapters render scene-owned
+require schema 8. An explicit viewer position requires schema 9, so an older player
+rejects it instead of ignoring the placement reference. Scenes without the field use
+the shared default without changing their existing manifest version. Both current adapters render scene-owned
 text, images, video and audio using the same timing/fade/media mapping. The mini-program
 owns native decoding and cleanup in `lib/scene-runtime/media*`; updating the clock snapshot
 alone is not a player upgrade. Deploy the matching mini-program before enabling these
@@ -48,7 +62,7 @@ Update the mini-program snapshot from the Web repository:
 ```sh
 npm pack ./packages/scene-core --pack-destination ../spatial-memory-mini-program/vendor
 cd ../spatial-memory-mini-program
-npm install --ignore-scripts ./vendor/spatial-memory-scene-core-2.6.0.tgz
+npm install --ignore-scripts ./vendor/spatial-memory-scene-core-2.7.0.tgz
 npm run build:scene-core
 npm run test:scene-memory
 ```

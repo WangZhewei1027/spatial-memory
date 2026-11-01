@@ -1,19 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AxesHelper, BufferGeometry, LineSegments, Material, Mesh, PerspectiveCamera, Raycaster, Sprite, Texture, Vector2, Vector3 } from 'three';
-import { configurePreviewCamera, createSpatialReference, DEFAULT_SCENE_CAMERA, MAP_SCENE_CAMERA } from '../app/manage/scenes/components/three-editor/spatial-reference';
+import { configurePreviewCamera, createSpatialReference, DEFAULT_SCENE_CAMERA, sceneCameraSettings, sceneViewerPosition } from '../app/manage/scenes/components/three-editor/spatial-reference';
 import { CanvasFixture } from './test-support/performance-hosts';
+import { fromDocument, toDocument } from '../app/manage/lib/scene-document';
 
 const near = (actual: number, expected: number, label: string) => assert.ok(Math.abs(actual - expected) < 1e-7, `${label}: ${actual} != ${expected}`);
 const vectorNear = (actual: Vector3, expected: number[], label: string) => actual.toArray().forEach((value, index) => near(value, expected[index], `${label}[${index}]`));
 
+test('saved viewer position survives editor serialization and reconstructs the same camera', () => {
+  const definition = fromDocument({ schemaVersion: 6, content: { kind: 'composition', units: 'meters', durationSeconds: 12, loop: false, assets: {}, instances: [], viewerPosition: [3, 1.8, 4] } });
+  const settings = sceneCameraSettings(definition.content.viewerPosition, { pitch: 15, fov: 75 });
+  near(settings.distance, 5, 'saved horizontal distance'); near(settings.height, 1.8, 'saved eye height');
+  const saved = toDocument(definition);
+  assert.deepEqual(saved.content.viewerPosition, [3, 1.8, 4]);
+  assert.deepEqual(fromDocument(saved).content.viewerPosition, [3, 1.8, 4]);
+  vectorNear(new Vector3().fromArray(sceneViewerPosition(settings)), [3, 1.8, 4], 'position roundtrip');
+  const camera = new PerspectiveCamera(); configurePreviewCamera(camera, sceneCameraSettings(saved.content.viewerPosition));
+  vectorNear(camera.position, [3, 1.8, 4], 'reopened camera');
+  assert.ok(!('pitch' in saved.content) && !('fov' in saved.content), 'preview lens settings do not change mobile camera hardware');
+});
+
 test('QR and map cameras match horizontal mini-program placement without scaling the scene', () => {
   const camera = new PerspectiveCamera();
   configurePreviewCamera(camera, DEFAULT_SCENE_CAMERA, 9 / 16);
-  vectorNear(camera.position, [0, 0, 2], 'QR camera');
+  vectorNear(camera.position, [0, 1.5, 2], 'QR camera');
   vectorNear(camera.getWorldDirection(new Vector3()), [0, 0, -1], 'QR direction');
   const origin = new Vector3().project(camera);
-  near(origin.x, 0, 'QR origin centered horizontally'); near(origin.y, 0, 'QR origin centered vertically');
+  near(origin.x, 0, 'QR origin centered horizontally');
+  near(new Vector3(0, 1.5, 0).project(camera).y, 0, 'eye-height content is centered');
   near(camera.aspect, 9 / 16, 'portrait aspect');
   near(camera.fov, 60, 'default vertical field of view');
 
@@ -21,12 +36,12 @@ test('QR and map cameras match horizontal mini-program placement without scaling
   const floor = new Vector3(0, 0, 0).project(camera), top = new Vector3(0, 1, 0).project(camera);
   near((top.y - floor.y) / 2, Math.sqrt(3) / 4, 'projected one-metre height');
   configurePreviewCamera(camera, { ...DEFAULT_SCENE_CAMERA, distance: 4 }, 9 / 16);
-  near(new Vector3(0, 1, 0).project(camera).y / 2, Math.sqrt(3) / 8, 'doubling distance halves apparent height');
+  near((new Vector3(0, 1, 0).project(camera).y - new Vector3().project(camera).y) / 2, Math.sqrt(3) / 8, 'doubling distance halves apparent height');
 
-  configurePreviewCamera(camera, MAP_SCENE_CAMERA, 9 / 16);
-  vectorNear(camera.position, [0, 1.4, 2], 'map camera');
+  configurePreviewCamera(camera, DEFAULT_SCENE_CAMERA, 9 / 16);
+  vectorNear(camera.position, [0, 1.5, 2], 'map camera');
   vectorNear(camera.getWorldDirection(new Vector3()), [0, 0, -1], 'map remains horizontal');
-  near(new Vector3(0, 1.4, 0).project(camera).y, 0, 'camera-height content at center');
+  near(new Vector3(0, 1.5, 0).project(camera).y, 0, 'camera-height content at center');
   assert.ok(new Vector3().project(camera).y < -1, 'ground origin can be below the portrait frame; do not silently tilt to fit it');
 });
 
@@ -86,8 +101,8 @@ test('spatial helpers have one-metre grid cells and axes, cannot be picked, and 
     const raycaster = new Raycaster();
     raycaster.setFromCamera(new Vector2(0, 0), camera);
     assert.deepEqual(raycaster.intersectObject(reference.root, true), [], 'helpers do not intercept scene selection');
-    reference.update(MAP_SCENE_CAMERA, 'en');
-    vectorNear(reference.camera.position, [0, 1.4, 2], 'helper follows virtual camera');
+    reference.update(DEFAULT_SCENE_CAMERA, 'en');
+    vectorNear(reference.camera.position, [0, 1.5, 2], 'helper follows virtual camera');
 
     const labels: Sprite[] = [];
     reference.root.traverse(node => { if (node instanceof Sprite) labels.push(node); });
