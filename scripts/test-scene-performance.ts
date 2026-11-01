@@ -7,7 +7,7 @@ import { createBlankSceneDocument, type CompositionInstance, type InstanceMedia,
 import { validateSceneDefinition, validateSceneDocument } from '../lib/scene/validate';
 
 const timing: InstanceTiming = { startSeconds: 2, endSeconds: 8, fadeInSeconds: 1, fadeOutSeconds: 2 };
-const media: InstanceMedia = { trimStartSeconds: 5, trimEndSeconds: 9, playbackRate: 2, loop: false, volume: .7, muted: false };
+const media: InstanceMedia = { trimStartSeconds: 5, trimEndSeconds: 9, playbackRate: 1, loop: false, volume: .7, muted: false };
 const title: CompositionInstance = { id: 'title', text: { content: '第一幕\nA story in space', color: '#ffffff', fontSize: .25, width: 3, align: 'center' }, timing, position: [0, 1, 0], rotation: [0, 0, 0], scale: [1, 1, 1], animation: null };
 const document = createBlankSceneDocument();
 document.content.instances.push(title);
@@ -46,14 +46,17 @@ assert.equal(samplePresentation({}, 10, 10).visible, true, 'legacy untimed model
 assert.equal(samplePresentation({ timing: { ...timing, endSeconds: null } }, 10, 10).visible, false);
 assert.equal(samplePresentation({ timing: { ...timing, endSeconds: null } }, 100, null).visible, true);
 assert.equal(mediaTime(1, media, timing, 20), 5);
-assert.equal(mediaTime(3, media, timing, 20), 7);
-assert.equal(mediaTime(4, media, timing, 20), 9);
+assert.equal(mediaTime(3, media, timing, 20), 6);
+assert.equal(mediaTime(4, media, timing, 20), 7);
 assert.equal(mediaTime(99, media, timing, 20), 9);
-assert.equal(mediaTime(4, { ...media, loop: true }, timing, 20), 5);
-assert.equal(mediaTime(4.5, { ...media, loop: true }, timing, 20), 6);
+assert.equal(mediaTime(6, { ...media, loop: true }, timing, 20), 5);
+assert.equal(mediaTime(6.5, { ...media, loop: true }, timing, 20), 5.5);
 assert.equal(mediaTime(9, media, timing, 3), 3, 'trim outside source duration stays at source end');
 assert.equal(mediaTime(2, undefined, undefined, 3), 2);
 assert.equal(mediaTime(9, undefined, undefined, 3), 3);
+for (const playbackRate of [.1, 2, 8]) {
+  assert.equal(Reflect.apply(mediaTime, undefined, [3, { ...media, playbackRate }, timing, 20]), 6, 'the runtime sampler never changes speed for stale input');
+}
 
 const cue = (id: string, startSeconds: number, endSeconds: number) => ({ id, timing: { startSeconds, endSeconds, fadeInSeconds: 0, fadeOutSeconds: 0 } });
 const cues = [cue('late', 25, 29), cue('third', 4, 7), cue('second', 3, 6), cue('first', 2, 4), cue('now', 0, 1)];
@@ -71,7 +74,6 @@ assert.equal(clock.looping, true); clock.play(false); assert.equal(clock.looping
 for (const patch of [
   { asset: 'music' },
   { text: { ...title.text, content: '' } },
-  { text: { ...title.text, content: 'x'.repeat(4001) } },
   { text: { ...title.text, color: 'url(javascript:evil)' } },
   { text: { ...title.text, align: ['left'] } },
   { text: { ...title.text, width: Infinity } },
@@ -85,9 +87,12 @@ for (const patch of [
   Object.assign(invalid.content.instances[0], patch);
   assert.equal(validateSceneDocument(invalid).ok, false, JSON.stringify(patch));
 }
-for (const patch of [{ volume: 2 }, { playbackRate: 0 }, { trimStartSeconds: -1 }, { trimEndSeconds: 5 }, { muted: 'yes' }]) {
+const longText = structuredClone(document);
+longText.content.instances[0].text!.content = 'x'.repeat(4001);
+assert.equal(validateSceneDocument(longText).ok, true, 'scene text has no arbitrary 4000-character quota');
+for (const patch of [{ volume: 2 }, { playbackRate: 0 }, { playbackRate: 2 }, { playbackRate: .5 }, { trimStartSeconds: -1 }, { trimEndSeconds: 5 }, { muted: 'yes' }]) {
   const invalid = structuredClone(mediaDoc);
   Object.assign(invalid.content.instances[0].media!, patch);
   assert.equal(validateSceneDocument(invalid).ok, false);
 }
-console.log(JSON.stringify({ result: 'PASS', coverage: 'scene-owned text roundtrip and grouping, strict media/timing/text validation, authorized kind rules, protocol compatibility, entry/exit fades, media trimming/rate/loop/source clamping' }));
+console.log(JSON.stringify({ result: 'PASS', coverage: 'scene-owned text roundtrip and grouping, strict media/timing/text validation, authorized kind rules, protocol compatibility, entry/exit fades, media trimming/natural speed/loop/source clamping' }));

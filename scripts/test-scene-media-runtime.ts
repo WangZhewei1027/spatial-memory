@@ -15,7 +15,7 @@ import { EventTargetFixture } from './test-support/performance-hosts';
 
 const instance = (): CompositionInstance => ({ id: 'video', asset: 'video', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], animation: null,
   timing: { startSeconds: 2, endSeconds: 10, fadeInSeconds: 2, fadeOutSeconds: 2 },
-  media: { trimStartSeconds: 3, trimEndSeconds: 7, playbackRate: 2, volume: 0.8, loop: false, muted: false },
+  media: { trimStartSeconds: 3, trimEndSeconds: 7, playbackRate: 1, volume: 0.8, loop: false, muted: false },
 });
 
 class FakeMedia extends EventTargetFixture {
@@ -31,6 +31,19 @@ class FakeMedia extends EventTargetFixture {
 const flush = async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); };
 const player = (media: FakeMedia, onError: (blocked: boolean) => void = () => {}) => new MediaPlayback(media as unknown as HTMLMediaElement, 'https://fixture.example/source.mp4', onError);
 
+test('natural-speed playback never reads or writes the native rate control', () => {
+  const media = new FakeMedia(), errors: boolean[] = [], playback = player(media, error => errors.push(error));
+  Object.defineProperty(media, 'playbackRate', {
+    get() { assert.fail('native rate must not be read'); },
+    set() { assert.fail('native rate must not be written'); },
+  });
+  const node = instance();
+  assert.doesNotThrow(() => playback.sync(node, 2, true, 12));
+  playback.sync(node, 3, true, 12);
+  assert.deepEqual(errors, []); assert.equal(media.plays, 1); assert.equal(media.currentTime, 4);
+  playback.dispose();
+});
+
 test('volume automation combines with cue fade and distance without coupling sound to visual opacity', () => {
   const media = new FakeMedia(), playback = player(media), node = instance();
   node.opacity = 0;
@@ -40,7 +53,7 @@ test('volume automation combines with cue fade and distance without coupling sou
   ] };
   playback.sync(node, 3, false, 12, true, { gain: .25, pan: -1 });
   assert.ok(Math.abs(media.volume - .0625) < 1e-10, 'keyed .5 volume × .5 fade × .25 distance');
-  assert.equal(media.currentTime, 5, 'an invisible video still seeks and has independently editable sound');
+  assert.equal(media.currentTime, 4, 'an invisible video still seeks and has independently editable sound');
   playback.dispose();
 });
 
@@ -99,19 +112,19 @@ test('future spatial cues unlock audio on Play without fetching media outside th
   playback.dispose(); mixer.dispose();
 });
 
-test('media starts at its scene cue, maps trim/speed, fades volume and stops at the source out point', async () => {
+test('media starts at its scene cue, maps trims at natural speed, fades volume and stops at the source out point', async () => {
   const media = new FakeMedia(), playback = player(media), node = instance();
   playback.sync(node, 1, true, 12);
   assert.equal(media.plays, 0); assert.equal(media.currentTime, 3); assert.equal(media.volume, 0);
   playback.sync(node, 3, true, 12); await flush();
-  assert.equal(media.plays, 1); assert.equal(media.currentTime, 5); assert.equal(media.playbackRate, 2); assert.equal(media.volume, 0.4);
+  assert.equal(media.plays, 1); assert.equal(media.currentTime, 4); assert.equal(media.playbackRate, 1); assert.equal(media.volume, 0.4);
   playback.sync(node, 3.01, true, 12); assert.equal(media.plays, 1, 'RAF must not create repeated play requests');
-  playback.sync(node, 4, true, 12); assert.equal(media.currentTime, 7); assert.equal(media.paused, true);
+  playback.sync(node, 6, true, 12); assert.equal(media.currentTime, 7); assert.equal(media.paused, true);
   node.media!.loop = true;
-  playback.sync(node, 4.5, true, 12); await flush();
-  assert.equal(media.currentTime, 4); assert.equal(media.plays, 2); assert.equal(media.loop, false, 'native loops must never escape trims');
+  playback.sync(node, 6.5, true, 12); await flush();
+  assert.equal(media.currentTime, 3.5); assert.equal(media.plays, 2); assert.equal(media.loop, false, 'native loops must never escape trims');
   node.media!.muted = true;
-  playback.sync(node, 5.1, false, 12); assert.equal(media.paused, true); assert.equal(media.muted, true); assert.ok(Math.abs(media.currentTime - 5.2) < 1e-10);
+  playback.sync(node, 7.1, false, 12); assert.equal(media.paused, true); assert.equal(media.muted, true); assert.ok(Math.abs(media.currentTime - 4.1) < 1e-10);
   playback.sync(node, 10, true, 12); assert.equal(media.paused, true, 'out cue is exclusive');
   playback.dispose(); assert.equal(media.srcRemoved, true); assert.equal(media.loads, 2);
 });
@@ -128,7 +141,7 @@ test('media stays unfetched outside its preload window and starts progressively 
   playback.sync(node, 3, true, 12, true);
   assert.equal(media.plays, 0, 'trimmed media cannot leak audio from source start while metadata loads');
   media.readyState = 1; media.duration = 20; media.emit('loadedmetadata'); await flush();
-  assert.equal(media.currentTime, 5); assert.equal(media.plays, 1, 'play starts before HAVE_ENOUGH_DATA or a complete download');
+  assert.equal(media.currentTime, 4); assert.equal(media.plays, 1, 'play starts before HAVE_ENOUGH_DATA or a complete download');
   playback.sync(node, 11, true, 12, false);
   assert.equal(media.src, ''); assert.equal(media.paused, true); assert.equal(media.preload, 'none');
   media.emit('loadedmetadata'); await flush(); assert.equal(media.plays, 1, 'late metadata cannot revive an evicted cue');

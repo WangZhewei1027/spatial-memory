@@ -65,7 +65,7 @@ function lazyMultipart(size: number, stallAfterFile = false) {
 
 test("original media size policy is independent of the stored output limit", () => {
   for (const type of ["image", "anchor", "audio"] as const) assert.equal(getUploadSourceLimitBytes(type), 32 * MIB);
-  assert.equal(getUploadSourceLimitBytes("model"), 3 * MIB);
+  assert.equal(getUploadSourceLimitBytes("model"), 5 * MIB);
   assert.equal(getUploadSourceLimitBytes("video"), 512 * MIB);
   assert.equal(MAX_MULTIPART_BYTES, 513 * MIB);
   assert.equal(STORED_FILE_MAX_BYTES, 5 * MIB);

@@ -1,4 +1,4 @@
-import { COMPOSITION_LIMITS, type CompositionInstance } from '@/lib/scene/protocol';
+import { type CompositionInstance } from '@/lib/scene/protocol';
 import { roundTime } from '@/lib/scene/transform-authoring';
 
 export type SceneTrackKind = 'model' | 'image' | 'audio' | 'video' | 'text' | 'group';
@@ -17,12 +17,11 @@ export function instanceRegion(instance: CompositionInstance, duration: number, 
 /** Clamp a gesture while preserving region length for moves and the opposite edge for trims. */
 export function changeRegion(range: RegionRange, mode: RegionEdit, at: number): RegionRange {
   if (!Number.isFinite(at)) return range;
-  // Retain out-of-scene content when the scene end was shortened; editing cannot exceed the protocol cap.
-  const limit = COMPOSITION_LIMITS.maxDurationSeconds;
+  // Retain out-of-scene content when the scene end was shortened.
   if (mode === 'start') return { start: roundTime(Math.max(0, Math.min(range.end - MIN_REGION_DURATION, at))), end: range.end };
-  if (mode === 'end') return { start: range.start, end: roundTime(Math.max(range.start + MIN_REGION_DURATION, Math.min(limit, at))) };
+  if (mode === 'end') return { start: range.start, end: roundTime(Math.max(range.start + MIN_REGION_DURATION, at)) };
   const length = range.end - range.start;
-  const start = roundTime(Math.max(0, Math.min(limit - length, at)));
+  const start = roundTime(Math.max(0, at));
   return { start, end: roundTime(start + length) };
 }
 
@@ -35,7 +34,7 @@ export function applyRegion(instance: CompositionInstance, before: RegionRange, 
   const length = after.end - after.start;
   const fadeIn = instance.timing?.fadeInSeconds ?? 0, fadeOut = instance.timing?.fadeOutSeconds ?? 0;
   const animation = instance.animation && mode === 'move'
-    ? { ...instance.animation, startSeconds: Math.min(COMPOSITION_LIMITS.maxDurationSeconds, Math.max(0, roundTime(instance.animation.startSeconds + after.start - before.start))) }
+    ? { ...instance.animation, startSeconds: Math.max(0, roundTime(instance.animation.startSeconds + after.start - before.start)) }
     : instance.animation;
   return {
     ...instance, animation,

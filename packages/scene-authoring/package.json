@@ -1,0 +1,33 @@
+{
+  "name": "@spatial-memory/scene-authoring",
+  "version": "0.2.0",
+  "private": false,
+  "description": "Pure scene document editing, inspection and deterministic sampling",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@spatial-memory/scene-core": "file:../scene-core",
+    "@types/three": "^0.183.1",
+    "esbuild": "^0.25.0",
+    "three": "^0.183.2",
+    "typescript": "^5.9.0"
+  }
+}

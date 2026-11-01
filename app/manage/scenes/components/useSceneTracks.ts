@@ -16,8 +16,6 @@ export function useSceneTracks(editor: SceneEditorState, selectedIds: string[], 
     editor.commit(current => ({ ...current, definition: { ...current.definition, content: edit(current.definition.content) } }));
   };
   const failed = (reason: HierarchyFailure) => editor.setError({
-    groupLimit: text('分组数量已达上限（16 个）。', 'Group limit reached (16).'),
-    depthLimit: text('分组最多嵌套 4 层。', 'Groups can be nested at most 4 levels deep.'),
     cycle: text('不能把分组移到它自己里面。', 'A group cannot be moved into itself.'),
   }[reason]);
   /** Apply a hierarchy edit that may refuse; the failure is reported instead of committing. */

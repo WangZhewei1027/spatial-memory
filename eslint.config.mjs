@@ -15,6 +15,8 @@ const eslintConfig = [
     ignores: [
       ".next/**",
       "node_modules/**",
+      "packages/*/node_modules/**",
+      "packages/*/dist/**",
       "vendor/three-editor/**",
     ],
   },

@@ -66,6 +66,8 @@ test('spatial sound follows distance, listener translation and orientation in wo
   assert.deepEqual(sampleSpatialAudio(spatial, { x: 0, y: 0, z: -4 }, listener), { gain: .25, pan: 0 });
   assert.equal(sampleSpatialAudio(spatial, { x: 100, y: 0, z: 0 }, listener).gain, .05, 'distance attenuation clamps at the configured maximum');
   assert.equal(sampleSpatialAudio({ ...spatial, rolloffFactor: 0 }, { x: 100, y: 0, z: 0 }, listener).gain, 1);
+  assert.equal(sampleSpatialAudio({ enabled: true, refDistance: 200, maxDistance: 2000, rolloffFactor: 20 }, { x: 2000, y: 0, z: 0 }, listener).gain, 200 / (200 + 20 * 1800), 'configured distances and rolloff are not capped');
+  assert.ok(Math.abs(sampleSpatialAudio({ enabled: true, refDistance: .001, maxDistance: .1, rolloffFactor: 1 }, { x: .01, y: 0, z: 0 }, listener).gain - .1) < 1e-12, 'positive sub-decimeter reference distances retain their scale');
   const turned = { ...listener, forward: { x: 0, y: 0, z: 1 } };
   assert.equal(sampleSpatialAudio(spatial, { x: 2, y: 0, z: 0 }, turned).pan, -1);
   const translated = { ...listener, position: { x: 5, y: 7, z: -3 } };
@@ -73,7 +75,7 @@ test('spatial sound follows distance, listener translation and orientation in wo
   assert.deepEqual(sampleSpatialAudio(spatial, { x: NaN, y: 0, z: 0 }, listener), { gain: 0, pan: 0 });
 });
 
-test('automation requires schema 8, validates values, and counts against the shared frame budget', () => {
+test('automation requires schema 8, validates values, and accepts long automation tracks', () => {
   const doc = document();
   let item = setKey(setKey(node(), 'volume', 0, 0), 'volume', 4, 1);
   item = editChannel(item, 'opacity', 0, .7);
@@ -106,7 +108,7 @@ test('automation requires schema 8, validates values, and counts against the sha
   assert.equal(validateSceneDocument(groupInvalid).ok, false);
   const tooMany = structuredClone(doc);
   tooMany.content.instances[0].tracks = { volume: Array.from({ length: 2401 }, (_, i) => key(i / 100, .5)) };
-  assert.ok(validateSceneDocument(tooMany).issues.some(issue => issue.message.includes('2400')));
+  assert.equal(validateSceneDocument(tooMany).ok, true);
   const volumeText = document();
   volumeText.content.instances = [{ ...node(), asset: undefined, text: { content: 'Text', color: '#ffffff', fontSize: .2, width: 2, align: 'left' }, tracks: { volume: [key(0, .5)] } }];
   assert.equal(validateSceneDocument(volumeText).ok, false);

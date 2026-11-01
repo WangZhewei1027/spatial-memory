@@ -27,7 +27,7 @@ async function main() {
   const editor = new Editor({ config: { getKey: () => 'en', setKey() {} }, history: { execute() {}, clear() {} } });
   const command = new SetPositionCommand(editor, root, new Vector3(150, 2, -200));
   assert.equal(applyEditorCommand(session, command, true), true);
-  assert.deepEqual(writes, [{ id: 'model', group: 'position', value: { x: 100, y: 2, z: -100 } }]);
+  assert.deepEqual(writes, [{ id: 'model', group: 'position', value: { x: 150, y: 2, z: -200 } }]);
   assert.equal(applyEditorCommand(session, command, false), false, 'read-only must not write');
   assert.equal(applyEditorCommand(session, { ...command, type: 'SetMaterialCommand', execute: () => command.execute() }, true), false);
   assert.equal(applyEditorCommand(session, new SetPositionCommand(editor, mesh, new Vector3(1, 2, 3)), true), false, 'GLB internals cannot become unsaved instance transforms');

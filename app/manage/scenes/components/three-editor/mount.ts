@@ -7,6 +7,7 @@ import { applyEditorCommand, instanceRoot, instanceId } from './transform-bridge
 import type { ThreeViewportProps } from './types';
 import { configurePreviewCamera, createSpatialReference } from './spatial-reference';
 import { renderPreviewInset } from './preview-inset';
+import { updateCameraClipping } from './camera-clipping';
 
 export function mountThreeEditor(host: HTMLDivElement, initial: ThreeViewportProps) {
   let props = initial, closed = false, draggingId: string | null = null;
@@ -36,7 +37,11 @@ export function mountThreeEditor(host: HTMLDivElement, initial: ThreeViewportPro
   const sun = new DirectionalLight(0xffffff, 2); sun.position.set(5, 8, 5);
   editor.scene.add(new AmbientLight(0xffffff, 1.2), sun);
   editor.camera.position.set(5, 4, 7); editor.camera.lookAt(0, 0, 0); editor.camera.near = 0.01; editor.camera.far = 2000;
-  viewport.beforeRender = () => models.frame();
+  viewport.beforeRender = () => {
+    models.frame();
+    updateCameraClipping(editor.camera, editor.scene);
+    updateCameraClipping(previewCamera, editor.scene);
+  };
   // Reuse the native render loop, scene and media instances; only the camera draw is repeated.
   editor.signals.sceneRendered.add(() => {
     const frame = props.previewRef.current;

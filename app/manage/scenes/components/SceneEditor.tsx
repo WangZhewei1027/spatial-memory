@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import type { SceneDetailDto } from "@/lib/content-model/contracts";
 import type { PlacementReader, ScenePosition } from "@/lib/scene/editor-interactions";
-import { COMPOSITION_LIMITS, type CompositionInstance } from "@/lib/scene/protocol";
+import { type CompositionInstance } from "@/lib/scene/protocol";
 import { findNode, isGroup, type SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { hiddenNodeIds } from "@/lib/scene/visibility";
 import { editTransform } from "@/lib/scene/transform-authoring";
+import { apply as applySceneOperations } from "@/packages/scene-authoring/src/operations";
 import { X } from "lucide-react";
 import { Component, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -64,7 +65,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const { instances, groups, assets, loop } = document.definition.content;
   const duration = document.definition.content.durationSeconds ?? 10;
   const sceneOrganizationId = detail?.organization_id ?? organizationId;
-  const canAdd = !readOnly && !playing && instances.length < COMPOSITION_LIMITS.maxInstances;
+  const canAdd = !readOnly && !playing;
   const resourceOf = (item: CompositionInstance) => item.asset ? resolve(assets[item.asset]) : undefined;
   const select = (id: string | null) => { setSelectedIds(id ? [id] : []); if (id && compact && panelOpen) togglePanel(); };
   const nameOf = (node: SceneNode) => node.name ?? (isGroup(node) ? node.id : node.text ? node.text.content.slice(0, 40) : resourceOf(node)?.name ?? node.asset ?? node.id);
@@ -82,7 +83,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
       outcome.added = true;
       return { ...current, definition: { ...current.definition, content: result.content } };
     });
-    if (outcome.failure) editor.setError(outcome.failure === "instanceLimit" ? text("场景对象数量已达上限。", "Scene object limit reached.") : outcome.failure === "assetLimit" ? t("sceneEditor.assetLimit") : text("素材不可用，请刷新素材库后重试。", "This asset is unavailable. Refresh the library and try again."));
+    if (outcome.failure) editor.setError(text("素材不可用，请刷新素材库后重试。", "This asset is unavailable. Refresh the library and try again."));
     if (outcome.added) { if (picked) editor.registerResource(picked); select(id); }
   };
   const addText = () => {
@@ -100,9 +101,18 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const duplicate = (sourceId: string) => {
     const source = instances.find(item => item.id === sourceId);
     if (!source || !canAdd) return;
-    const copy: CompositionInstance = { ...structuredClone(source), id: `object_${crypto.randomUUID().slice(0, 8)}`, name: `${nameOf(source)} ${text("副本", "copy")}`.slice(0, COMPOSITION_LIMITS.maxNameLength) };
-    commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, instances: current.definition.content.instances.flatMap(item => item.id === sourceId ? [item, copy] : [item]) } } }));
-    select(copy.id);
+    const id = `object_${crypto.randomUUID().slice(0, 8)}`;
+    let duplicated = false;
+    commit(current => {
+      const result = applySceneOperations(current.definition, [
+        { type: "node.duplicate", id: sourceId, idMap: { [sourceId]: id } },
+        { type: "node.update", id, patch: { name: `${nameOf(source)} ${text("副本", "copy")}` } },
+      ]);
+      if (!result.ok) throw new Error(result.errors.map(issue => `${issue.path}: ${issue.message}`).join("; "));
+      duplicated = !result.unchanged;
+      return { ...current, definition: result.document };
+    });
+    if (duplicated) select(id);
   };
   const selectedResource = instance ? resourceOf(instance) : undefined;
   const hidden = hiddenNodeIds(document.definition.content);
@@ -115,7 +125,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
     </div>
     <div className="scene-workbench">
         <aside id="scene-assets" className="scene-workspace-sidebar scene-island" hidden={!panelOpen} aria-label={text("素材库", "Asset library")}>
-          <SceneLibraryPanel organizationId={sceneOrganizationId} canAdd={canAdd} atCapacity={instances.length >= COMPOSITION_LIMITS.maxInstances} canUpload={!readOnly} onRegister={editor.registerResource} onAdd={resource => addAsset(resource.assetId, undefined, resource)} onAddText={addText} />
+          <SceneLibraryPanel organizationId={sceneOrganizationId} canAdd={canAdd} canUpload={!readOnly} onRegister={editor.registerResource} onAdd={resource => addAsset(resource.assetId, undefined, resource)} onAddText={addText} />
         </aside>
       <div className="scene-stage-content">
       <div className="scene-stage-area" data-preview-open={preview || undefined} data-inspector={!!selectedNode || undefined}>

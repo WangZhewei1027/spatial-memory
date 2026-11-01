@@ -13,7 +13,7 @@ export function configurePreviewCamera(camera: PerspectiveCamera, settings: Scen
   // YXZ first turns around the vertical axis, then pitches locally. Positive pitch looks up.
   camera.rotation.set(MathUtils.degToRad(settings.pitch), yaw, 0, 'YXZ');
   camera.fov = settings.fov; camera.aspect = aspect > 0 && Number.isFinite(aspect) ? aspect : SCENE_CAMERA_ASPECT;
-  camera.near = .01; camera.far = 100;
+  camera.near = .01; camera.far = Math.max(100, camera.position.length() * 2);
   camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
 }
 

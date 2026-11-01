@@ -4,7 +4,6 @@ import { SceneNameDialog } from "@/app/manage/content/SceneNameDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
-import { MAX_SCENE_BYTES } from "@/lib/scene/protocol";
 import { useId, useRef, useState } from "react";
 import { newIdempotencyKey, organizationApi } from "../../lib/content-api";
 import { ERROR_TEXTS, runContentAction } from "../../lib/content-errors";
@@ -21,7 +20,6 @@ const TEXTS: IntegrationTexts = {
   "contentModel.integration.sceneImport.file": ["场景文件", "Scene file"],
   "contentModel.integration.sceneImport.action": ["导入", "Import"],
   "contentModel.integration.sceneImport.fileRequired": ["请选择一个 JSON 文件", "Choose a JSON file"],
-  "contentModel.integration.sceneImport.tooLarge": ["文件不能超过 256 KiB", "The file must be 256 KiB or smaller"],
 };
 
 /** Import a schema-4 document with asset references. */
@@ -35,7 +33,6 @@ export function SceneImportDialog({ open, onOpenChange, teamName, organizationId
 
   const submit = (name: string) => runContentAction(async () => {
     if (!file) throw new Error(tx("contentModel.integration.sceneImport.fileRequired"));
-    if (file.size > MAX_SCENE_BYTES) throw new Error(tx("contentModel.integration.sceneImport.tooLarge"));
     const document = readSceneImport(await file.text());
     key.current ??= newIdempotencyKey();
     return organizationApi.createScene(organizationId, { name, document, idempotencyKey: key.current });

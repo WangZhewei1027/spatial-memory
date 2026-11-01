@@ -1,6 +1,5 @@
 "use client";
 import { useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { COMPOSITION_LIMITS } from '@/lib/scene/protocol';
 import { roundTime } from '@/lib/scene/transform-authoring';
 import { formatTime, MIN_SCENE_DURATION, snapTime, type GridSteps } from './timeline-scale';
 
@@ -28,7 +27,7 @@ export function SceneTimelineRuler(p: SceneTimelineRulerProps) {
     event.preventDefault(); event.stopPropagation();
     apply((event.key === 'ArrowRight' ? 1 : -1) * (event.shiftKey ? p.steps.major : p.steps.minor));
   };
-  const resizeTo = (time: number) => roundTime(clamp(time, MIN_SCENE_DURATION, COMPOSITION_LIMITS.maxDurationSeconds));
+  const resizeTo = (time: number) => roundTime(Math.max(MIN_SCENE_DURATION, time));
   const labels = Array.from({ length: Math.floor(p.span / p.steps.major + 1e-6) + 1 }, (_, i) => roundTime(i * p.steps.major));
   return <div className="scene-time-ruler" data-scrubbing={scrubbing || undefined}
     onPointerDown={e => { if (e.button) return; e.currentTarget.setPointerCapture(e.pointerId); setScrubbing(true); seekTo(timeAt(e, e.currentTarget)); }}
@@ -41,7 +40,7 @@ export function SceneTimelineRuler(p: SceneTimelineRulerProps) {
       aria-label={p.text('播放头', 'Playhead')} aria-valuemin={0} aria-valuemax={p.end} aria-valuenow={p.time} aria-valuetext={formatTime(p.time, .1)}
       onKeyDown={e => nudge(e, delta => seekTo(p.time + delta))} />
     <div className="scene-end-marker" role="slider" tabIndex={p.canResize ? 0 : -1} aria-disabled={!p.canResize}
-      aria-label={p.text('场景结束位置（拖动调整时长）', 'Scene end (drag to change duration)')} aria-valuemin={MIN_SCENE_DURATION} aria-valuemax={COMPOSITION_LIMITS.maxDurationSeconds} aria-valuenow={p.end} aria-valuetext={formatTime(p.end, .1)}
+      aria-label={p.text('场景结束位置（拖动调整时长）', 'Scene end (drag to change duration)')} aria-valuemin={MIN_SCENE_DURATION} aria-valuenow={p.end} aria-valuetext={formatTime(p.end, .1)}
       data-active={resizing || undefined} style={{ left: pct(p.end) }}
       onKeyDown={e => { if (p.canResize) nudge(e, delta => p.onDuration(resizeTo(p.end + delta))); }}
       onPointerDown={e => {

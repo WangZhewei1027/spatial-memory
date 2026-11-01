@@ -1,5 +1,5 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
-import { COMPOSITION_LIMITS, type CompositionContent, type CompositionGroup, type CompositionInstance, type TransformNode } from './protocol';
+import { type CompositionContent, type CompositionGroup, type CompositionInstance, type TransformNode } from './protocol';
 
 type Content = Pick<CompositionContent, 'instances' | 'groups' | 'assets'>;
 export type SceneNode = CompositionInstance | CompositionGroup;
@@ -18,20 +18,24 @@ export function trackRows(content: Content): TrackRow[] {
   const add = (node: SceneNode) => { const list = children.get(node.parent) ?? []; list.push(node); children.set(node.parent, list); };
   groups.forEach(add); content.instances.forEach(add);
   const first = new Map<string, number>();
-  const firstOf = (node: SceneNode): number => {
-    if (!isGroup(node)) return content.instances.indexOf(node);
-    if (!first.has(node.id)) first.set(node.id, Math.min(Infinity, ...(children.get(node.id) ?? []).map(firstOf)));
-    return first.get(node.id)!;
-  };
-  const rows: TrackRow[] = [];
-  const visit = (parent: string | undefined, depth: number) => {
-    const list = [...(children.get(parent) ?? [])].sort((a, b) => firstOf(a) - firstOf(b));
-    for (const node of list) {
-      rows.push({ id: node.id, kind: isGroup(node) ? 'group' : 'instance', depth, node, children: children.get(node.id)?.length ?? 0 });
-      if (isGroup(node) && depth < COMPOSITION_LIMITS.maxGroupDepth) visit(node.id, depth + 1);
+  const nodes = new Map([...groups, ...content.instances].map(node => [node.id, node]));
+  content.instances.forEach((instance, index) => {
+    const visited = new Set<string>();
+    for (let node: SceneNode | undefined = instance; node && !visited.has(node.id); node = node.parent ? nodes.get(node.parent) : undefined) {
+      visited.add(node.id);
+      first.set(node.id, Math.min(index, first.get(node.id) ?? Infinity));
     }
-  };
-  visit(undefined, 0);
+  });
+  const ordered = (parent: string | undefined) => [...(children.get(parent) ?? [])].sort((a, b) => (first.get(a.id) ?? Infinity) - (first.get(b.id) ?? Infinity));
+  const rows: TrackRow[] = [], visited = new Set<string>();
+  const pending = ordered(undefined).reverse().map(node => ({ node, depth: 0 }));
+  while (pending.length) {
+    const { node, depth } = pending.pop()!;
+    if (visited.has(node.id)) continue;
+    visited.add(node.id);
+    rows.push({ id: node.id, kind: isGroup(node) ? 'group' : 'instance', depth, node, children: children.get(node.id)?.length ?? 0 });
+    if (isGroup(node)) for (const child of ordered(node.id).reverse()) pending.push({ node: child, depth: depth + 1 });
+  }
   return rows;
 }
 
@@ -54,36 +58,28 @@ export const descendants = (content: Content, id: string): Set<string> => {
   }
   return found;
 };
-const depthOf = (content: Content, parent: string | undefined) => { let depth = 0; for (let at = parent; at; at = findNode(content, at)?.parent) depth++; return depth; };
-/** Deepest group nesting below `id`, counting `id` itself when it is a group. */
-const heightOf = (content: Content, id: string): number => {
-  const node = findNode(content, id);
-  if (!node || !isGroup(node)) return 0;
-  return 1 + Math.max(0, ...(content.groups ?? []).filter(group => group.parent === id).map(group => heightOf(content, group.id)));
-};
-
 // Static transforms only: reparenting keeps the resting pose in place; keyed channels stay local.
 const matrixOf = (node: TransformNode) => new Matrix4().compose(new Vector3(...node.position), new Quaternion().setFromEuler(new Euler(...node.rotation, 'XYZ')), new Vector3(...node.scale));
 function worldOf(content: Content, parent: string | undefined) {
   const matrix = new Matrix4();
-  for (let at = parent; at;) { const group = findNode(content, at); if (!group) break; matrix.premultiply(matrixOf(group)); at = group.parent; }
+  const visited = new Set<string>();
+  for (let at = parent; at && !visited.has(at);) { visited.add(at); const group = findNode(content, at); if (!group) break; matrix.premultiply(matrixOf(group)); at = group.parent; }
   return matrix;
 }
 // `|| 0` drops the -0 that decomposition produces; JSON would turn it into 0 on save.
-const round = (value: number) => Math.round(value * 1e6) / 1e6 || 0;
+const round = (value: number) => Number(value.toPrecision(15)) || 0;
 function reparented<T extends SceneNode>(content: Content, node: T, parent: string | undefined): T {
   if (node.parent === parent) return node;
   const local = worldOf(content, parent).invert().multiply(worldOf(content, node.parent)).multiply(matrixOf(node));
   const position = new Vector3(), quaternion = new Quaternion(), scale = new Vector3();
   local.decompose(position, quaternion, scale);
   const rotation = new Euler().setFromQuaternion(quaternion, 'XYZ');
-  const limit = COMPOSITION_LIMITS.maxPositionAbs, clamp = (value: number, min: number, max: number) => round(Math.min(max, Math.max(min, value)));
   const { parent: _parent, ...rest } = node;
   return {
     ...rest, ...(parent ? { parent } : {}),
-    position: [clamp(position.x, -limit, limit), clamp(position.y, -limit, limit), clamp(position.z, -limit, limit)],
+    position: [round(position.x), round(position.y), round(position.z)],
     rotation: [round(rotation.x), round(rotation.y), round(rotation.z)],
-    scale: [clamp(scale.x, .001, COMPOSITION_LIMITS.maxScale), clamp(scale.y, .001, COMPOSITION_LIMITS.maxScale), clamp(scale.z, .001, COMPOSITION_LIMITS.maxScale)],
+    scale: [round(scale.x), round(scale.y), round(scale.z)],
   } as T;
 }
 function withParents<T extends Content>(content: T, parents: Map<string, string | undefined>, extra: CompositionGroup[] = []): T {
@@ -92,7 +88,7 @@ function withParents<T extends Content>(content: T, parents: Map<string, string 
   return { ...content, instances: content.instances.map(move), groups: source.groups.map(move) };
 }
 
-export type HierarchyFailure = 'groupLimit' | 'depthLimit' | 'cycle';
+export type HierarchyFailure = 'cycle';
 type Result<T> = { ok: true; content: T } | { ok: false; reason: HierarchyFailure };
 
 /** Wrap the selected tracks in a new identity group placed where the first of them is. */
@@ -101,9 +97,7 @@ export function groupNodes<T extends Content>(content: T, ids: string[], group: 
   const picked = ids.filter(id => findNode(content, id)).sort((a, b) => order.indexOf(a) - order.indexOf(b));
   const top = picked.filter(id => !picked.some(other => other !== id && descendants(content, other).has(id)));
   if (!top.length) return { ok: true, content };
-  if ((content.groups?.length ?? 0) >= COMPOSITION_LIMITS.maxGroups) return { ok: false, reason: 'groupLimit' };
   const parent = findNode(content, top[0])!.parent;
-  if (depthOf(content, parent) + 1 + Math.max(0, ...top.map(id => heightOf(content, id))) > COMPOSITION_LIMITS.maxGroupDepth) return { ok: false, reason: 'depthLimit' };
   const created: CompositionGroup = { id: group.id, name: group.name, ...(parent ? { parent } : {}), position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
   const next = withParents(content, new Map(top.map(id => [id, group.id])), [created]);
   // Pull the new members together at the first member's position.
@@ -130,7 +124,6 @@ export function moveNode<T extends Content>(content: T, id: string, target: { pa
   if (!node || target.before === id) return { ok: true, content };
   const inside = descendants(content, id);
   if (target.parent === id || (target.parent && inside.has(target.parent))) return { ok: false, reason: 'cycle' };
-  if (depthOf(content, target.parent) + heightOf(content, id) > COMPOSITION_LIMITS.maxGroupDepth) return { ok: false, reason: 'depthLimit' };
   const next = withParents(content, new Map([[id, target.parent]]));
   const members = new Set([id, ...inside]);
   const moved = next.instances.filter(item => members.has(item.id));
@@ -161,7 +154,7 @@ export function editNode<T extends Content>(content: T, id: string, edit: <N ext
 
 /** An empty instance name falls back to its asset name; groups always keep a name. */
 export function renameNode<T extends Content>(content: T, id: string, name: string): T {
-  const trimmed = name.trim().slice(0, COMPOSITION_LIMITS.maxNameLength);
+  const trimmed = name.trim();
   return editNode(content, id, node => {
     if (trimmed) return { ...node, name: trimmed };
     if (isGroup(node)) return node;

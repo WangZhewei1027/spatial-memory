@@ -114,17 +114,30 @@ export class AudioContextFixture {
 }
 export class VideoDecoderFixture extends EventTargetFixture {
   source = ''; currentTime = 0; removed = false; started = false; seekCalls: number[] = []; pendingFrame = true;
-  failNextSeek = false;
-  start(options: { source: string; mode: number }) { this.source = options.source; this.started = true; this.pendingFrame = true; queueMicrotask(() => this.emit('start')); return Promise.resolve({ width: 8, height: 4, duration: 20000 }); }
+  failNextSeek = false; abortVideo = false;
+  start(options: { source: string; mode: number; abortVideo?: boolean }) { this.abortVideo = !!options.abortVideo; this.source = options.source; this.started = true; this.pendingFrame = true; queueMicrotask(() => this.emit('start')); return Promise.resolve({ width: 8, height: 4, duration: 20000 }); }
   seek(milliseconds: number) { if (this.failNextSeek) { this.failNextSeek = false; return Promise.reject(new Error('Injected decoder seek failure')); } this.currentTime = milliseconds / 1000; this.seekCalls.push(milliseconds); this.pendingFrame = true; queueMicrotask(() => this.emit('seek')); return Promise.resolve(); }
   getFrameData() { if (this.removed || !this.started || !this.pendingFrame) return null; this.pendingFrame = false; return { data: new Uint8Array(8 * 4 * 4).fill(255).buffer, width: 8, height: 4, pkPts: this.currentTime * 1000, pkDts: this.currentTime * 1000 }; }
   stop() { this.started = false; return Promise.resolve(); }
   remove() { this.removed = true; this.started = false; return Promise.resolve(); }
 }
 
+export class MediaAudioPlayerFixture {
+  decoder?: VideoDecoderFixture;
+  volume = 0; started = false; destroyed = false;
+  addAudioSource(decoder: VideoDecoderFixture) { this.decoder = decoder; return Promise.resolve(); }
+  removeAudioSource() { this.decoder = undefined; return Promise.resolve(); }
+  start() { this.started = true; return Promise.resolve(); }
+  stop() { this.started = false; return Promise.resolve(); }
+  destroy() { this.destroyed = true; this.started = false; return Promise.resolve(); }
+  tick(seconds: number) { if (this.started && !this.destroyed && this.decoder) this.decoder.currentTime += seconds; }
+}
+
 export function performanceHosts() {
   const browserMedia: BrowserMediaFixture[] = [], browserCanvases: CanvasFixture[] = [], miniCanvases: CanvasFixture[] = [];
   const audioContexts: AudioContextFixture[] = [], decoders: VideoDecoderFixture[] = [], innerAudio: InnerAudioFixture[] = [];
+  const mediaAudio: MediaAudioPlayerFixture[] = [];
+  const realNow = Date.now; let now = realNow(); Date.now = () => now;
   const files = new Set<string>();
   const document = {
     createElement(name: string) {
@@ -143,6 +156,7 @@ export function performanceHosts() {
       queueMicrotask(() => success({ statusCode: 206, data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length) })); return { abort() {} };
     },
     createWebAudioContext() { const context = new AudioContextFixture(); audioContexts.push(context); return context; },
+    createMediaAudioPlayer() { const player = new MediaAudioPlayerFixture(); mediaAudio.push(player); return player; },
     createVideoDecoder() { const decoder = new VideoDecoderFixture(); decoders.push(decoder); return decoder; },
     getVideoInfo({ src, success }: { src: string; success(value: unknown): void }) { queueMicrotask(() => success({ duration: 20, width: 8, height: 4, type: 'mp4', size: 1, source: src })); },
     downloadFile({ url, success }: { url: string; success(value: unknown): void }) { const path = `/performance-fixture/${url.split('/').at(-1)}`; files.add(path); queueMicrotask(() => success({ statusCode: 200, tempFilePath: path })); return { abort() {} }; },
@@ -154,9 +168,9 @@ export function performanceHosts() {
   const descriptors = { document: Object.getOwnPropertyDescriptor(globalThis, 'document'), wx: Object.getOwnPropertyDescriptor(globalThis, 'wx') };
   Object.defineProperty(globalThis, 'document', { configurable: true, value: document });
   Object.defineProperty(globalThis, 'wx', { configurable: true, value: wx });
-  return { browserMedia, browserCanvases, miniCanvases, audioContexts, innerAudio, decoders, files, canvas: new CanvasFixture(),
-    tick(seconds: number) { browserMedia.forEach(media => media.tick(seconds)); innerAudio.forEach(media => media.tick(seconds)); audioContexts.forEach(context => { context.currentTime += seconds; context.sources.forEach(source => source.tick()); }); },
-    restore() { for (const [key, descriptor] of Object.entries(descriptors)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); } },
+  return { browserMedia, browserCanvases, miniCanvases, audioContexts, innerAudio, mediaAudio, decoders, files, canvas: new CanvasFixture(),
+    tick(seconds: number) { now += seconds * 1000; mediaAudio.forEach(player => player.tick(seconds)); browserMedia.forEach(media => media.tick(seconds)); innerAudio.forEach(media => media.tick(seconds)); audioContexts.forEach(context => { context.currentTime += seconds; context.sources.forEach(source => source.tick()); }); },
+    restore() { Date.now = realNow; for (const [key, descriptor] of Object.entries(descriptors)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); } },
   };
 }
 export async function settleMedia() { for (let i = 0; i < 100; i++) await Promise.resolve(); }

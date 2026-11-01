@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
-import { COMPOSITION_LIMITS, type CompositionInstance } from "@/lib/scene/protocol";
+import { type CompositionInstance } from "@/lib/scene/protocol";
 import { isGroup, type SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { FolderOutput, MousePointer2, X } from "lucide-react";
 import { useId } from "react";
@@ -38,7 +38,7 @@ export function SceneInstancePanel(props: SceneInstancePanelProps) {
     <div className="scene-panel-heading"><Text as="h2" variant="bodySm" fontWeight="semibold">{text("对象属性", "Inspector")}</Text><Button className="ml-auto size-8" size="icon" variant="ghost" aria-label={text("关闭属性", "Close inspector")} onClick={props.onClose}><X /></Button></div>
     <div className="scene-inspector-content">
     {!node ? <div className="flex items-start gap-2"><MousePointer2 className="mt-1 size-4 shrink-0 text-muted-foreground" /><Text as="p" variant="bodySm" tone="subdued">{text("在舞台或时间轴选择对象，调整空间、出入场和播放参数。", "Select an object on the stage or timeline to edit its position, timing and playback.")}</Text></div> : <>
-      <div className="scene-inspector-identity"><Label htmlFor={`${id}-name`}>{text("轨道名称", "Track name")}</Label><Input key={`${node.id}-${name}`} id={`${id}-name`} defaultValue={name} maxLength={COMPOSITION_LIMITS.maxNameLength} disabled={disabled} onBlur={event => props.onRename(event.target.value)} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+      <div className="scene-inspector-identity"><Label htmlFor={`${id}-name`}>{text("轨道名称", "Track name")}</Label><Input key={`${node.id}-${name}`} id={`${id}-name`} defaultValue={name} disabled={disabled} onBlur={event => props.onRename(event.target.value)} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} />
         {resource && <SceneResourceSource resource={resource} assetHref={assetHref} />}
         {props.hiddenByParent && <Text as="p" variant="bodyXs" tone="subdued">{text("所属分组已隐藏", "Hidden by a parent group")}</Text>}
       </div>
@@ -56,7 +56,7 @@ export function SceneInstancePanel(props: SceneInstancePanelProps) {
         <select id={`${id}-clip`} className="scene-select w-full" disabled={disabled} value={animation ? String(animation.clipIndex ?? clips?.findIndex(clip => clip.name === animation.clipName)) : "none"} onChange={event => onAnimation(event.target.value === "none" ? null : { clipIndex: Number(event.target.value), startSeconds: animation?.startSeconds ?? instance.timing?.startSeconds ?? 0, loop: animation?.loop ?? false })}>
           <option value="none">{t("sceneEditor.noAnimation")}</option>{clips?.map((clip, index) => <option key={index} value={index}>{clip.name || `Clip ${index + 1}`}</option>)}
         </select>
-        {animation && <><label className="scene-field-label">{text("动画起点 · 秒", "Animation start · seconds")}<SceneNumberField label={t("sceneEditor.clipStart")} value={animation.startSeconds} min={0} max={600} disabled={disabled} onCommit={startSeconds => onAnimation({ ...animation, startSeconds })} /></label><Label htmlFor={`${id}-loop`} className="flex min-h-8 items-center gap-2"><Checkbox id={`${id}-loop`} disabled={disabled} checked={animation.loop} onCheckedChange={checked => onAnimation({ ...animation, loop: checked === true })} />{t("sceneEditor.clipLoop")}</Label></>}
+        {animation && <><label className="scene-field-label">{text("动画起点 · 秒", "Animation start · seconds")}<SceneNumberField label={t("sceneEditor.clipStart")} value={animation.startSeconds} min={0} disabled={disabled} onCommit={startSeconds => onAnimation({ ...animation, startSeconds })} /></label><Label htmlFor={`${id}-loop`} className="flex min-h-8 items-center gap-2"><Checkbox id={`${id}-loop`} disabled={disabled} checked={animation.loop} onCheckedChange={checked => onAnimation({ ...animation, loop: checked === true })} />{t("sceneEditor.clipLoop")}</Label></>}
       </SceneInspectorSection>}
     </>}
     </div>

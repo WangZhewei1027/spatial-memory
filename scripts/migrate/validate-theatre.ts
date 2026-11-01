@@ -1,4 +1,5 @@
-import { COMPOSITION_LIMITS, TRANSFORM_CHANNELS } from "../../lib/scene/protocol";
+import { COMPOSITION_LIMITS } from "./legacy-scene-limits";
+import { TRANSFORM_CHANNELS } from "../../lib/scene/protocol";
 import { IssueList, rejectUnknownKeys, requireObject, requireNumberInRange, requireNumberTuple } from "../../lib/scene/validate-utils";
 
 /** Validate the supported native Theatre subset at the existing save boundary.

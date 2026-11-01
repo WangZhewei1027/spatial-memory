@@ -935,6 +935,23 @@ async function main(): Promise<void> {
       await rejectCode(() => sceneService.getScene(actors.foreign, scene.id), "NOT_FOUND");
     });
 
+    await check("agent preflight validates references without changing scene, lock or index", async () => {
+      const scene = await sceneService.createOrganizationScene(actors.editor, f.organizations.team, { name: "agent preflight", document: createBlankSceneDocument() });
+      const document = assetDocument(f.assets.shared);
+      const before = await sceneService.getScene(actors.editor, scene.id);
+      const body = { document, sceneId: scene.id, expectedLockVersion: scene.lock_version };
+      const result = await sceneService.validateOrganizationScene(actors.editor, f.organizations.team, body);
+      assert.equal(result.valid, true);
+      assert.equal(result.referenced_resources.length, 1);
+      assert.deepEqual(await sceneService.getScene(actors.editor, scene.id), before, "preflight preserves document, refs and lock");
+      await rejectCode(() => sceneService.validateOrganizationScene(actors.viewer, f.organizations.team, body), "FORBIDDEN");
+      await rejectCode(() => sceneService.validateOrganizationScene(actors.foreign, f.organizations.team, body), "FORBIDDEN");
+      await rejectCode(() => sceneService.validateOrganizationScene(actors.editor, f.organizations.team, { ...body, expectedLockVersion: scene.lock_version + 1 }), "LOCK_VERSION_CONFLICT");
+      await rejectCode(() => sceneService.validateOrganizationScene(actors.editor, f.organizations.team, { document: assetDocument(randomUUID()) }), "NOT_FOUND");
+      await sceneService.saveScene(actors.editor, scene.id, { expectedLockVersion: scene.lock_version, state: "archived" });
+      await rejectCode(() => sceneService.validateOrganizationScene(actors.editor, f.organizations.team, body), "ARCHIVED");
+    });
+
     await check("T02 probe-content-regression: explicit viewer-collection context is validated even for the source owner", async () => {
       const ids = await seedRuntimeProjectionFixture(client, f, { kind: "model", payload: { kind: "model" },
         resources: [{ role: "primary", url: "https://external-fixture.invalid/context.glb" }] });

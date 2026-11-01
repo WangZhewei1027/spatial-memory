@@ -101,8 +101,8 @@ function animationsOf(payload: unknown): ModelAnimationInfo[] | undefined {
   return payload.animations as ModelAnimationInfo[];
 }
 
-async function syncSceneRefs(trx: Trx, actor: Actor, scene: { id: string; organization_id: string }, writer: OrgAccess, document: SceneDocument): Promise<void> {
-  const existing = new Set((await trx.selectFrom("scene_asset_ref").select("asset_id").where("scene_id", "=", scene.id).execute()).map((r) => r.asset_id));
+async function validateSceneRefs(trx: Trx, actor: Actor, scene: { id?: string; organization_id: string }, writer: OrgAccess, document: SceneDocument): Promise<void> {
+  const existing = new Set(scene.id ? (await trx.selectFrom("scene_asset_ref").select("asset_id").where("scene_id", "=", scene.id).execute()).map((r) => r.asset_id) : []);
   const entries = Object.entries(document.content.assets);
   const assetIds = [...new Set(entries.map(([, ref]) => ref.assetId.toLowerCase()))].sort();
   for (const id of assetIds) await ensureAssetUse(trx, actor, id, writer, { existingReference: existing.has(id) });
@@ -123,10 +123,34 @@ async function syncSceneRefs(trx: Trx, actor: Actor, scene: { id: string; organi
   issues.push(...resourceKindIssues(document, kinds));
   issues.push(...clipIssues(document, animations));
   if (issues.length) throw invalid("场景引用校验失败", issues);
+}
+
+async function syncSceneRefs(trx: Trx, actor: Actor, scene: { id: string; organization_id: string }, writer: OrgAccess, document: SceneDocument): Promise<void> {
+  await validateSceneRefs(trx, actor, scene, writer, document);
+  const entries = Object.entries(document.content.assets);
   await trx.deleteFrom("scene_asset_ref").where("scene_id", "=", scene.id).execute();
   if (entries.length) await trx.insertInto("scene_asset_ref").values(entries.map(([alias, ref]) => ({
     scene_id: scene.id, organization_id: scene.organization_id, resource_alias: alias, asset_id: ref.assetId.toLowerCase(),
   }))).execute();
+}
+
+/** Read-only draft preflight. Saving repeats these checks in its own transaction. */
+export async function validateOrganizationScene(actor: Actor, organizationId: string, body: JsonRecord) {
+  rejectUnknown(body, ["document", "sceneId", "expectedLockVersion"]);
+  const document = parseDocument(body.document);
+  const sceneId = body.sceneId === undefined ? undefined : requireUuid(body.sceneId, "sceneId");
+  const expected = body.expectedLockVersion === undefined ? undefined : requireInt(body.expectedLockVersion, "expectedLockVersion", 0);
+  return db.transaction().execute(async (trx) => {
+    const writer = await requireOrgWrite(trx, actor, organizationId);
+    const scene = sceneId ? (await requireSceneWrite(trx, actor, sceneId)).scene : undefined;
+    if (scene && scene.organization_id !== organizationId) throw notFound("场景不存在");
+    if (scene?.state === "archived") throw archived("场景已归档，请先恢复再编辑");
+    if (scene && expected !== undefined) checkLockVersion(expected, scene.lock_version, "场景");
+    if (!scene && expected !== undefined) throw invalid("新场景不接受 expectedLockVersion");
+    await validateSceneRefs(trx, actor, { id: sceneId, organization_id: organizationId }, writer, document);
+    const referenced_resources = await resolveSceneResources(trx, Object.entries(document.content.assets).map(([resource_alias, ref]) => ({ resource_alias, asset_id: ref.assetId.toLowerCase() })));
+    return { valid: true as const, ...(scene ? { lock_version: scene.lock_version } : {}), referenced_resources };
+  });
 }
 
 // ───────────────────────── DTOs ─────────────────────────

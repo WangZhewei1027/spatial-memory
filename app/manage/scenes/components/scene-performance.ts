@@ -29,7 +29,7 @@ export function mediaFor(instance: CompositionInstance) {
 }
 /** New tracks begin at the playhead and are always long enough to be edited. */
 export function insertionTiming(time: number, duration: number, mediaDuration?: number) {
-  const startSeconds = Math.min(599.9, Math.max(0, time));
-  const endSeconds = Math.min(600, mediaDuration ? startSeconds + mediaDuration : Math.max(duration, startSeconds + 1));
+  const startSeconds = Math.max(0, time);
+  const endSeconds = mediaDuration ? startSeconds + mediaDuration : Math.max(duration, startSeconds + 1);
   return { startSeconds, endSeconds, fadeInSeconds: 0, fadeOutSeconds: 0 };
 }

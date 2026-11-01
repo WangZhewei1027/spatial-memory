@@ -55,6 +55,7 @@ async function main(): Promise<void> {
   const routes = {
     orgAssets: await import("../app/api/organizations/[id]/assets/route"),
     orgScenes: await import("../app/api/organizations/[id]/scenes/route"),
+    sceneValidate: await import("../app/api/organizations/[id]/scenes/validate/route"),
     orgCollections: await import("../app/api/organizations/[id]/collections/route"),
     orgPlacements: await import("../app/api/organizations/[id]/placements/route"),
     collection: await import("../app/api/collections/[id]/route"),
@@ -118,12 +119,24 @@ async function main(): Promise<void> {
       for (const [handler, method, url, params] of [
         [routes.orgAssets.POST, "POST", `/api/organizations/${f.organizations.team}/assets`, { id: f.organizations.team }],
         [routes.orgScenes.GET, "GET", `/api/organizations/${f.organizations.team}/scenes`, { id: f.organizations.team }],
+        [routes.sceneValidate.POST, "POST", `/api/organizations/${f.organizations.team}/scenes/validate`, { id: f.organizations.team }],
         [routes.orgCollections.GET, "GET", `/api/organizations/${f.organizations.team}/collections`, { id: f.organizations.team }],
         [routes.collection.GET, "GET", `/api/collections/${f.workspaces.a}`, { id: f.workspaces.a }],
         [routes.collectionArchive.POST, "POST", `/api/collections/${f.workspaces.a}/archive`, { id: f.workspaces.a }],
       ] as const) {
         expect(await call(handler, { user: null, method, url, params, body: method === "GET" ? undefined : {} }), 401, "UNAUTHENTICATED");
       }
+    });
+
+    await check("agent scene preflight route checks writer scope and returns resource facts without writes", async () => {
+      const url = `/api/organizations/${f.organizations.team}/scenes/validate`, params = { id: f.organizations.team };
+      const body = { document: assetDocument(f.assets.shared) };
+      const result = expect(await call(routes.sceneValidate.POST, { user: u.editor, method: "POST", url, params, body }), 200);
+      assert.equal(result.data.valid, true);
+      assert.equal(result.data.referenced_resources[0].asset_id, f.assets.shared);
+      expect(await call(routes.sceneValidate.POST, { user: u.viewer, method: "POST", url, params, body }), 403, "FORBIDDEN");
+      expect(await call(routes.sceneValidate.POST, { user: u.foreign, method: "POST", url, params, body }), 403, "FORBIDDEN");
+      expect(await call(routes.sceneValidate.POST, { user: u.editor, method: "POST", url, params, body: { document: {} } }), 400, "VALIDATION_FAILED");
     });
 
     await check("R02 POST /api/organizations/[id]/assets: team asset without collection, idempotent, writers only", async () => {

@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from 'react';
 import { Diamond } from 'lucide-react';
-import { COMPOSITION_LIMITS, type AutomationChannel, type TransformKeyframe } from '@/lib/scene/protocol';
+import { type AutomationChannel, type TransformKeyframe } from '@/lib/scene/protocol';
 import type { SceneNode } from '@/lib/scene/hierarchy-authoring';
 import { frameAt, keyAll, keyTimes, moveKeys, unkeyAll } from '@/lib/scene/transform-authoring';
 import { useTimeline } from './timeline-context';
@@ -33,7 +33,7 @@ export function SceneKeyLane({ node, channels, label }: { node: SceneNode; chann
         onPointerDown={e => { if (e.button) return; e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); dragging.current = { from: time, to: time }; setDrag(dragging.current); }}
         onPointerMove={e => {
           if (!e.currentTarget.hasPointerCapture(e.pointerId) || !dragging.current) return;
-          dragging.current = { ...dragging.current, to: view.laneTime(e, e.currentTarget.parentElement!, Math.min(view.span, COMPOSITION_LIMITS.maxDurationSeconds)) }; setDrag(dragging.current);
+          dragging.current = { ...dragging.current, to: view.laneTime(e, e.currentTarget.parentElement!, view.span) }; setDrag(dragging.current);
         }}
         onPointerCancel={() => { dragging.current = null; setDrag(null); }}
         onPointerUp={e => {

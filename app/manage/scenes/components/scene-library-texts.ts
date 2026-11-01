@@ -13,5 +13,4 @@ export const SCENE_LIBRARY_TEXTS: IntegrationTexts = {
   "contentModel.integration.sceneLibrary.missing": ["文件缺失", "File missing"],
   "contentModel.integration.sceneLibrary.retry": ["重新加载", "Try again"],
   "contentModel.integration.sceneLibrary.loading": ["正在加载素材…", "Loading assets…"],
-  "contentModel.integration.sceneLibrary.limit": ["场景对象数量已达上限。移除对象后可继续添加。", "This scene is at its object limit. Remove an object to add another."],
 };

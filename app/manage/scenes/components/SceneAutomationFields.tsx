@@ -5,7 +5,7 @@ import { Diamond } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/typography";
-import { COMPOSITION_LIMITS, type AutomationChannel, type CompositionInstance, type TransformKeyframe } from "@/lib/scene/protocol";
+import { type AutomationChannel, type CompositionInstance, type TransformKeyframe } from "@/lib/scene/protocol";
 import type { SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { editChannel, frameAt, keyAll, sampleChannel, unkeyAll, type TransformGroup } from "@/lib/scene/transform-authoring";
 import { SceneNumberField } from "./SceneFields";
@@ -36,8 +36,7 @@ export function SceneTransformField({ node, group, label, time, disabled, onEdit
     </div>
     <div className="scene-transform-fields">{(["x", "y", "z"] as const).map(axis => <label key={axis}><span>{axis.toUpperCase()}</span>
       <SceneNumberField label={`${label} ${axis.toUpperCase()}`} value={sampleChannel(node, `${group}.${axis}`, time) * factor}
-        min={group === "scale" ? .001 : group === "position" ? -COMPOSITION_LIMITS.maxPositionAbs : -100 * factor}
-        max={group === "scale" ? COMPOSITION_LIMITS.maxScale : group === "position" ? COMPOSITION_LIMITS.maxPositionAbs : 100 * factor}
+        exclusiveMin={group === "scale" ? 0 : undefined}
         step={group === "rotation" ? 1 : .1} disabled={disabled} onCommit={value => onEdit(current => editChannel(current, `${group}.${axis}`, time, value / factor))} />
     </label>)}</div>
   </div>;

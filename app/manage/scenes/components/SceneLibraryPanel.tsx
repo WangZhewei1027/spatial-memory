@@ -20,9 +20,9 @@ import { useSceneLibraryCatalog } from "./useSceneLibraryCatalog";
 import { SceneLibraryList } from "./SceneLibraryList";
 import { SceneTextLibrary } from "./SceneTextLibrary";
 
-export function SceneLibraryPanel({ organizationId, canAdd, canUpload, onRegister, onAdd, onAddText, atCapacity }: {
+export function SceneLibraryPanel({ organizationId, canAdd, canUpload, onRegister, onAdd, onAddText }: {
   organizationId: string | null;
-  canAdd: boolean; canUpload: boolean; atCapacity: boolean;
+  canAdd: boolean; canUpload: boolean;
   /** Register before dragging; the existing stage/timeline protocol carries only the asset ID. */
   onRegister: (resource: SceneResource) => void;
   onAdd: (resource: SceneResource) => void;
@@ -99,7 +99,6 @@ export function SceneLibraryPanel({ organizationId, canAdd, canUpload, onRegiste
             {catalog.hasMore && catalog.error == null && !pendingSearch && <Button variant="ghost" size="sm" className="scene-library-more" disabled={catalog.loadingMore} onClick={catalog.loadMore}>{catalog.loadingMore && <LoaderCircle className="animate-spin" />}{tx("contentModel.integration.sceneLibrary.loadMore")}</Button>}
           </>}
         </div>
-        {atCapacity && canUpload && <Text as="p" variant="bodySm" tone="subdued" className="scene-library-capacity">{tx("contentModel.integration.sceneLibrary.limit")}</Text>}
       </div>
   </section>;
 }

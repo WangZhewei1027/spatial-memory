@@ -1,7 +1,7 @@
 import { normalizeDefinition, toDocument, type EditorDefinition } from "@/app/manage/lib/scene-document";
 import { addModelInstance, resourceKey } from "@/app/manage/scenes/components/scene-add-model";
 import type { SceneResource } from "@/app/manage/scenes/components/types";
-import { COMPOSITION_LIMITS, createBlankScene } from "@/lib/scene/protocol";
+import { createBlankScene } from "@/lib/scene/protocol";
 import assert from "node:assert/strict";
 
 const V1 = "22222222-2222-4222-8222-222222222222";
@@ -53,14 +53,14 @@ assert.equal(resourceKey(both.content.assets[both.content.instances[3].asset!]),
 assert.deepEqual(add(empty, V1, {}, resource(V1, 1, { assetState: "archived" })), { ok: false, reason: "archived" });
 expectOk(add(first, V1, {}, resource(V1, 1, { assetState: "archived" })));
 
-// Limits.
+// Large compositions are not truncated by authoring.
 let full = blank(6);
-for (let index = 0; index < COMPOSITION_LIMITS.maxInstances; index++) full = expectOk(add(full, V1, {}, resource(V1, 1)));
-assert.deepEqual(add(full, V1, {}, resource(V1, 1)), { ok: false, reason: "instanceLimit" });
+for (let index = 0; index < 25; index++) full = expectOk(add(full, V1, {}, resource(V1, 1)));
+assert.equal(expectOk(add(full, V1, {}, resource(V1, 1))).content.instances.length, 26);
 let many = blank(6);
-const assets = Array.from({ length: COMPOSITION_LIMITS.maxAssets + 1 }, (_, index) => `44444444-4444-4444-8444-${String(index).padStart(12, "0")}`);
+const assets = Array.from({ length: 10 }, (_, index) => `44444444-4444-4444-8444-${String(index).padStart(12, "0")}`);
 for (const asset of assets.slice(0, -1)) many = expectOk(add(many, asset, {}, resource(asset, 1)));
-assert.deepEqual(add(many, assets.at(-1)!, {}, resource(assets.at(-1)!, 1)), { ok: false, reason: "assetLimit" });
+assert.equal(Object.keys(expectOk(add(many, assets.at(-1)!, {}, resource(assets.at(-1)!, 1))).content.assets).length, 10);
 expectOk(add(many, assets[0], {}));
 
-console.log("PASS picked asset, missing resource, shared alias, asset coexistence, archived and limits");
+console.log("PASS picked asset, missing resource, shared alias, asset coexistence, archived and large compositions");

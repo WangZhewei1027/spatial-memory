@@ -1,10 +1,10 @@
 import type { ScenePosition } from "@/lib/scene/editor-interactions";
-import { COMPOSITION_LIMITS, type CompositionInstance } from "@/lib/scene/protocol";
+import { type CompositionInstance } from "@/lib/scene/protocol";
 import { newAlias, type EditorAssetRef, type EditorDefinition } from "../../lib/scene-document";
 import type { SceneResource } from "./types";
 
 type Content = EditorDefinition["content"];
-export type ModelAddFailure = "instanceLimit" | "assetLimit" | "archived" | "missing";
+export type ModelAddFailure = "archived" | "missing";
 
 /** Resources are keyed by asset ID; repeated instances share the same current content. */
 export function resourceKey(ref: EditorAssetRef | undefined) {
@@ -20,12 +20,10 @@ export function resourceKey(ref: EditorAssetRef | undefined) {
 export function addModelInstance(content: Content, { key, resource, id, position, createAlias = newAlias }: {
   key: string; resource: SceneResource | undefined; id: string; position: ScenePosition; createAlias?: () => string;
 }): { ok: true; content: Content } | { ok: false; reason: ModelAddFailure } {
-  if (content.instances.length >= COMPOSITION_LIMITS.maxInstances) return { ok: false, reason: "instanceLimit" };
   if (!key) return { ok: false, reason: "missing" };
   let alias = Object.keys(content.assets).find((name) => resourceKey(content.assets[name]) === key);
   let assets = content.assets;
   if (!alias) {
-    if (Object.keys(assets).length >= COMPOSITION_LIMITS.maxAssets) return { ok: false, reason: "assetLimit" };
     if (!resource || resource.assetId !== key || !resource.url) return { ok: false, reason: "missing" };
     if (resource.assetState === "archived") return { ok: false, reason: "archived" };
     const ref: EditorAssetRef = { assetId: resource.assetId };

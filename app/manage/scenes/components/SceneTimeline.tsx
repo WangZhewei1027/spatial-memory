@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/typography';
-import { COMPOSITION_LIMITS, type CompositionContent } from '@/lib/scene/protocol';
+import { type CompositionContent } from '@/lib/scene/protocol';
 import { findNode, isGroup, trackRows, type SceneNode } from '@/lib/scene/hierarchy-authoring';
 import { hiddenNodeIds } from '@/lib/scene/visibility';
 import { roundTime, unkeyAll, type TransformGroup } from '@/lib/scene/transform-authoring';
@@ -49,9 +49,9 @@ export function SceneTimeline(p: SceneTimelineProps) {
   const disabled = p.readOnly || p.playing, end = endDraft ?? p.duration;
   const rows = useMemo(() => trackRows(p.content), [p.content]);
   const hidden = useMemo(() => hiddenNodeIds(p.content), [p.content]);
-  const visible = rows.filter(row => { for (let at = row.node.parent; at; at = findNode(p.content, at)?.parent) if (collapsed.has(at)) return false; return true; });
-  const lastKey = Math.max(0, ...rows.flatMap(row => Object.values(row.node.tracks ?? {}).map(frames => frames?.at(-1)?.time ?? 0)));
-  const lastRegion = Math.max(0, ...p.content.instances.map(instance => instanceRegion(instance, end).end));
+  const visible = rows.filter(row => { const visited = new Set<string>(); for (let at = row.node.parent; at && !visited.has(at); at = findNode(p.content, at)?.parent) { if (collapsed.has(at)) return false; visited.add(at); } return true; });
+  const lastKey = rows.reduce((end, row) => Object.values(row.node.tracks ?? {}).reduce((last, frames) => Math.max(last, frames?.at(-1)?.time ?? 0), end), 0);
+  const lastRegion = p.content.instances.reduce((last, instance) => Math.max(last, instanceRegion(instance, end).end), 0);
   const { scroller, span, laneWidth, labelWidth, compact, zoom, canZoomIn, zoomBy, fit } = useTimelineView(Math.max(end, lastKey, lastRegion), p.time, p.playing);
   const steps = gridSteps(laneWidth / span), x = (time: number) => time / span * laneWidth, left = (time: number) => labelWidth + TIMELINE_LEAD + x(time);
   const primary = p.selectedIds.at(-1), primaryNode = primary ? findNode(p.content, primary) : undefined;
@@ -155,7 +155,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
               onSelect={event => select(event, row.id)} onStack={() => setCollapsed(current => toggle(current, row.id))}
               onAutomation={() => toggleAutomation([row.id])} onRename={name => p.tracks.rename(row.id, name)}
               onDragStart={() => setDragId(row.id)} onDrop={place => { drop(row.id, place); setDragId(null); }}
-              canDuplicate={!disabled && p.content.instances.length < COMPOSITION_LIMITS.maxInstances}
+              canDuplicate={!disabled}
               onDuplicate={isGroup(row.node) ? undefined : () => p.onDuplicate(row.id)}
               onDelete={selection => { if (!disabled) p.tracks.remove(selection && p.selectedIds.includes(row.id) ? p.selectedIds : [row.id]); }} />)}
           </div>

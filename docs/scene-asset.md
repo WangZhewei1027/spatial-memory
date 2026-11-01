@@ -1,6 +1,6 @@
 # Scene：保存即生效
 
-Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排，资源别名只引用 `{ assetId }`；支持模型、图片、音频和视频。实例保存初始 position/rotation/scale、可选数值轨道、出入场时间和对应的媒体参数。空间文字保存在实例的 `text` 中，只属于当前 Scene，不创建 Asset，也不进入 `scene_asset_ref`；复制场景会复制文字内容并复用已有媒体素材。可选 `groups` 是带变换和轨道的父节点，实例与分组通过 `parent` 组成最多 4 层的层级，`instances` 的顺序即时间轴轨道顺序。`scene_asset_ref` 是同一保存事务重建的素材依赖索引。Asset 和 Scene 都只有一份当前内容，没有发布或版本切换流程。
+Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排，资源别名只引用 `{ assetId }`；支持模型、图片、音频和视频。实例保存初始 position/rotation/scale、可选数值轨道、出入场时间和对应的媒体参数。空间文字保存在实例的 `text` 中，只属于当前 Scene，不创建 Asset，也不进入 `scene_asset_ref`；复制场景会复制文字内容并复用已有媒体素材。可选 `groups` 是带变换和轨道的父节点，实例与分组通过 `parent` 组成无循环的层级，`instances` 的顺序即时间轴轨道顺序。`scene_asset_ref` 是同一保存事务重建的素材依赖索引。Asset 和 Scene 都只有一份当前内容，没有发布或版本切换流程。
 
 ## 保存、引用和归档
 
@@ -35,18 +35,18 @@ Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排�
 
 ## 协议与共享 Core
 
-`compileSceneManifest` 将文档 schema 6 与当前资源编译为播放清单：没有新功能且没有分组的场景保持 schema 4，有分组的旧场景保持 schema 5。包含 `text`、`timing`、`media` 或非模型素材的演出使用 schema 7；resources 记录从服务器读取的 `kind`，不能把新能力伪装成旧协议。包含实例 `opacity`、透明度/音量轨道或 `media.spatial` 的场景使用 schema 8。当前小程序播放器支持 4/5/7/8，并与 Web 共用 Scene Core 2.4.0 的采样与空间音频计算。上线时需要配套发布小程序；旧播放器拒绝未知版本，避免忽略关键帧或空间音频后错误播放。
+`compileSceneManifest` 将文档 schema 6 与当前资源编译为播放清单：没有新功能且没有分组的场景保持 schema 4，有分组的旧场景保持 schema 5。包含 `text`、`timing`、`media` 或非模型素材的演出使用 schema 7；resources 记录从服务器读取的 `kind`，不能把新能力伪装成旧协议。包含实例 `opacity`、透明度/音量轨道或 `media.spatial` 的场景使用 schema 8。当前小程序播放器支持 4/5/7/8，并与 Web 共用 Scene Core 2.5.0 的采样与空间音频计算。上线时需要配套发布小程序；旧播放器拒绝未知版本，避免忽略关键帧或空间音频后错误播放。
 
 两端从各节点的 `parent` 搭建 Object3D 层级，变换值都相对父分组。每个实例的 GLB 包在 `pivot` 节点中，按加载时的包围盒把底部中心对齐到实例原点（与小程序单素材 AR 放置同一规则，`test-scene-playback-parity.ts` 校验两端一致）；2026-10-22 之前保存的场景若使用原点偏移的模型，模型会移到实例原点处，需要重新摆放。`manifest.assetId` 是播放实例标识：地图入口为 Placement ID，直接扫码入口为 Scene ID；资源里的 assetId 才是基础素材 ID。
 
 - 实例使用米制 `position`、Euler XYZ 弧度 `rotation` 和 `scale`。可选 `tracks` 的键为 `position.x/y/z`、`rotation.x/y/z`、`scale.x/y/z`；每个关键帧为 `{ time, value, handles: [inX, inY, outX, outY], connectedRight }`，time 单位为秒。相邻帧使用左帧出柄与右帧入柄做 Bezier 插值；`connectedRight: false` 保持到下一帧，精确关键帧时间返回该帧值。没有轨道的通道使用静态姿态。实例另支持 `opacity` 与 `volume` 两个标量轨道（值为 0–1），使用相同的曲线、保持、改时和撤销规则；分组仅支持九个变换通道。静态透明度为实例 `opacity`（默认 1），静态音量为 `media.volume`（默认 1）。删去通道最后一帧会将当前采样值保留为静态值。
 - `asset` 和 `text` 必须且只能提供一个。`text` 包含 `content`（1–4000 字符）、`color`、`fontSize`（0.02–5 米）、`width`（0.1–20 米）、`align`（left/center/right）和可选 `backgroundColor`。颜色为 #RRGGBB，省略背景色表示透明。文字和媒体使用相同的实例变换、分组、时间轴和撤销模型。
 - 可选 `timing` 为 `{ startSeconds, endSeconds, fadeInSeconds, fadeOutSeconds }`；结束点不包含在可见区间内，null 表示跟随场景时长。历史淡入淡出使用同一线性包络，重叠时取较小值。编辑器出入场只提供起止时间，新实例的 fade 字段为 0；视觉渐变使用 opacity 关键帧，声音渐变使用 volume 关键帧。历史 fade 字段继续兼容播放，不因 UI 调整自动改写。没有 timing 的历史模型保留全程可见、结束后定格的行为。时长缩短不删除其后的时间点。
-- 音频/视频的可选 `media` 为 `{ trimStartSeconds, trimEndSeconds, playbackRate, volume, loop, muted }`。trim 是素材内部的秒数，结束 null 代表源文件结束；速率 0.1–4，音量 0–1。共享 `mediaTime` 从场景时间映射至裁切后的素材时间，再由宿主管理播放、暂停和音量；淡入淡出同时作用于视觉透明度和音量。原生流式音频的音高处理由宿主决定，无法保证不同设备的变速音色完全相同。
+- 音频/视频的可选 `media` 为 `{ trimStartSeconds, trimEndSeconds, playbackRate, volume, loop, muted }`。trim 是素材内部的秒数，结束 null 代表源文件结束；`playbackRate` 固定为 1，音量 0–1。音视频统一按素材原速播放，编辑器没有倍速设置，播放器不调用原生倍率接口或重采样。共享 `mediaTime` 从场景时间映射至裁切后的素材时间，再由宿主管理播放、暂停和音量；淡入淡出同时作用于视觉透明度和音量。
 - 实例及分组可保存 `hidden?: boolean`；隐藏与不透明度曲线、媒体静音独立，分组隐藏会传递到后代。Web 舞台与相机预览都隐藏这些对象，选中也不显示幽灵对象。编译播放清单时移除 `hidden`，仅将有效隐藏实例的 `opacity` 设为 0 并移除该份清单中的不透明度曲线；保存文档中的曲线保留，音量和静音不变。因此现有 schema 8 小程序播放器可直接获得一致画面，隐藏视频仍能播放声音。恢复可见后，原有不透明度曲线重新生效。
 - `samplePresentation` 的视觉透明度为出入场包络 × 透明度采样；音量为 `sampleVolume` × `sampleFade` 包络 × 空间衰减，静音最终归零。视频透明度不会改变其声音。标量曲线允许纵向超调，但运行时将结果限制在 0–1。
-- `media.spatial` 为可选 `{ enabled, refDistance, maxDistance, rolloffFactor }`，缺省关闭，避免改变旧场景声音。参考距离 0.1–100 米，最大距离从参考距离至 1000 米，衰减系数 0–10。使用反距离衰减：`gain = ref / (ref + rolloff × (clamp(distance, ref, max) - ref))`；超过最大距离保持该距离的增益。音源和听者均传入世界位置，分组、放置根节点、位置关键帧及相机移动都影响距离；左右声像相对相机 forward × up 方向计算。Web 与小程序共享计算规则，宿主按音频 API 能力输出声像，原生流式通路至少保留距离衰减。
-- 保存限制 1 MiB、8 素材、24 实例、2400 关键帧，时长大于 0 且不超过 600 秒；静态场景可用 null 时长，新场景默认 10 秒。校验允许 Bezier 纵向超调。
+- `media.spatial` 为可选 `{ enabled, refDistance, maxDistance, rolloffFactor }`，缺省关闭，避免改变旧场景声音。参考距离为有限正数，最大距离不小于参考距离，衰减系数为有限非负数。使用反距离衰减：`gain = ref / (ref + rolloff × (clamp(distance, ref, max) - ref))`；超过最大距离保持该距离的增益。音源和听者均传入世界位置，分组、放置根节点、位置关键帧及相机移动都影响距离；左右声像相对相机 forward × up 方向计算。Web 与小程序共享计算规则，宿主按音频 API 能力输出声像，原生流式通路至少保留距离衰减。
+- 场景不设素材、实例、分组、层级、关键帧数量或时长上限；静态场景可用 null 时长，新场景默认 10 秒。所有数值必须有限，时长、缩放和文字尺寸必须大于 0，时间非负，透明度和音量在 0–1 之间；保留引用完整性与分组循环检查，允许 Bezier 纵向超调。请求体仍遵守网关的统一传输限制。编辑器和小程序镜头按实际内容范围自适应远裁剪面。
 - `packages/scene-core` 是 Web 与小程序共用的零依赖源码。接口为 `play/pause/seek/advance/sync/sample/subscribe/observe/bind/dispose`，另提供数值采样、`clipTime`、`samplePresentation`、`sampleFade`、`sampleOpacity`、`sampleVolume`、`sampleSpatialAudio` 和 `mediaTime`。宿主负责帧时钟、资源、渲染和编辑历史；Core 不持有全局项目表、DOM、定时器或 RAF。
 - 每个播放器独立创建 Core；`dispose()` 停止播放并清空订阅、对象绑定与内容引用。GLB 骨骼/节点动画仍由各端 Three.AnimationMixer 求值，Core 只共享片段时间映射。
 - Web 使用本地 npm 包；小程序提交 npm pack 快照与 esbuild 产物。小程序仓库的 `miniprogram/lib/scene-runtime/vendor/build-info.json` 记录版本、源码哈希和字节数，更新后需核对两端一致。更新命令见 [Scene Core README](../packages/scene-core/README.md)。
@@ -55,7 +55,7 @@ Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排�
 
 小程序预览不请求 GPS。场景的模型、文字与媒体占位对象准备完成并获得有效相机帧后启用“放置场景”，点击时使用最新相机位置和水平朝向，放到前方 2 米、相机高度；轻触场景暂停/继续，底部控制也可暂停、继续和重播纯音频或暂时没有画面的场景。后台、错误、销毁会取消待处理结果并释放模型、解码器、音频节点与临时文件；超过 250ms 的相机帧不能用于放置。回到前台会重新读取保存内容并重新定位。
 
-微信图片使用 Canvas 图片解码，空间文字从 Scene 数据绘制到独立纹理，不进入素材库。音视频通过远程 URL 渐进播放，两端共用 Core `mediaPreloadIds`：全部当前有效媒体，加上未来 5 秒内最近 2 条媒体，包含场景循环回绕。离开窗口释放播放器；预加载只定位到裁切起点，不发声。小程序普通音频使用原生 InnerAudioContext（0.5–2 倍速）；视频通过 Range 读取 MP4 索引，VideoDecoder 按素材时间取帧，默认 1 倍速音轨使用独立 audio-only PTS 解码器和 MediaAudioPlayer。原生 API 不支持的音频倍速、视频变速音轨及旧容器保留完整缓冲兼容路径。新上传 H.264/AAC faststart MP4 不经过完整下载。音频源按实例裁切、循环、音量和淡变播放。每个模型实例持有自己的材质，淡变不影响同素材的其他实例。字体字形及视频解码精度受宿主实现影响，时间轴与布局规则相同。
+微信图片使用 Canvas 图片解码，空间文字从 Scene 数据绘制到独立纹理，不进入素材库。音视频通过远程 URL 渐进播放，两端共用 Core `mediaPreloadIds`：全部当前有效媒体，加上未来 5 秒内最近 2 条媒体，包含场景循环回绕。离开窗口释放播放器；预加载只定位到裁切起点，不发声。小程序普通音频使用原生 InnerAudioContext；视频通过 Range 读取 MP4 索引，VideoDecoder 按素材时间取帧，音轨使用独立 audio-only PTS 解码器和 MediaAudioPlayer。旧容器保留完整缓冲解码路径，仍按素材原速播放。新上传 H.264/AAC faststart MP4 不经过完整下载。音频源按实例裁切、循环、音量和淡变播放。每个模型实例持有自己的材质，淡变不影响同素材的其他实例。字体字形及视频解码精度受宿主实现影响，时间轴与布局规则相同。
 
 地图发现沿用 `/api/miniapp/assets/scene`，请求里的 `asset_id` 是投放 ID，并继续校验合集/团队范围；直接场景 ID 不能绕过地图投放状态校验。
 

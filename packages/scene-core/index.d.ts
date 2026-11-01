@@ -12,7 +12,7 @@ export function sampleTrack(frames: Keyframe[] | undefined, time: number, fallba
 export function applyTransform(root: TransformRoot, values: TransformValues): void;
 export function clipTime(time: number, animation: { startSeconds: number; loop: boolean }, duration: number): number;
 export type PresentationTiming = { startSeconds: number; endSeconds: number | null; fadeInSeconds: number; fadeOutSeconds: number };
-export type MediaSettings = { trimStartSeconds: number; trimEndSeconds: number | null; playbackRate: number; loop: boolean };
+export type MediaSettings = { trimStartSeconds: number; trimEndSeconds: number | null; playbackRate: 1; loop: boolean };
 export type PresentationInstance = { timing?: PresentationTiming; opacity?: number; media?: { volume?: number }; tracks?: Partial<Record<AutomationChannel, Keyframe[]>> };
 export type Presentation = { visible: boolean; opacity: number; localTime: number };
 export type SpatialAudioSettings = { enabled: boolean; refDistance: number; maxDistance: number; rolloffFactor: number };

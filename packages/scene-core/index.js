@@ -73,9 +73,9 @@ const finiteVector = v => v && Number.isFinite(v.x) && Number.isFinite(v.y) && N
 function sampleSpatialAudio(settings, source, listener) {
   if (!settings || !settings.enabled) return { gain: 1, pan: 0 };
   if (!finiteVector(source) || !listener || !finiteVector(listener.position) || !finiteVector(listener.forward) || !finiteVector(listener.up)) return { gain: 0, pan: 0 };
-  const ref = Number.isFinite(settings.refDistance) ? Math.max(.1, Math.min(100, settings.refDistance)) : 1;
-  const max = Number.isFinite(settings.maxDistance) ? Math.max(ref, Math.min(1000, settings.maxDistance)) : 30;
-  const rolloff = Number.isFinite(settings.rolloffFactor) ? Math.max(0, Math.min(10, settings.rolloffFactor)) : 1;
+  const ref = Number.isFinite(settings.refDistance) && settings.refDistance > 0 ? settings.refDistance : 1;
+  const max = Number.isFinite(settings.maxDistance) ? Math.max(ref, settings.maxDistance) : Math.max(ref, 30);
+  const rolloff = Number.isFinite(settings.rolloffFactor) ? Math.max(0, settings.rolloffFactor) : 1;
   const dx = source.x - listener.position.x, dy = source.y - listener.position.y, dz = source.z - listener.position.z;
   const distance = Math.hypot(dx, dy, dz), boundedDistance = Math.max(ref, Math.min(max, distance));
   const gain = ref / (ref + rolloff * (boundedDistance - ref));
@@ -86,14 +86,14 @@ function sampleSpatialAudio(settings, source, listener) {
   const pan = distance > 1e-8 && length > 1e-8 ? Math.max(-1, Math.min(1, (dx * rx + dy * ry + dz * rz) / (distance * length))) : 0;
   return { gain, pan };
 }
-/** Map scene seconds to a source-media time, respecting trim, speed and looping. */
+/** Map scene seconds to source-media time at 1x, respecting trim and looping. */
 function mediaTime(time, media = { trimStartSeconds: 0, trimEndSeconds: null, playbackRate: 1, loop: false }, timing, duration) {
   const sourceEnd = Number.isFinite(duration) && duration >= 0 ? duration : Infinity;
   const start = Math.min(sourceEnd, media.trimStartSeconds);
   const end = Math.max(start, Math.min(sourceEnd, media.trimEndSeconds === null ? Infinity : media.trimEndSeconds));
   const span = end - start;
   if (span <= 0) return start;
-  const local = Math.max(0, time - (timing ? timing.startSeconds : 0)) * media.playbackRate;
+  const local = Math.max(0, time - (timing ? timing.startSeconds : 0));
   return start + (media.loop && Number.isFinite(span) ? local % span : Math.min(local, span));
 }
 const MEDIA_PRELOAD_SECONDS = 5, MEDIA_PRELOAD_UPCOMING_LIMIT = 2;

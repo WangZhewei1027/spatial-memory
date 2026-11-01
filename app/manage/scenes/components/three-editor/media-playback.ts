@@ -43,7 +43,7 @@ export class MediaPlayback {
     const target = mediaTime(presentation.visible ? time : 0, settings, instance.timing, sourceDuration);
     const trimStart = Math.min(settings?.trimStartSeconds ?? 0, sourceDuration ?? Infinity);
     const trimEnd = Math.min(settings?.trimEndSeconds ?? Infinity, sourceDuration ?? Infinity);
-    const local = Math.max(0, time - (instance.timing?.startSeconds ?? 0)) * (settings?.playbackRate ?? 1);
+    const local = Math.max(0, time - (instance.timing?.startSeconds ?? 0));
     const emptyRange = Number.isFinite(trimEnd) && trimEnd <= trimStart;
     const ended = emptyRange || (!settings?.loop && Number.isFinite(trimEnd) && local >= trimEnd - trimStart);
     const shouldPlay = playing && presentation.visible && !ended;
@@ -53,7 +53,6 @@ export class MediaPlayback {
     if (this.audio) this.audio.apply(this.element, volume, spatial.pan, settings?.spatial?.enabled ?? false, playing, () => this.onError(true));
     else this.element.volume = volume;
     this.element.muted = settings?.muted ?? false;
-    this.element.playbackRate = settings?.playbackRate ?? 1;
     // The scene owns loops, including trims. Native looping would include the entire file.
     this.element.loop = false;
     const threshold = playing && this.wasPlaying ? 0.15 : 0.015;

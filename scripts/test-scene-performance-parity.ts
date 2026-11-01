@@ -14,16 +14,35 @@ import type { ThreeViewportProps } from '../app/manage/scenes/components/three-e
 import { DEFAULT_SCENE_CAMERA } from '../app/manage/scenes/components/three-editor/spatial-reference';
 import type { SceneResource } from '../app/manage/scenes/components/types';
 import { performanceHosts, settleMedia } from './test-support/performance-hosts';
+import { unboundedScene } from './test-support/unbounded-scene';
+import { validateSceneDocument } from '../lib/scene/validate';
 
 const require = createRequire(import.meta.url), miniRoot = resolve('../spatial-memory-mini-program/miniprogram');
 const { createFixtureGLB } = require(`${miniRoot}/labs/xr-three/runtime`);
 const { THREE } = require(`${miniRoot}/lib/three-runtime/runtime`);
 const { ModelCache } = require(`${miniRoot}/lib/three-runtime/resources`);
 const { createCompositionPlayer } = require(`${miniRoot}/lib/scene-runtime/composition`);
+const { validateManifest } = require(`${miniRoot}/lib/scene-runtime/manifest`);
+const large = unboundedScene();
+const largeResources = Object.fromEntries(Object.entries(large.content.assets).map(([alias, ref]) => [alias, { ...ref, kind: alias === 'asset_0' ? 'audio' as const : 'model' as const, url: `https://fixture.example/${alias}` }]));
+assert.equal(validateSceneDocument(large).ok, true);
+const largeManifest = compileSceneManifest('large', large, largeResources);
+assert.equal(validateManifest(largeManifest).list.length, 25, 'mini accepts the same large document as Web');
+for (const corrupt of [
+  (doc: typeof large) => { doc.content.groups![0].parent = 'group_2'; },
+  (doc: typeof large) => { doc.content.instances[0].scale[0] = 0; },
+  (doc: typeof large) => { Object.assign(doc.content.instances[0].media!, { playbackRate: 0 }); },
+  (doc: typeof large) => { doc.content.instances[0].tracks!['position.x']![0].time = -1; },
+]) {
+  const invalid = structuredClone(large); corrupt(invalid);
+  assert.equal(validateSceneDocument(invalid).ok, false);
+  assert.throws(() => validateManifest({ ...largeManifest, content: invalid.content }));
+}
 
-const resources: Record<string, SceneResource> = Object.fromEntries(['model', 'image', 'video', 'audio', 'muted', 'fast', 'slow'].map((alias, index) => [alias, {
+
+const resources: Record<string, SceneResource> = Object.fromEntries(['model', 'image', 'video', 'audio', 'muted', 'looped', 'trimmed'].map((alias, index) => [alias, {
   assetId: `11111111-1111-4111-8111-${String(index + 1).padStart(12, '0')}`, assetLockVersion: 1, assetState: 'active', name: alias,
-  kind: ['muted', 'fast', 'slow'].includes(alias) ? 'audio' : alias as SceneResource['kind'], url: `https://fixture.example/${alias}.${alias === 'model' ? 'glb' : alias === 'video' ? 'mp4' : alias === 'image' ? 'png' : 'wav'}`,
+  kind: ['muted', 'looped', 'trimmed'].includes(alias) ? 'audio' : alias as SceneResource['kind'], url: `https://fixture.example/${alias}.${alias === 'model' ? 'glb' : alias === 'video' ? 'mp4' : alias === 'image' ? 'png' : 'wav'}`,
 }]));
 function definition(loop: boolean): CompositionContent {
   const keys = (a: number, b: number) => [
@@ -33,7 +52,7 @@ function definition(loop: boolean): CompositionContent {
   const spatial = { enabled: true, refDistance: 1, maxDistance: 30, rolloffFactor: 1 };
   const base = (id: string): CompositionInstance => ({ id, asset: id, position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], animation: null });
   const timing = (startSeconds: number, endSeconds: number, fadeInSeconds = 0, fadeOutSeconds = 0) => ({ startSeconds, endSeconds, fadeInSeconds, fadeOutSeconds });
-  const media = (trimStartSeconds: number, trimEndSeconds: number, playbackRate: number, volume: number, loop: boolean, muted = false) => ({ trimStartSeconds, trimEndSeconds, playbackRate, volume, loop, muted });
+  const media = (trimStartSeconds: number, trimEndSeconds: number, volume: number, loop: boolean, muted = false) => ({ trimStartSeconds, trimEndSeconds, playbackRate: 1 as const, volume, loop, muted });
   const text: CompositionInstance = { ...base('text'), asset: undefined, parent: 'stage', position: [0, 2, 0],
     text: { content: '光影之间\nA story unfolds', fontSize: .25, width: 2, color: '#224466', backgroundColor: '#ffffff', align: 'left' }, timing: timing(1, 9, 1, 2) };
   return { kind: 'composition', units: 'meters', durationSeconds: 12, loop,
@@ -41,11 +60,11 @@ function definition(loop: boolean): CompositionContent {
     groups: [{ id: 'stage', name: 'Stage', position: [1, 0, -1], rotation: [0, .3, 0], scale: [1, 1.2, 1], tracks: { 'position.x': [{ time: 0, value: 1, handles: [1 / 3, 1 / 3, 2 / 3, 2 / 3], connectedRight: true }, { time: 12, value: 3, handles: [1 / 3, 1 / 3, 2 / 3, 2 / 3], connectedRight: true }] } }],
     instances: [text,
       { ...base('image'), parent: 'stage', position: [-2, 0, 0], timing: timing(0, 10, 0, 2), tracks: { opacity: keys(.8, .2) } },
-      { ...base('video'), parent: 'stage', position: [2, 0, 0], timing: timing(2, 11, 1, 1), media: { ...media(3, 7, 2, .7, true), spatial }, tracks: { opacity: keys(.9, 0), volume: keys(.2, .8) } },
-      { ...base('audio'), parent: 'stage', position: [-1, .5, -2], timing: timing(1, 9, 2, 2), media: { ...media(2, 4, .5, .8, false), spatial }, tracks: { volume: keys(.9, .1) } },
-      { ...base('muted'), timing: timing(0, 12), media: media(.5, 3, 1.5, .6, true, true) },
-      { ...base('fast'), timing: timing(1, 10, .5, 1), media: media(1, 9, 4, .4, true) },
-      { ...base('slow'), timing: timing(0, 12, 2, 2), media: media(2, 6, .1, .3, false) },
+      { ...base('video'), parent: 'stage', position: [2, 0, 0], timing: timing(2, 11, 1, 1), media: { ...media(3, 7, .7, true), spatial }, tracks: { opacity: keys(.9, 0), volume: keys(.2, .8) } },
+      { ...base('audio'), parent: 'stage', position: [-1, .5, -2], timing: timing(1, 9, 2, 2), media: { ...media(2, 4, .8, false), spatial }, tracks: { volume: keys(.9, .1) } },
+      { ...base('muted'), timing: timing(0, 12), media: media(.5, 3, .6, true, true) },
+      { ...base('looped'), timing: timing(1, 10, .5, 1), media: media(1, 9, .4, true) },
+      { ...base('trimmed'), timing: timing(0, 12, 2, 2), media: media(2, 6, .3, false) },
       { ...base('model'), position: [0, 0, -2], timing: timing(2, 8, 2, 2), animation: { clipIndex: 0, startSeconds: 1, loop: true }, opacity: .75 },
       { ...base('modelReference'), asset: 'model', position: [0, 0, 2] },
     ],
@@ -127,7 +146,7 @@ async function main() {
           if (surface.audio) near(surface.audio.sourceTime, media.currentTime, `${label} ${file} requested audio time`, driftTolerance);
           if (surface.video) {
             near(surface.video.sourceTime, media.currentTime, `${label} ${file} requested video time`, driftTolerance);
-            const decoder = hosts.decoders.findLast(decoder => !decoder.removed && decoder.source.endsWith(file))!;
+            const decoder = hosts.decoders.findLast(decoder => !decoder.removed && !decoder.abortVideo && decoder.source.endsWith(file))!;
             near(decoder.currentTime, media.currentTime, `${label} ${file} decoded frame time`, 1 / 30);
             assert.ok(surface.materials[0].map?.image.data.length > 0, 'decoded video pixels uploaded to the real native material');
           }
@@ -135,18 +154,25 @@ async function main() {
           if (nativeAudio) {
             assert.equal(nativeAudio.paused, media.paused, `${label} ${file} native streaming playback`);
             near(nativeAudio.currentTime, media.currentTime, `${label} ${file} streamed audio time`, .2);
-            near(nativeAudio.playbackRate, media.playbackRate, `${label} ${file} streamed audio rate`);
+            near(nativeAudio.playbackRate, 1, `${label} ${file} native default rate`);
+            near(media.playbackRate, 1, `${label} ${file} browser default rate`);
             near(nativeAudio.volume, media.muted ? 0 : media.volume, `${label} ${file} streamed audio fade`);
             continue;
           }
-          const factor = media.playbackRate > 2 ? 2 : 1;
-          const nativeSources = hosts.audioContexts.flatMap(context => context.sources).filter(source => factor === 2 ? source.buffer?.duration === 10 : source.buffer?.source.endsWith(file));
+          const soundtrack = hosts.mediaAudio.findLast(audio => !audio.destroyed && audio.decoder?.source.endsWith(file));
+          if (soundtrack) {
+            assert.equal(soundtrack.started, !media.paused, `${label} ${file} video soundtrack playback`);
+            near(soundtrack.decoder!.currentTime, media.currentTime, `${label} ${file} physical video soundtrack time`, .2);
+            near(soundtrack.volume, media.paused || media.muted ? 0 : media.volume, `${label} ${file} video soundtrack volume`);
+            continue;
+          }
+          const nativeSources = hosts.audioContexts.flatMap(context => context.sources).filter(source => source.buffer?.source.endsWith(file));
           const active = nativeSources.filter(source => source.started && !source.stopped);
           assert.equal(active.length > 0, !media.paused, `${label} ${file} source playback`);
           if (active.length) {
             const source = active.at(-1)!;
-            near(source.position * factor, media.currentTime, `${label} ${file} physical audio position`, .15);
-            near(source.playbackRate.value * factor, media.playbackRate, `${label} ${file} effective playback rate`);
+            near(source.position, media.currentTime, `${label} ${file} physical audio position`, .15);
+            near(source.playbackRate.value, 1, `${label} ${file} effective playback rate`);
             near(source.gain!.gain.value, media.muted ? 0 : media.volume, `${label} ${file} faded/muted gain`);
           }
         }
@@ -174,7 +200,8 @@ async function main() {
       }
       assert.equal(player.state, loop ? 'playing' : 'ended', 'scene transport follows end versus loop behavior');
       session.seek(3); player.seek(3); session.play(loop); player.play(); await compare('resume after seek');
-      session.seek(3.25); session.play(loop); player.seek(3.25); await compare('seek during playback');
+      // Explicit transport changes must seek even below the old .3s drift heuristic.
+      session.seek(3.25); session.play(loop); player.seek(3.25); await compare('small seek during playback');
       hosts.tick(.25); session.advance(.25); player.update(.25); await compare('advance after playing seek');
       near(player.time, 3.5, 'playing seek preserves clock advancement');
       session.pause(); player.pause(); const paused = session.time;
@@ -183,7 +210,7 @@ async function main() {
       assert.ok(hosts.audioContexts.every(context => context.sources.every(source => !source.started || source.stopped)));
       session.play(loop); player.play(); await compare('resume');
       // A late asynchronous native failure must silence/release the entire performance.
-      hosts.decoders.findLast(decoder => !decoder.removed)!.failNextSeek = true; player.seek(4); await settleMedia();
+      hosts.decoders.findLast(decoder => !decoder.removed && !decoder.abortVideo)!.failNextSeek = true; player.seek(4); await settleMedia();
       assert.equal(player.state, 'error', 'decoder failure transitions the real player to error');
       assert.match(player.diagnostics.message, /Injected decoder seek failure/);
       assert.equal(player.root.children.length, 0, 'runtime error detaches every instance');
@@ -195,9 +222,10 @@ async function main() {
       assert.ok(hosts.decoders.every(decoder => decoder.removed && !decoder.started), 'native decoders removed');
       assert.ok(hosts.audioContexts.every(context => context.closed && context.sources.every(source => source.stopped)), 'native audio contexts and scheduled sources released');
       assert.ok(hosts.innerAudio.every(audio => audio.destroyed && audio.paused), 'native streaming audio released');
+      assert.ok(hosts.mediaAudio.every(audio => audio.destroyed && !audio.started), 'native video soundtrack players released');
       assert.equal(hosts.files.size, 0, 'native temporary downloads released');
     } finally { models.dispose(); session.dispose(); player.dispose(); cache.dispose(); hosts.restore(); }
   }
-  console.log(JSON.stringify({ result: 'PASS', samples, comparisons, maximumExactError, maximumMediaDrift, coverage: 'actual Web EditorModels vs mini CompositionPlayer; schema8 images/video/audio/scene text, text layout, group transforms and planar bounds, keyed opacity/volume, camera-relative spatial distance gain, GLB fade isolation, persisted instance/group visibility without silencing video, visibility/fades, source trims/.1–4 rates/loop/volume/mute, decoded video frame targets, forward/reverse/playing seeks/play/pause/resume/restart/end, asynchronous decoder errors and disposal' }));
+  console.log(JSON.stringify({ result: 'PASS', samples, comparisons, maximumExactError, maximumMediaDrift, coverage: 'actual Web EditorModels vs mini CompositionPlayer; schema8 images/video/audio/scene text, text layout, group transforms and planar bounds, keyed opacity/volume, camera-relative spatial distance gain, GLB fade isolation, persisted instance/group visibility without silencing video, visibility/fades, source trims/natural 1x speed/loop/volume/mute, decoded video frame targets, forward/reverse/playing seeks/play/pause/resume/restart/end, asynchronous decoder errors and disposal' }));
 }
 main().then(() => process.exit(0), error => { console.error(error); process.exit(1); });

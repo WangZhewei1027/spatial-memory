@@ -10,10 +10,10 @@ assert.deepEqual(instanceRegion({ ...text, timing: { ...text.timing!, endSeconds
 
 const range = { start: 2, end: 7 };
 assert.deepEqual(changeRegion(range, 'move', -10), { start: 0, end: 5 }, 'moving before zero preserves length');
-assert.deepEqual(changeRegion(range, 'move', 599), { start: 595, end: 600 }, 'moves clamp at the protocol limit without shrinking');
+assert.deepEqual(changeRegion(range, 'move', 599), { start: 599, end: 604 }, 'moves preserve length beyond the former duration cap');
 assert.deepEqual(changeRegion(range, 'start', 10), { start: 6.999, end: 7 }, 'start trim cannot invert a region');
 assert.deepEqual(changeRegion(range, 'end', -1), { start: 2, end: 2.001 }, 'end trim retains a nonzero region');
-assert.deepEqual(changeRegion(range, 'end', 700), { start: 2, end: 600 }, 'end trim respects duration bounds');
+assert.deepEqual(changeRegion(range, 'end', 700), { start: 2, end: 700 }, 'end trim supports long performances');
 assert.equal(changeRegion(range, 'move', NaN), range, 'non-finite input is ignored');
 
 const moved = applyRegion(text, range, changeRegion(range, 'move', 4), 'move');
@@ -33,5 +33,5 @@ assert.equal(trimmed.timing?.endSeconds, 3, 'resizing a legacy clip introduces a
 const faded = applyRegion(text, range, { start: 2, end: 2.5 }, 'end');
 assert.ok(faded.timing!.fadeInSeconds <= .5 && faded.timing!.fadeOutSeconds <= .5, 'shortening a region keeps each fade within its interval');
 const nearLimit = applyRegion({ ...animated, animation: { ...animated.animation!, startSeconds: 599 }, timing: text.timing }, range, { start: 12, end: 17 }, 'move');
-assert.equal(nearLimit.animation?.startSeconds, 600, 'moving a region cannot push an independently offset GLB clip past the protocol limit');
+assert.equal(nearLimit.animation?.startSeconds, 609, 'moving a region preserves the independently offset GLB clip');
 console.log('PASS performance region timing, movement, trimming, text ownership, legacy clips and undo snapshots');

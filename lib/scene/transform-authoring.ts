@@ -12,7 +12,7 @@ export function sampleChannel(node: Node, channel: AutomationChannel, time: numb
 }
 export type TransformGroup = 'position' | 'rotation' | 'scale';
 export const frameAt = (frames: TransformKeyframe[] | undefined, time: number) => frames?.findIndex(f => Math.abs(f.time - time) < 0.0005) ?? -1;
-export const roundTime = (time: number) => Math.round(time * 1000) / 1000;
+export const roundTime = (time: number) => Math.abs(time) <= Number.MAX_VALUE / 1000 ? Math.round(time * 1000) / 1000 : time;
 export function setKey<N extends Node>(instance: N, channel: AutomationChannel, time: number, value: number): N {
   if (scalar(channel) && !('animation' in instance)) return instance;
   const frames = [...(instance.tracks?.[channel] ?? [])];

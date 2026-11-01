@@ -55,17 +55,19 @@ assert.equal(renameNode(renameNode(content, 'a', ' Lantern '), 'a', '').instance
 assert.equal(renameNode(content, 'a', ' Lantern ').instances.find(item => item.id === 'a')!.name, 'Lantern');
 assert.equal(renameNode(content, 'g1', '  ').groups!.find(item => item.id === 'g1')!.name, 'Rig', 'groups keep a name');
 
-// Limits: nesting depth and group count.
+// Deep hierarchies and large group counts remain editable.
 let deep = scene([model('a')]);
-for (let i = 0; i < 4; i++) deep = ok(groupNodes(deep, [deep.groups?.at(-1)?.id ?? 'a'], { id: `d${i}`, name: `D${i}` }));
-assert.deepEqual(groupNodes(deep, ['d3'], { id: 'd4', name: 'D4' }), { ok: false, reason: 'depthLimit' });
+for (let i = 0; i < 20; i++) deep = ok(groupNodes(deep, [deep.groups?.at(-1)?.id ?? 'a'], { id: `d${i}`, name: `D${i}` }));
+deep = ok(groupNodes(deep, ['d19'], { id: 'd20', name: 'D20' }));
+assert.equal(trackRows(deep).length, 22);
+assert.equal(validateSceneDocument({ schemaVersion: 6, content: deep }).ok, true);
 
 // Validation, save round trip and compiled schema.
 const document = { schemaVersion: 6 as const, content };
 assert.equal(validateSceneDocument(document).ok, true, JSON.stringify(validateSceneDocument(document).issues));
 assert.deepEqual(toDocument(fromDocument(JSON.parse(JSON.stringify(document)))), document, 'groups and names survive save/reopen');
 const cyclic = { schemaVersion: 6, content: { ...content, groups: content.groups!.map(group => group.id === 'g1' ? { ...group, parent: 'g2' } : group) } };
-assert.match(JSON.stringify(validateSceneDocument(cyclic).issues), /不能包含自己/);
+assert.match(JSON.stringify(validateSceneDocument(cyclic).issues), /循环引用/);
 assert.equal(validateSceneDocument({ schemaVersion: 6, content: { ...content, instances: content.instances.map(item => ({ ...item, parent: 'missing' })) } }).ok, false);
 assert.equal(validateSceneDocument({ schemaVersion: 6, content: { ...content, groups: [...content.groups!, { ...content.groups![0] }] } }).ok, false, 'IDs are unique across groups and instances');
 const resources = { model: { assetId, url: 'https://cdn.test/model.glb' } };
@@ -83,4 +85,4 @@ const core = createSceneCore({ content: animated });
 core.seek(1); near(core.sample('g1')!.position.x, 2, 'group track sampled');
 core.sync(scene([model('a')])); assert.equal(core.sample('g1'), undefined, 'sync drops removed groups');
 core.dispose();
-console.log(JSON.stringify({ result: 'PASS', coverage: 'track order, stack/nest/move/ungroup, world-preserving reparent, empty groups, delete, rename, depth limit, validation, save round trip, schema 4/5 compile, core group sampling' }));
+console.log(JSON.stringify({ result: 'PASS', coverage: 'track order, stack/nest/move/ungroup, world-preserving reparent, empty groups, delete, rename, unbounded depth, validation, save round trip, schema 4/5 compile, core group sampling' }));

@@ -21,12 +21,12 @@ export function SceneCameraControls({ settings, onChange, onPreview, preview = f
   const anchorRef = useCallback((node: HTMLDivElement | null) => setContainer(node?.closest<HTMLElement>(".scene-workspace-theme") ?? null), []);
   const matches = (preset: SceneCameraSettings) => (Object.keys(preset) as (keyof SceneCameraSettings)[]).every(key => settings[key] === preset[key]);
   const preset = matches(DEFAULT_SCENE_CAMERA) ? "scene" : matches(MAP_SCENE_CAMERA) ? "map" : "custom";
-  const fields: { key: keyof SceneCameraSettings; label: string; min: number; max: number; step: number }[] = [
-    { key: "distance", label: text("水平距离 · 米", "Distance · m"), min: .1, max: 50, step: .1 },
-    { key: "height", label: text("高度 · 米", "Height · m"), min: -10, max: 20, step: .1 },
-    { key: "yaw", label: text("水平角 · 度", "Orbit · °"), min: -180, max: 180, step: 1 },
-    { key: "pitch", label: text("仰角 · 度", "Pitch · °"), min: -80, max: 80, step: 1 },
-    { key: "fov", label: text("视场角 · 度", "Field of view · °"), min: 30, max: 100, step: 1 },
+  const fields: { key: keyof SceneCameraSettings; label: string; min?: number; max?: number; step: number }[] = [
+    { key: "distance", label: text("水平距离 · 米", "Distance · m"), min: Number.MIN_VALUE, step: .1 },
+    { key: "height", label: text("高度 · 米", "Height · m"),  step: .1 },
+    { key: "yaw", label: text("水平角 · 度", "Orbit · °"),  step: 1 },
+    { key: "pitch", label: text("仰角 · 度", "Pitch · °"),  step: 1 },
+    { key: "fov", label: text("视场角 · 度", "Field of view · °"), min: Number.MIN_VALUE, max: 179.999, step: 1 },
   ];
   return <div ref={anchorRef} className="scene-camera-controls">
     <Popover open={open} onOpenChange={setOpen}>

@@ -19,7 +19,7 @@ fade envelope multiplied by the instance opacity. `sampleFade` returns the timin
 without opacity, so transparent video can still be audible. `sampleOpacity` and `sampleVolume`
 sample optional scalar tracks with static `opacity` / `media.volume` fallbacks (default 1);
 Bezier overshoot is clamped to [0, 1]. Groups remain transform-only. `mediaTime(time, settings, timing, sourceDuration)` maps scene time to trimmed,
-rate-adjusted, optionally looping source-media seconds. Untimed legacy nodes stay visible at
+optionally looping source-media seconds at natural 1x speed. Untimed legacy nodes stay visible at
 the final scene time. `mediaPreloadIds(mediaInstances, time, sceneDuration, loop)` selects
 all current cues and the nearest two upcoming cues within five scene seconds, including
 loop wrap. Pass only audio/video nodes; the hosts prepare remote streams for these IDs
@@ -33,7 +33,8 @@ Positions use the same world space in meters; the listener contains `position`, 
 and `up` vectors. An enabled source uses inverse attenuation clamped between `refDistance`
 and `maxDistance`, with `rolloffFactor` controlling the decay. Camera right is forward × up.
 Hosts apply gain to audio and pan when their audio API supports it; the core never opens
-an audio context or converts local transforms to world coordinates.
+an audio context or converts local transforms to world coordinates. Distances and rolloff
+retain their configured finite values, without additional runtime caps.
 
 Performance scenes compile to playback schema 7; opacity, scalar tracks or spatial audio
 require schema 8. Both current adapters render scene-owned
@@ -47,7 +48,7 @@ Update the mini-program snapshot from the Web repository:
 ```sh
 npm pack ./packages/scene-core --pack-destination ../spatial-memory-mini-program/vendor
 cd ../spatial-memory-mini-program
-npm install --ignore-scripts ./vendor/spatial-memory-scene-core-2.4.0.tgz
+npm install --ignore-scripts ./vendor/spatial-memory-scene-core-2.6.0.tgz
 npm run build:scene-core
 npm run test:scene-memory
 ```

@@ -1,9 +1,7 @@
 "use client";
 import { FolderInput, FolderOutput, Maximize2, Pause, Play, Repeat, SkipBack, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { COMPOSITION_LIMITS } from '@/lib/scene/protocol';
 import { SceneNumberField } from './SceneFields';
-import { MIN_SCENE_DURATION } from './timeline-scale';
 import type { Interpolation } from './timeline-keys';
 
 export interface SceneTimelineToolbarProps {
@@ -25,7 +23,7 @@ export function SceneTimelineToolbar(p: SceneTimelineToolbarProps) {
     <Button variant="ghost" size="icon" className="size-8 aria-pressed:bg-secondary aria-pressed:text-foreground" aria-label={text('循环播放', 'Loop playback')} aria-pressed={p.loop} disabled={p.disabled} onClick={() => p.onLoop(!p.loop)}><Repeat /></Button>
     <div className="w-20"><SceneNumberField label={text('播放时间（秒）', 'Time (seconds)')} value={p.time} min={0} max={p.duration} step={.1} onCommit={p.onSeek} /></div>
     <span className="text-xs text-muted-foreground">/</span>
-    <div className="w-20"><SceneNumberField label={text('场景时长（秒）', 'Duration (seconds)')} value={p.end} min={MIN_SCENE_DURATION} max={COMPOSITION_LIMITS.maxDurationSeconds} step={1} disabled={p.disabled} onCommit={p.onDuration} /></div>
+    <div className="w-20"><SceneNumberField label={text('场景时长（秒）', 'Duration (seconds)')} value={p.end} exclusiveMin={0} step={1} disabled={p.disabled} onCommit={p.onDuration} /></div>
     <span className="text-xs text-muted-foreground">s</span>
     {p.canGroup && <><Divider /><Button variant="ghost" size="sm" className="h-8" disabled={p.disabled} title="Ctrl / ⌘ G" onClick={p.onGroup}><FolderInput />{text('编组', 'Group')}</Button></>}
     {p.canUngroup && <Button variant="ghost" size="sm" className="h-8" disabled={p.disabled} title="Ctrl / ⌘ Shift G" onClick={p.onUngroup}><FolderOutput />{text('取消编组', 'Ungroup')}</Button>}

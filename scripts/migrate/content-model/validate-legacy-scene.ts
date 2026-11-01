@@ -1,5 +1,5 @@
+import { COMPOSITION_LIMITS } from "../legacy-scene-limits";
 import {
-  COMPOSITION_LIMITS,
 } from "../../../lib/scene/protocol";
 import { validateTracks } from "../../../lib/scene/validate-tracks";
 import {

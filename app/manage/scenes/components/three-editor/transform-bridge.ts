@@ -12,8 +12,8 @@ export function instanceRoot(object: Object3D | null): Object3D | null {
 }
 export const commandChannel = (type: string) => ({ SetPositionCommand: 'position', SetRotationCommand: 'rotation', SetScaleCommand: 'scale' } as const)[type as 'SetPositionCommand'];
 export function transformValue(object: Object3D, key: 'position' | 'rotation' | 'scale') {
-  const clamp = (n: number) => Math.max(key === 'scale' ? 0.001 : -100, Math.min(100, Number.isFinite(n) ? n : (key === 'scale' ? 1 : 0)));
-  return { x: clamp(object[key].x), y: clamp(object[key].y), z: clamp(object[key].z) };
+  const valid = (n: number) => Number.isFinite(n) && (key !== 'scale' || n > 0) ? n : (key === 'scale' ? 1 : 0);
+  return { x: valid(object[key].x), y: valid(object[key].y), z: valid(object[key].z) };
 }
 /** Commit one transform per completed native drag into the scene's undo history. */
 export function applyEditorCommand(onTransform: ThreeViewportProps['onTransform'], command: NativeCommand, editable: boolean) {

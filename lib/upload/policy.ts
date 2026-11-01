@@ -6,7 +6,7 @@ export const UPLOAD_SOURCE_MAX_MB: Readonly<Record<UploadType, number>> = {
   audio: 32,
   anchor: 32,
   video: 512,
-  model: 3,
+  model: 5,
   document: 5,
   scene: 0.25,
   text: 5,

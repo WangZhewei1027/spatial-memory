@@ -11,6 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "npm run test:unit",
     "test:unit": "node scripts/run-unit-tests.mjs",
+    "test:scene-authoring": "npm --prefix packages/scene-authoring test",
+    "test:scene-renderer": "npm --prefix packages/scene-renderer test",
     "test:integration": "node --import tsx --conditions react-server scripts/test-content-model-services.ts && node --import tsx --conditions react-server scripts/test-team-workbench-routes.ts && node --import tsx --conditions react-server scripts/test-upload-dedup.ts && node --import tsx --conditions react-server scripts/test-activities.ts",
     "test:cross-runtime": "tsx scripts/test-three-editor.ts && tsx scripts/test-scene-playback-parity.ts && tsx scripts/test-scene-performance-parity.ts",
     "check:fast": "npm run typecheck && npm run lint && npm test",
