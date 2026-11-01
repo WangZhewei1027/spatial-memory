@@ -17,7 +17,7 @@
 
 ## 服务与访问边界
 
-- 镜像固定为 `dpage/pgadmin4:9.18`，Compose 服务 `pgadmin`，容器 `sanlin-pgadmin-1`；上限 512 MiB / 1 CPU，Gunicorn 4 个线程。
+- 镜像固定为 `dpage/pgadmin4:9.18`，Compose 服务 `pgadmin`，容器 `spatial-memory-pgadmin-1`；上限 512 MiB / 1 CPU，Gunicorn 4 个线程。
 - Caddy 为 `db.spatialmemory.online` 提供 HTTPS，转发到 Docker 网络内 `pgadmin:80`；pgAdmin 不映射主机端口，数据库仍只绑定 `127.0.0.1:5432`。
 - `/var/lib/pgadmin` 使用 `spatial-memory_pgadmin-data` 持久卷，保存 pgAdmin 账号、连接、偏好与会话；它是管理工具配置，不是第二套业务数据库。
 - 登录密码通过 Compose secret 文件提供；禁用容器内 Postfix，邮件找回当前未配置。
@@ -49,7 +49,7 @@
 
 ```bash
 ssh root@139.196.189.102 'cd /opt/spatial-memory && docker compose ps pgadmin'
-ssh root@139.196.189.102 'docker stats --no-stream sanlin-pgadmin-1'
+ssh root@139.196.189.102 'docker stats --no-stream spatial-memory-pgadmin-1'
 curl --head https://db.spatialmemory.online/login
 ```
 

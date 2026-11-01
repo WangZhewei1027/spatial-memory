@@ -1,8 +1,19 @@
 # 线上部署与服务说明
 
-基础设施快照：**2026-10-19（北京时间）**。依据线上 Docker、systemd、端口、备份日志、PAI-EAS 服务状态，以及本仓库部署脚本整理；Google 登录中转和其余服务运行状态沿用当天巡检快照。Web 的最新发布核对见下节；变更部署后应同步更新本文。
+基础设施快照：**2026-11-01（北京时间）**。生产数据库、Compose 持久卷、部署路径、媒体与备份桶、RAM 身份和 Google 中转函数已完成 Spatial Memory 迁移。恢复材料和逐项验证见[迁移记录](spatial-memory-migration.md)。下列旧发布记录保留当时事实。
 
 正式入口：**<https://www.spatialmemory.online/>**。整体由上海 Web 主机、OSS 文件存储、按需启动的 GPU 推理服务、中国香港 Google 登录中转函数，以及 Google、微信和短信接口组成。地图合集、Scene、基础素材属于同一个 Next.js 应用，共用同一个数据库。
+
+## Web 与资源迁移发布（2026-11-01）
+
+应用代码已发布至 `6a63f7cad3c88a094de06ec604b9a61f4b4b6ce9`（[Deploy 运行](https://github.com/WangZhewei1027/spatial-memory/actions/runs/41312619125)），运行镜像为 `sha256:b9c93443ed80aca2cf032a865957427c32278048c3696c6a0aacd1187516024d`。后续部署记录与备份权限修正不改变应用镜像。
+
+- 45 个存量手机号账号迁移为 `phone.spatialmemory.local`，账号 ID、密码、会话、团队关系保留。另建的临时旧域账号已用原密码完成新域 Web/CLI 登录并清理；无短信发送。
+- `/opt/spatial-memory`、Compose 项目及四卷使用新身份，PostgreSQL 数据库与三角色原地改名。pgAdmin 保存连接、SAGE systemd/虚拟环境与配置路径、03:30 备份 cron 已同步；网段仍为 172.18.0.0/16。
+- 12,214 个 OSS 媒体对象和 33 个历史备份对象复制后逐项核对。8 条当前参考图 URL 更新，38 张业务/归档表的规范化内容指纹和计数一致。备份使用新私有桶；首份新备份全量恢复后 41 张表计数一致，临时恢复库已清理。
+- 工程检查和数据库集成 CI 通过。线上 HTTP 验收覆盖资产幂等创建/更新、场景保存/重读、409/428 乐观锁、匿名拒绝、编辑器认证页面、媒体 Range，以及小程序 schema 8 参数与 Web/CLI 读写一致性。临时账号、团队和内容已清理；未将此验收表述为手机实机或完整浏览器交互测试。
+- CLI `0.2.1` 直接使用当前 Scene/Asset/Collection API，私有仓库已推送到 `348b547`，10 项测试及离线安装验证通过。SAGE 仓库已推送到 `e5f4f85`。
+- 小程序已推送 `1f221f8`；用户选择微信上传稍后处理，尚未上传、审核或正式上线。IP API 入口继续保留，避免影响现有小程序。
 
 ## Web 发布记录（2026-10-29 17:00）
 
@@ -67,8 +78,8 @@ flowchart TB
     end
 
     subgraph CLOUD["独立云服务"]
-        MEDIA[("OSS 素材存储<br/>sanlinlaojie-media<br/>图片、视频、音频、模型、二维码")]
-        ARCHIVE[("OSS 私有备份存储<br/>sanlinlaojie-backups<br/>数据库备份文件")]
+        MEDIA[("OSS 素材存储<br/>spatial-memory-media<br/>图片、视频、音频、模型、二维码")]
+        ARCHIVE[("OSS 私有备份存储<br/>spatial-memory-backups<br/>数据库备份文件")]
         GPU["阿里云 PAI-EAS · SAGE 推理<br/>GU30 / L20 / A10 按需选择<br/>核对时均已停止，等待请求启动"]
         WX["微信开放接口<br/>生成小程序二维码"]
         SMS["阿里云号码认证服务<br/>手机验证码"]
@@ -76,7 +87,7 @@ flowchart TB
     end
 
     subgraph HONG_KONG["阿里云函数计算 · 中国香港 · cn-hongkong"]
-        GOOGLE_RELAY["FC 3.0 · Google 登录中转<br/>sanlin-google-oauth-relay<br/>按需运行 · 128 MiB / 0.05 vCPU"]
+        GOOGLE_RELAY["FC 3.0 · Google 登录中转<br/>spatial-memory-google-oauth-relay<br/>按需运行 · 128 MiB / 0.05 vCPU"]
     end
 
     WEB -->|"HTTPS · 页面、API、Google 授权回调"| CADDY
@@ -100,22 +111,22 @@ Google 授权页由用户浏览器直接访问，授权码随浏览器回调网�
 
 ## 服务用途与部署方式
 
-Web 主机是阿里云**轻量应用服务器**，地域 `cn-shanghai`，部署目录 `/opt/sanlin`。Docker Compose 项目名为 `sanlin`，网络为 `sanlin_default`。
+Web 主机是阿里云**轻量应用服务器**，地域 `cn-shanghai`，部署目录 `/opt/spatial-memory`。Docker Compose 项目名为 `spatial-memory`，网络为 `spatial-memory_default`。
 
 | 服务 | 用途 | 部署方式与位置 | 核对时状态 |
 | --- | --- | --- | --- |
-| Caddy | HTTPS、域名跳转、反向代理、证书自动续期 | Compose 的 `caddy`；容器 `sanlin-caddy-1`，镜像 `caddy:2-alpine`；挂载 `/opt/sanlin/Caddyfile`，证书保存在 `sanlin_caddy-data` 卷 | 运行中 |
-| Next.js | Web 页面、管理 API、小程序 API、Better Auth 登录鉴权、上传与识别编排 | Compose 的 `app`；容器 `sanlin-app-1`，镜像 `sanlin-web:latest`；Node.js 22 + Next standalone，`linux/amd64` | 运行且健康 |
-| PostgreSQL + PostGIS | 账号会话、团队、地图合集、素材、Scene、投放和空间查询 | Compose 的 `db`；容器 `sanlin-db-1`，镜像 `postgis/postgis:17-3.5`；数据库 `sanlin`，数据卷 `sanlin_db-data` | 运行且健康；唯一生产业务数据库 |
-| pgAdmin 4 | 浏览表格、JSON、执行 SQL 和维护数据 | Compose 的 `pgadmin`；镜像 `dpage/pgadmin4:9.18`，独立配置卷 `sanlin_pgadmin-data`，512 MiB 内存上限；Caddy 提供 `db.spatialmemory.online` HTTPS | 2026-10-19 新增；登录与运维见 [pgAdmin 说明](pgadmin.md) |
-| SAGE 网关 | 管理 GPU 生命周期、选择合格候选、预热校验和转发图片向量请求 | 主机 Python 虚拟环境 + `sage-fallback.service`，代码位于 `/opt/sanlin/sage-fallback`；独立于 Docker Compose | 运行中；控制器因空闲处于 `off` |
+| Caddy | HTTPS、域名跳转、反向代理、证书自动续期 | Compose 的 `caddy`；容器 `spatial-memory-caddy-1`，镜像 `caddy:2-alpine`；挂载 `/opt/spatial-memory/Caddyfile`，证书保存在 `spatial-memory_caddy-data` 卷 | 运行中 |
+| Next.js | Web 页面、管理 API、小程序 API、Better Auth 登录鉴权、上传与识别编排 | Compose 的 `app`；容器 `spatial-memory-app-1`，镜像 `spatial-memory:latest`；Node.js 22 + Next standalone，`linux/amd64` | 运行且健康 |
+| PostgreSQL + PostGIS | 账号会话、团队、地图合集、素材、Scene、投放和空间查询 | Compose 的 `db`；容器 `spatial-memory-db-1`，镜像 `postgis/postgis:17-3.5`；数据库 `spatial_memory`，数据卷 `spatial-memory_db-data` | 运行且健康；唯一生产业务数据库 |
+| pgAdmin 4 | 浏览表格、JSON、执行 SQL 和维护数据 | Compose 的 `pgadmin`；镜像 `dpage/pgadmin4:9.18`，独立配置卷 `spatial-memory_pgadmin-data`，512 MiB 内存上限；Caddy 提供 `db.spatialmemory.online` HTTPS | 2026-10-19 新增；登录与运维见 [pgAdmin 说明](pgadmin.md) |
+| SAGE 网关 | 管理 GPU 生命周期、选择合格候选、预热校验和转发图片向量请求 | 主机 Python 虚拟环境 + `sage-fallback.service`，代码位于 `/opt/spatial-memory/sage-fallback`；独立于 Docker Compose | 运行中；控制器因空闲处于 `off` |
 | SAGE 推理 | 将参考图、相机图片转为特征向量，供后端匹配；AR 渲染仍在手机端完成 | 阿里云 PAI-EAS 上海服务，GPU 由网关按需启动；详情见下节 | 所有候选 `Stopped`，运行实例数为 0 |
-| OSS 素材桶 | 保存媒体、3D 模型、二维码和部分静态资源 | 上海桶 `sanlinlaojie-media`；应用经 OSS SDK 上传，客户端经公开 HTTPS 地址读取 | 已接入；使用 OSS 原始域名，未配置独立媒体 CDN |
-| 数据库备份任务 | 导出生产数据库并上传到主机外的存储 | 主机 cron 执行 `/opt/sanlin/backup.sh`；`/etc/cron.d/sanlin-backup` 配置每天 03:30，服务器时区 `Asia/Shanghai` | 最近核对的 2026-10-19 定时备份成功 |
-| OSS 备份桶 | 保存用于恢复的数据库 dump | 私有桶 `sanlinlaojie-backups`，对象前缀 `db/`；由备份脚本上传 | 已接入；不是运行中的数据库或热备副本 |
+| OSS 素材桶 | 保存媒体、3D 模型、二维码和部分静态资源 | 上海桶 `spatial-memory-media`；应用经 OSS SDK 上传，客户端经公开 HTTPS 地址读取 | 已接入；使用 OSS 原始域名，未配置独立媒体 CDN |
+| 数据库备份任务 | 导出生产数据库并上传到主机外的存储 | 主机 cron 执行 `/opt/spatial-memory/backup.sh`；`/etc/cron.d/spatial-memory-backup` 配置每天 03:30，服务器时区 `Asia/Shanghai` | 2026-11-01 迁移后手动执行与离机恢复验证成功 |
+| OSS 备份桶 | 保存用于恢复的数据库 dump | 私有桶 `spatial-memory-backups`，对象前缀 `db/`；由备份脚本上传 | 已接入；不是运行中的数据库或热备副本 |
 | 微信开放接口 | 获取 access token、生成合集和 Scene 的小程序码 | Next.js 服务端调用微信 API；生成图片按 `release/trial/develop` 分开缓存在 OSS，access token 缓存在应用进程内 | 已配置；二维码环境在 `/admin/settings` 浏览器端选择，默认 `release` |
 | 阿里云号码认证服务 | 发送、校验手机号验证码 | Next.js 内的 `lib/auth/sms.ts` 调用 Dypnsapi；使用服务端 RAM 凭据，不额外部署短信进程 | 已接入；本次未发送真实短信测试 |
-| Google 认证中转 | Google 令牌交换、刷新与签名公钥获取 | FC 3.0 中国香港 `cn-hongkong` 函数 `sanlin-google-oauth-relay`；Node.js 20、128 MiB、0.05 vCPU，按需运行；由 [独立脚本](../scripts/deploy-google-auth-relay.mjs) 发布，配置见 [中转说明](google-auth-relay.md) | 已上线；生产容器获取公钥、无效授权码回调与中转鉴权检查通过，真实账号授权仍需用户验证 |
+| Google 认证中转 | Google 令牌交换、刷新与签名公钥获取 | FC 3.0 中国香港 `cn-hongkong` 函数 `spatial-memory-google-oauth-relay`；Node.js 20、128 MiB、0.05 vCPU，按需运行；由 [独立脚本](../scripts/deploy-google-auth-relay.mjs) 发布，配置见 [中转说明](google-auth-relay.md) | 已上线；生产容器获取公钥、无效授权码回调与中转鉴权检查通过，真实账号授权仍需用户验证 |
 | 微信小程序 | 扫码入口、地图内容与 Scene 播放、手机端 AR | 兄弟项目 `spatial-memory-mini-program` 通过微信开发者工具独立编译、上传和发布；通过 `/api/miniapp/*` 访问 Web 后端 | 配套 Scene / 新内容模型版本仍待用户另行发布 |
 | GitHub Actions | 质量检查、镜像构建、Web 部署和冒烟检查 | [Deploy 工作流](../.github/workflows/deploy.yml)，push `main` 或手动触发 | 已启用；不发布小程序、SAGE 或香港 FC 函数 |
 
@@ -136,7 +147,7 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 | `db:5432` / `127.0.0.1:5432` | 应用容器 / 主机回环 | 应用数据库访问；外部运维通过 SSH 隧道进入 |
 | `172.18.0.1:18080` | 主机 Docker 网桥 | SAGE 网关；应用的 `SAGE_EAS_ENDPOINT` 指向此地址 |
 | `/_sage/*` | 经 Caddy 的 HTTPS 入口 | 去掉前缀后转发至网关；`/health`、`/embed`、`/status` 仍需网关 Token |
-| `sanlin-th-relay-vchqmnnrvk.cn-hongkong.fcapp.run` | 公网 HTTPS 入口，函数校验独立调用密钥 | 香港 Google 中转，仅支持 `POST /token` 和 `GET /jwks`；调用密钥只在服务端配置 |
+| `spatialth-relay-vsuiocyxbq.cn-hongkong.fcapp.run` | 公网 HTTPS 入口，函数校验独立调用密钥 | 香港 Google 中转，仅支持 `POST /token` 和 `GET /jwks`；调用密钥只在服务端配置 |
 
 典型请求路径：
 
@@ -150,7 +161,7 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 
 网关与模型源码位于兄弟项目 `ai-location`，主要说明在 `ai-location/deploy/sage/fallback/README.md`。**Web 的 GitHub Actions 和 `npm run deploy` 不会更新这两项服务。**
 
-- 网关：Python 程序、虚拟环境和依赖部署到 `/opt/sanlin/sage-fallback`，由 systemd 管理；私有配置与云凭据在 `/etc/sage-fallback/`，恢复状态在 `/var/lib/sage-fallback/state.json`。更新后通过 systemd 重启并核对状态。
+- 网关：Python 程序、虚拟环境和依赖部署到 `/opt/spatial-memory/sage-fallback`，由 systemd 管理；私有配置与云凭据在 `/etc/sage-fallback/`，恢复状态在 `/var/lib/sage-fallback/state.json`。更新后通过 systemd 重启并核对状态。
 - 模型：通过 `ai-location/deploy/sage/` 的部署工具与阿里云 PAI-EAS 管理接口更新。模型、容器、规格或挂载变化需重新验证候选资格并更新网关注册表，不能只更新某个推理服务就视为全部发布完成。
 - 正式候选按顺序尝试：GU30 32 核 `sage_qual_gu30_32_1014` → L20 `sage_qual_l20_1014` → A10 `sage_anchor_gpu`。名字含 `qual` 的前两项已用于正式调度。
 - 两个未通过资格验证的服务 `sage_qual_gu30_1014`（8 核）、`sage_qual_gu30_16_1014`（16 核）保持停止，不参与自动启动。
@@ -164,7 +175,7 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 1. push `main` 或手动运行工作流，先完成 `npm run check`（类型、零警告 lint、离线回归、生产构建）以及隔离 PostGIS 的迁移、服务、路由与上传去重测试。
 2. 构建 `linux/amd64` 的 `spatial-memory:<commit SHA>` 镜像。`NEXT_PUBLIC_*` 在构建时写入前端包，修改这类配置需要重新构建。
 3. 经 SSH 对目标数据库运行只读部署门禁，核对迁移账本和实际结构；缺迁移或残留旧结构时阻止部署。
-4. 使用 `docker save | gzip` 经 SSH 传输镜像，再在服务器 `docker load`；当前链路不使用镜像仓库。复制 Compose、Caddy 和备份脚本，保留服务器 `/opt/sanlin/.env`。
+4. 使用 `docker save | gzip` 经 SSH 传输镜像，再在服务器 `docker load`；当前链路不使用镜像仓库。复制 Compose、Caddy 和备份脚本，保留服务器 `/opt/spatial-memory/.env`。
 5. 将目标镜像标为 `spatial-memory:latest`，执行 Compose 更新、Caddy reload，最后访问首页做 HTTP 200 冒烟检查。
 
 手工发布入口是 [`scripts/deploy.sh`](../scripts/deploy.sh)（`npm run deploy`）：本地构建后走相同的 SSH 传输方式，并安装备份 cron。与 CI 不同，**手工脚本会用所选环境文件覆盖服务器 `.env`**；应先核对该文件，避免覆盖现有域名、SAGE 或凭据配置。
@@ -175,7 +186,7 @@ pgAdmin 的首次 secret 和数据库角色需按 [部署说明](pgadmin.md) 初
 
 ### OSS 媒体跨域与浏览器缓存（2026-10-29）
 
-素材桶 `sanlinlaojie-media` 的 CORS 保留现有规则：来源 `*`，方法 `GET` / `HEAD`，允许请求头 `*`，暴露 `ETag` / `Content-Length`，预检缓存 86400 秒；已开启 `ResponseVary=true`。此设置让包括非跨域请求在内的响应都返回 `Vary: Origin`，避免普通素材预览与场景的 `crossOrigin="anonymous"` 请求错误复用缓存。此规则只允许跨域读取，不允许浏览器跨域上传或删除。
+素材桶 `spatial-memory-media` 的 CORS 保留现有规则：来源 `*`，方法 `GET` / `HEAD`，允许请求头 `*`，暴露 `ETag` / `Content-Length`，预检缓存 86400 秒；已开启 `ResponseVary=true`。此设置让包括非跨域请求在内的响应都返回 `Vary: Origin`，避免普通素材预览与场景的 `crossOrigin="anonymous"` 请求错误复用缓存。此规则只允许跨域读取，不允许浏览器跨域上传或删除。
 
 这次在 Chrome 复现了原音频 URL 加载失败，而同一文件使用新缓存键可以播放；仅重新获取该音频的缓存后，原 URL 也恢复。音频文件和编码没有修改。修改 CORS 配置不会自动失效浏览器已经缓存的旧响应；遇到旧页面仍报缺少 `Access-Control-Allow-Origin`，先保存未保存的场景，再重新加载；必要时在开发者工具禁用缓存后刷新一次。不要通过移除视频的 `crossOrigin` 来处理，WebGL 视频纹理仍需要 CORS。
 
@@ -185,9 +196,9 @@ pgAdmin 的首次 secret 和数据库角色需按 [部署说明](pgadmin.md) 初
 
 新用户通过 Google 或中国大陆手机号注册，存量邮箱保留密码登录；密码重置仅支持手机号验证码。此改动不需要数据库迁移，认证回归由 `scripts/test-sms-auth.cjs` 纳入 CI。
 
-Google 的 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 保存于服务器 `/opt/sanlin/.env`，回调地址为 `https://www.spatialmemory.online/api/auth/callback/google`。生产凭据已于 2026-10-19 配置，重建应用容器后生效；凭据不进入仓库或镜像。
+Google 的 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 保存于服务器 `/opt/spatial-memory/.env`，回调地址为 `https://www.spatialmemory.online/api/auth/callback/google`。生产凭据已于 2026-10-19 配置，重建应用容器后生效；凭据不进入仓库或镜像。
 
-上海主机无法直连 Google，因此服务端请求通过中国香港 FC 中转。`GOOGLE_RELAY_URL` 和 `GOOGLE_RELAY_SECRET` 保存在 `/opt/sanlin/.env`，网站仍负责 OAuth state、PKCE、Google JWT 验签、账号关联与会话。香港函数没有数据库访问权限。用户浏览器仍须能打开 Google 授权页；真实账号授权与自动化测试的验证范围见 [中转说明](google-auth-relay.md)。
+上海主机无法直连 Google，因此服务端请求通过中国香港 FC 中转。`GOOGLE_RELAY_URL` 和 `GOOGLE_RELAY_SECRET` 保存在 `/opt/spatial-memory/.env`，网站仍负责 OAuth state、PKCE、Google JWT 验签、账号关联与会话。香港函数没有数据库访问权限。用户浏览器仍须能打开 Google 授权页；真实账号授权与自动化测试的验证范围见 [中转说明](google-auth-relay.md)。
 
 ## 数据库迁移、备份与恢复边界
 
@@ -197,7 +208,7 @@ Google 的 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 保存于服务器 `/opt/
 2. 经 [`scripts/db-tunnel.sh`](../scripts/db-tunnel.sh) 连接目标库，按 [迁移手册](content-model-migration-runbook.md) 执行 `npm run db:migrate`，核对迁移账本、引用和归档。
 3. 运行只读部署门禁，再发布匹配结构的 Web；涉及客户端协议变化时协调小程序独立发布和验收。
 
-[`deploy/backup.sh`](../deploy/backup.sh) 使用 PostgreSQL custom 格式压缩导出，保存为 `/opt/sanlin/backups/sanlin-<时间>.dump`，随后上传到私有 OSS 的 `db/` 前缀；本地通过 `find -mtime +3` 清理旧 dump。OSS 保留周期由桶生命周期配置管理，本文不将历史文档中的周期当作已重新核验值。
+[`deploy/backup.sh`](../deploy/backup.sh) 使用 PostgreSQL custom 格式压缩导出，保存为 `/opt/spatial-memory/backups/spatial-memory-<时间>.dump`，随后上传到私有 OSS 的 `db/` 前缀；本地通过 `find -mtime +3` 清理旧 dump。OSS 保留周期由桶生命周期配置管理，本文不将历史文档中的周期当作已重新核验值。
 
 这些 dump 备份数据库内容，不包含 OSS 媒体文件、服务器配置或 SAGE 凭据。数据库文件与 Caddy 证书使用持久卷；替换应用容器不会清空它们。恢复时需匹配数据库结构与应用版本，删表删列之后不能只回滚旧应用镜像；详见迁移手册。
 
@@ -208,10 +219,10 @@ Google 的 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 保存于服务器 `/opt/
 以下命令不会迁移数据库或唤醒 GPU：
 
 ```bash
-ssh root@139.196.189.102 'cd /opt/sanlin && docker compose ps'
+ssh root@139.196.189.102 'cd /opt/spatial-memory && docker compose ps'
 ssh root@139.196.189.102 'systemctl status sage-fallback --no-pager'
 ssh root@139.196.189.102 'curl --fail --silent --show-error http://172.18.0.1:18080/readyz'
-ssh root@139.196.189.102 'tail -n 10 /var/log/sanlin-backup.log'
+ssh root@139.196.189.102 'tail -n 10 /var/log/spatial-memory-backup.log'
 curl --head https://www.spatialmemory.online/
 ```
 

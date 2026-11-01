@@ -9,6 +9,7 @@
 # Restore: ossutil cp oss://spatial-memory-backups/db/<file> . &&
 #   docker compose exec -T db pg_restore -U spatial_memory -d spatial_memory --clean --if-exists < <file>
 set -euo pipefail
+umask 077
 DIR=/opt/spatial-memory
 cd "$DIR"
 set -a; . ./.env; set +a
