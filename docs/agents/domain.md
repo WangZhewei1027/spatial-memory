@@ -1,6 +1,6 @@
 # Domain docs
 
-Use a single-context layout for the `sanlinlaojie` web platform. Paths in this document are relative to this repository root; sibling repositories have their own configuration.
+Use a single-context layout for the `spatial-memory` web platform. Paths in this document are relative to this repository root; sibling repositories have their own configuration.
 
 ## Before exploring
 

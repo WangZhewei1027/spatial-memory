@@ -1,8 +1,8 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repository live in GitHub Issues at `WangZhewei1027/sanlinlaojie`. Use the `gh` CLI from this repository root. For commands run elsewhere, pass `--repo WangZhewei1027/sanlinlaojie` explicitly.
+Issues and specs for this repository live in GitHub Issues at `WangZhewei1027/spatial-memory`. Use the `gh` CLI from this repository root. For commands run elsewhere, pass `--repo WangZhewei1027/spatial-memory` explicitly.
 
-Before the first write in a session, run `gh repo view --json nameWithOwner` and verify the target is `WangZhewei1027/sanlinlaojie`. Resolve a mismatch before writing. The skill source repository, `mattpocock/skills`, is not this project's tracker.
+Before the first write in a session, run `gh repo view --json nameWithOwner` and verify the target is `WangZhewei1027/spatial-memory`. Resolve a mismatch before writing. The skill source repository, `mattpocock/skills`, is not this project's tracker.
 
 ## Issue operations
 
@@ -23,7 +23,7 @@ Use GitHub's native sub-issues and blocking relationships so the task graph is v
 - **Create a child:** `gh issue create --parent <parent> --title "..." --body-file <path>`.
 - **Attach an existing child:** `gh issue edit <parent> --add-sub-issue <child>`.
 - **Add blockers:** `gh issue edit <child> --add-blocked-by <blocker>`; on creation, use `gh issue create --blocked-by <n>,<n> ...`.
-- **Count open blockers:** `gh api repos/WangZhewei1027/sanlinlaojie/issues/<number> --jq .issue_dependencies_summary.blocked_by`.
+- **Count open blockers:** `gh api repos/WangZhewei1027/spatial-memory/issues/<number> --jq .issue_dependencies_summary.blocked_by`.
 
 If native relationships are unavailable, put `Part of #<parent>` and `Blocked by: #<n>, #<n>` near the top of the child body, and maintain a child task list on the parent. A ticket is unblocked when every blocker is closed. If reading `blockedBy` via `gh issue view`, filter out closed blockers.
 

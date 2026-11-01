@@ -29,7 +29,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useWorkbenchData } from "./useWorkbenchData";
 
-const VIEW_KEY = "sanlin.workbench.view";
+const VIEW_KEY = "spatial-memory.workbench.view";
 const TEAM_ROLES: readonly string[] = ["owner", "admin", "member", "viewer"];
 
 function readType(value: string | null): WorkbenchTypeFilter {

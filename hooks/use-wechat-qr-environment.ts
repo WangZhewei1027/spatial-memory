@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { DEFAULT_WECHAT_QR_ENVIRONMENT, isWeChatQrEnvironment, type WeChatQrEnvironment } from "@/lib/wechat-qr";
 
-const STORAGE_KEY = "sanlin.wechat-qr.environment";
-const CHANGE_EVENT = "sanlin:wechat-qr-environment";
+const STORAGE_KEY = "spatial-memory.wechat-qr.environment";
+const CHANGE_EVENT = "spatial-memory:wechat-qr-environment";
 let memoryEnvironment = DEFAULT_WECHAT_QR_ENVIRONMENT;
 let memoryOnly = false;
 

@@ -47,7 +47,7 @@ export async function readUploadForm(request: Request): Promise<UploadForm> {
     queueMicrotask(() => parser?.destroy(error));
   };
   try {
-    directory = await mkdtemp(join(tmpdir(), `sanlin-upload-form-${process.pid}-`));
+    directory = await mkdtemp(join(tmpdir(), `spatial-memory-upload-form-${process.pid}-`));
     const path = join(directory, "original");
     const form = new FormData();
     const maxFile = getUploadSourceLimitBytes("video");

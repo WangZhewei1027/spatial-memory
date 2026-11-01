@@ -1,4 +1,6 @@
-# Production stack on the Aliyun server (/opt/sanlin). Deployed by
+# Spatial Memory production stack; existing deployment identity stays /opt/sanlin.
+# Database roles, Compose volumes and paths require a separate resource migration.
+# Deployed by
 # scripts/deploy.sh, which copies this file, Caddyfile and the .env file.
 #
 #   caddy  — TLS termination (Let's Encrypt) and reverse proxy
@@ -33,7 +35,7 @@ services:
       retries: 10
 
   app:
-    image: sanlin-web:latest
+    image: spatial-memory:latest
     restart: unless-stopped
     env_file: .env
     environment:

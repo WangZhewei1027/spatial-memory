@@ -45,8 +45,8 @@ features for existing mobile clients. Legacy model scenes retain schema 4/5 and 
 Update the mini-program snapshot from the Web repository:
 
 ```sh
-npm pack ./packages/scene-core --pack-destination ../xr-frame-plant-trees/vendor
-cd ../xr-frame-plant-trees
+npm pack ./packages/scene-core --pack-destination ../spatial-memory-mini-program/vendor
+cd ../spatial-memory-mini-program
 npm install --ignore-scripts ./vendor/spatial-memory-scene-core-2.4.0.tgz
 npm run build:scene-core
 npm run test:scene-memory

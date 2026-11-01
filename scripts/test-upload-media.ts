@@ -62,15 +62,15 @@ test("AAC/M4A and Opus/WebM inputs normalize to the same mono MP3 contract from 
 });
 
 test("invalid audio, playlists and overlong audio fail without leaving processing files", async () => {
-  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort();
+  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort();
   await assert.rejects(processUploadMedia(file(Buffer.from("not audio"), "broken.mp3", "audio/mpeg"), "audio"), invalid());
   await assert.rejects(processUploadMedia(file(Buffer.from("#EXTM3U\n#EXTINF:5,\nhttp://127.0.0.1/private.wav\n"), "list.mp3", "audio/mpeg"), "audio"), invalid());
   await assert.rejects(processUploadMedia(file(wav(601, 1, 8000), "long.wav", "audio/wav"), "audio"), invalid(413));
-  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort(), before);
+  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort(), before);
 });
 
 test("streamed MediaRecorder-style WebM without Duration transcodes fully and still enforces ten minutes", async () => {
-  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort();
+  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort();
   const streamedWebm = (seconds: number) => execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", `anullsrc=r=8000:cl=mono:d=${seconds}`,
     "-c:a", "libopus", "-b:a", "6k", "-f", "webm", "pipe:1"], { maxBuffer: 16 * 1024 * 1024 });
   const directory = await mkdtemp(join(tmpdir(), "upload-media-test-"));
@@ -88,7 +88,7 @@ test("streamed MediaRecorder-style WebM without Duration transcodes fully and st
     await assert.rejects(processUploadMedia(file(tooLong, "long-recording.webm", "audio/webm"), "audio"),
       (error: unknown) => invalid(413)(error) && error instanceof Error && error.message.includes("10 分钟"));
   } finally { await rm(directory, { recursive: true, force: true }); }
-  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort(), before);
+  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort(), before);
 });
 
 test("photos compress on the server, are correctly oriented and lose EXIF metadata", async () => {
@@ -241,7 +241,7 @@ test("five-minute disk-backed videos retain their full soundtrack with a low bit
 });
 
 test("video processing rejects invalid, playlist and overlong sources and cleans up every temporary file", async () => {
-  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort();
+  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort();
   await assert.rejects(processUploadMedia(file(Buffer.from("broken"), "bad.mp4", "video/mp4"), "video"), invalid());
   await assert.rejects(processUploadMedia(file(wav(0.1), "audio.mp4", "video/mp4"), "video"), invalid());
   await assert.rejects(processUploadMedia(file(Buffer.from("#EXTM3U\n#EXTINF:5,\nhttp://127.0.0.1/private.mp4\n"), "list.mp4", "video/mp4"), "video"), invalid());
@@ -259,5 +259,5 @@ test("video processing rejects invalid, playlist and overlong sources and cleans
       else assert.equal((await processUploadMedia(file(source, "stream.webm", "video/webm"), "video")).mimeType, "video/mp4");
     }
   } finally { await rm(directory, { recursive: true, force: true }); }
-  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-${process.pid}-`)).sort(), before);
+  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort(), before);
 });

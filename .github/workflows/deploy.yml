@@ -4,6 +4,7 @@
 # Mirrors scripts/deploy.sh: buildx (linux/amd64) → docker save | ssh docker
 # load → docker compose up. The server keeps its own /opt/sanlin/.env, so the
 # only secret this workflow needs is an SSH key that can log in as root.
+# Legacy deployment paths/DB names are retained; only the application image is renamed.
 #
 # Repository settings:
 #   secrets.DEPLOY_SSH_KEY     private key (ed25519) authorized on the server
@@ -51,7 +52,7 @@ jobs:
           context: .
           platforms: linux/amd64
           load: true
-          tags: sanlin-web:${{ github.sha }}
+          tags: spatial-memory:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_MEDIA_BASE_URL=${{ vars.NEXT_PUBLIC_MEDIA_BASE_URL }}
@@ -93,7 +94,7 @@ jobs:
             docker pull --platform linux/amd64 "$PGADMIN_IMAGE"
             docker save "$PGADMIN_IMAGE" | gzip -1 | ssh deploy "gunzip | docker load"
           fi
-          docker save sanlin-web:$TAG | gzip -1 | ssh deploy "gunzip | docker load"
+          docker save spatial-memory:$TAG | gzip -1 | ssh deploy "gunzip | docker load"
           ssh deploy "mkdir -p /opt/sanlin"
           scp -q deploy/docker-compose.yml deploy/backup.sh deploy:/opt/sanlin/
           scp -q deploy/pgadmin/servers.json deploy/pgadmin/provision.py deploy:/opt/sanlin/pgadmin/
@@ -103,7 +104,7 @@ jobs:
           # The server's .env decides which Caddyfile is live (CADDYFILE=Caddyfile
           # for the domain + Let's Encrypt, Caddyfile.ip while ICP filing is pending).
           ssh deploy 'cd /opt/sanlin && f=$(grep -E "^CADDYFILE=" .env | cut -d= -f2-); f=${f:-Caddyfile}; [ "$f" = Caddyfile ] && f=Caddyfile.domain; cp "$f" Caddyfile && echo "Caddyfile <- $f"'
-          ssh deploy "cd /opt/sanlin && docker tag sanlin-web:$TAG sanlin-web:latest && docker compose up -d --wait --wait-timeout 180 --remove-orphans && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile && docker image prune -f >/dev/null && docker compose ps"
+          ssh deploy "cd /opt/sanlin && docker tag spatial-memory:$TAG spatial-memory:latest && docker compose up -d --wait --wait-timeout 180 --remove-orphans && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile && docker image prune -f >/dev/null && docker compose ps"
 
       - name: Smoke test
         env:

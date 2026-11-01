@@ -1,8 +1,10 @@
-# 三林老街 AR 记忆 · Web 平台
+# Spatial Memory · Web 平台
 
-管理团队素材、3D 场景和地图投放，为三林老街 AR 体验提供内容与接口。线上网站：[spatialmemory.online](https://www.spatialmemory.online/)。
+管理团队素材、3D 场景和地图投放，为空间记忆与 AR 体验提供内容与接口。线上网站：[spatialmemory.online](https://www.spatialmemory.online/)。
 
-本仓库只包含 Web 平台。微信小程序位于独立的兄弟仓库 `xr-frame-plant-trees`，通过 [小程序 API](docs/miniapp-api.md) 获取内容。
+本仓库只包含 Web 平台。微信小程序位于独立的兄弟仓库 `spatial-memory-mini-program`，通过 [小程序 API](docs/miniapp-api.md) 获取内容。
+
+独立 CLI 位于同级 `spatial-memory-web-cli`，命令为 `spatial-memory`。名称约定与既有部署标识见[项目名称](docs/project-identity.md)。
 
 ## 业务与架构
 
@@ -29,7 +31,7 @@ npm run hooks:install
 准备本地 PostgreSQL + PostGIS 数据库，在 `.env.local` 配置：
 
 ```dotenv
-DATABASE_URL=postgresql://sanlin:sanlin@localhost:55432/sanlin
+DATABASE_URL=postgresql://spatial_memory:<password>@localhost:55432/spatial_memory
 BETTER_AUTH_SECRET=<使用 openssl rand -base64 32 生成>
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 OSS_INTERNAL=false

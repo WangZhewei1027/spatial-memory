@@ -32,7 +32,7 @@ function createAuth() {
   const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
   return betterAuth({
-    appName: "三林老街",
+    appName: "Spatial Memory",
     baseURL: siteUrl,
     secret: process.env.BETTER_AUTH_SECRET,
     // Password recovery is SMS-only, including for previously issued email tokens.

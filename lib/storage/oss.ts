@@ -3,7 +3,7 @@ import OSS from "ali-oss";
 import { mediaUrl } from "./public-url";
 
 // Server-side object storage on Aliyun OSS (replaces Supabase Storage).
-// Credentials come from the RAM user `sanlin-app` (ALIBABA_CLOUD_ACCESS_KEY_*,
+// Credentials come from the configured RAM user (ALIBABA_CLOUD_ACCESS_KEY_*,
 // shared with the SMS client). The bucket is public-read; URLs are built by
 // lib/storage/public-url.ts, never by the SDK (which would point at the raw
 // bucket endpoint instead of the media domain).

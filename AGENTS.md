@@ -1,6 +1,6 @@
 # Repository Agent Guide
 
-This repository contains the Sanlin web platform. The mini-program is a separate sibling repository; its public API contract is maintained here. Read [README.md](README.md) for local setup and [docs/README.md](docs/README.md) for the documentation index.
+This repository contains the Spatial Memory web platform. The mini-program is a separate sibling repository; its public API contract is maintained here. Read [README.md](README.md) for local setup and [docs/README.md](docs/README.md) for the documentation index.
 
 Before implementing or reviewing code, read [CODING_STANDARDS.md](CODING_STANDARDS.md). For check commands, test selection, Git hooks or CI changes, read [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -39,7 +39,7 @@ For UI work, search existing components and reuse product patterns. Import Radix
 
 ### Issue tracker
 
-Track requirements, specs, and implementation tickets in `WangZhewei1027/sanlinlaojie` GitHub Issues. Before reading, publishing, or updating tickets, read `docs/agents/issue-tracker.md`.
+Track requirements, specs, and implementation tickets in `WangZhewei1027/spatial-memory` GitHub Issues. Before reading, publishing, or updating tickets, read `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

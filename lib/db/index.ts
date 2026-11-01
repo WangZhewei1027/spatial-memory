@@ -18,14 +18,14 @@ import type { DB } from "./types";
 types.setTypeParser(types.builtins.INT8, (v) => Number(v));
 
 declare global {
-  var __sanlinPgPool: Pool | undefined;
+  var __spatialMemoryPgPool: Pool | undefined;
 }
 
 // The pool is created on first use, not at import time: `next build` loads
 // every route module to collect metadata, and the build image has no
 // DATABASE_URL. Survives Next.js dev hot-reloads without leaking pools.
 function getPool(): Pool {
-  if (globalThis.__sanlinPgPool) return globalThis.__sanlinPgPool;
+  if (globalThis.__spatialMemoryPgPool) return globalThis.__spatialMemoryPgPool;
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
   // `min` keeps two connections open through idle periods: a fresh backend
@@ -44,7 +44,7 @@ function getPool(): Pool {
   pool.on("error", (error) => {
     console.error("[db] idle client error:", error.message);
   });
-  globalThis.__sanlinPgPool = pool;
+  globalThis.__spatialMemoryPgPool = pool;
   return pool;
 }
 

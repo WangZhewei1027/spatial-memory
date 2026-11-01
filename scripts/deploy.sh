@@ -15,9 +15,10 @@ cd "$(dirname "$0")/.."
 
 ENV_FILE=${1:-deploy/.env.production}
 HOST=${DEPLOY_HOST:-root@139.196.189.102}
+# Existing production directory and DB identity are retained across the rebrand.
 DIR=${DEPLOY_DIR:-/opt/sanlin}
 TAG=$(git rev-parse --short HEAD)$( [ -n "$(git status --porcelain)" ] && echo "-dirty" || true )
-IMAGE=sanlin-web
+IMAGE=spatial-memory
 
 [ -f "$ENV_FILE" ] || { echo "missing $ENV_FILE (see deploy/env.example)"; exit 1; }
 

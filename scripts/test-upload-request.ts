@@ -18,7 +18,7 @@ const headers = { "content-type": `multipart/form-data; boundary=${boundary}` };
 const fileHeader = new TextEncoder().encode(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="original.mp4"\r\nContent-Type: video/mp4\r\n\r\n`);
 const ending = new TextEncoder().encode(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="organization_id"\r\n\r\nteam\r\n--${boundary}--\r\n`);
 const rejectsStatus = (status: number) => (error: unknown) => error instanceof ContentError && error.status === status;
-const stagedDirectories = async () => (await readdir(tmpdir())).filter(name => name.startsWith(`sanlin-upload-form-${process.pid}-`)).sort();
+const stagedDirectories = async () => (await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-form-${process.pid}-`)).sort();
 function smallRequest() {
   const body = new FormData();
   body.set("file", new File([new Uint8Array([1, 2, 3])], "输入.wav", { type: "audio/wav" }));

@@ -8,7 +8,7 @@
 
 图片存放于 `wechat-qrcodes/<环境>/`，二维码缓存不在 PostgreSQL。合集使用 `org__workspace.png`，场景使用 `scenes/org__scene.png`。三个版本都复用后端 OSS 缓存；正式版图片的浏览器缓存为一年，体验版和开发版图片使用 `no-store`，避免调试时清理 OSS 后浏览器仍显示旧图。播放接口始终 `no-store`，每次打开读取最近保存的数据。场景归档或团队归档后，已有二维码也不能继续直接预览。
 
-二维码版本在 `/admin/settings` 的「微信二维码」中切换，可选 `release`（正式版，默认）、`trial`（体验版）、`develop`（开发版）。修改立即生效，无需保存团队设置或重启 Web 服务。选择仅保存在当前浏览器的 `localStorage`（`sanlin.wechat-qr.environment`），对该站点的所有团队生效，也会同步到已经打开的场景、地图编辑标签页；不写入数据库，不影响其他浏览器。
+二维码版本在 `/admin/settings` 的「微信二维码」中切换，可选 `release`（正式版，默认）、`trial`（体验版）、`develop`（开发版）。修改立即生效，无需保存团队设置或重启 Web 服务。选择仅保存在当前浏览器的 `localStorage`（`spatial-memory.wechat-qr.environment`），对该站点的所有团队生效，也会同步到已经打开的场景、地图编辑标签页；不写入数据库，不影响其他浏览器。
 
 前端每次请求二维码时传入 `environment`。服务端校验版本、登录和团队访问权限后，使用同一版本构造 OSS 缓存键和微信请求的 `env_version`。切换版本不会清缓存，切回时继续复用该版本的已有二维码。二维码弹窗显示当前版本；版本变化时关闭旧弹窗，避免展示旧版本二维码。
 

@@ -56,7 +56,7 @@ async function audioInfo(path: string): Promise<{ duration: number | null; chann
 }
 
 async function transcodeAudio(buffer: Buffer, name: string): Promise<ProcessedUploadMedia> {
-  const directory = await mkdtemp(join(tmpdir(), `sanlin-upload-${process.pid}-`));
+  const directory = await mkdtemp(join(tmpdir(), `spatial-memory-upload-${process.pid}-`));
   try {
     const input = join(directory, "input");
     const output = join(directory, "output.mp3");
@@ -117,7 +117,7 @@ async function videoInfo(path: string): Promise<VideoInfo> {
 }
 
 async function transcodeVideo(file: File): Promise<ProcessedUploadMedia> {
-  const directory = await mkdtemp(join(tmpdir(), `sanlin-upload-${process.pid}-`));
+  const directory = await mkdtemp(join(tmpdir(), `spatial-memory-upload-${process.pid}-`));
   try {
     const input = join(directory, "input"), output = join(directory, "output.mp4");
     // Video originals can be 512 MiB. Preserve the parser's disk-backed source

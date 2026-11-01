@@ -14,7 +14,7 @@ import type { ThreeViewportProps } from '../app/manage/scenes/components/three-e
 import type { CompositionContent } from '../lib/scene/protocol';
 
 const require = createRequire(import.meta.url);
-const { createFixtureGLB } = require('../../xr-frame-plant-trees/miniprogram/labs/xr-three/runtime');
+const { createFixtureGLB } = require('../../spatial-memory-mini-program/miniprogram/labs/xr-three/runtime');
 const fixture = () => new GLTFLoader().parseAsync(createFixtureGLB(), '');
 const pause = () => new Promise(resolve => setTimeout(resolve, 5));
 async function main() {

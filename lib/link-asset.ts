@@ -60,7 +60,7 @@ function withFigmaEmbedHost(url: URL): string {
     previewUrl.hostname === "embed.figma.com" &&
     !previewUrl.searchParams.has("embed-host")
   ) {
-    previewUrl.searchParams.set("embed-host", "sanlinlaojie");
+    previewUrl.searchParams.set("embed-host", "spatial-memory");
   }
   return previewUrl.href;
 }

@@ -3,7 +3,7 @@
 #
 #   DATABASE_URL=postgres://… scripts/migrate/rewrite-urls.sh \
 #       https://<ref>.supabase.co/storage/v1/object/public \
-#       https://sanlinlaojie-media.oss-cn-shanghai.aliyuncs.com
+#       https://your-media-bucket.oss-cn-shanghai.aliyuncs.com
 #
 # Rewrites the three columns that hold storage URLs with one rule, in one
 # transaction, with triggers off: invalidate_anchor_embedding would otherwise

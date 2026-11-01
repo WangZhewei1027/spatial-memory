@@ -151,7 +151,7 @@
   },
   "home": {
     "hero": {
-      "title": "Mixed Reality & Cultural Heritage",
+      "title": "Spatial Memory",
       "subtitle": "IMA, DHL, 上海纽约大学",
       "description": "为历史街区与文化遗产而生的 AR 数字化平台——现场采集、地图化资产管理与混合现实体验。"
     },
@@ -170,7 +170,7 @@
       }
     },
     "footer": {
-      "copyright": "© {{year}} 三林老街数字化平台 · 保留所有权利",
+      "copyright": "© {{year}} Spatial Memory · 保留所有权利",
       "credit": "上海纽约大学 · 文化遗产数字化实验室"
     },
     "cta": {
@@ -225,7 +225,7 @@
       "scan": "高精度三维扫描",
       "mesh": "点云与网格重建"
     },
-    "heroShotAlt": "三林老街平台的 3D 地图工作台界面",
+    "heroShotAlt": "Spatial Memory 的 3D 地图工作台界面",
     "ar": {
       "title": "把 AR 带到真实街头",
       "subtitle": "游客扫码即入微信小程序，数字创作叠加在真实街景之上。",

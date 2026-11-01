@@ -37,6 +37,7 @@ async function main() {
   try {
     // A single migration owner per database also protects the fresh-baseline
     // decision. App instances must not race while both see an empty ledger.
+    // Keep the legacy lock identity so old and new migration runners serialize.
     await client.query("select pg_advisory_lock(hashtext('sanlin.schema-migrations'))");
     const { rows } = await client.query<{ exists: boolean }>(
       "select to_regclass('public.schema_migrations') is not null as exists",

@@ -1,6 +1,6 @@
 # 开发与质量检查
 
-业务工程规则见 [CODING_STANDARDS.md](CODING_STANDARDS.md)，环境与数据库初始化见 [README.md](README.md)。本指南只适用于 `sanlinlaojie` 仓库。
+业务工程规则见 [CODING_STANDARDS.md](CODING_STANDARDS.md)，环境与数据库初始化见 [README.md](README.md)。本指南只适用于 `spatial-memory` 仓库。
 
 ## 本地准备
 

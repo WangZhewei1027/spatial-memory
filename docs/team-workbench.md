@@ -41,7 +41,7 @@ Organization 在界面上称为团队。团队拥有素材、Scene 和活动，�
 - 详情页通过 `useResourceTeam()` 对齐资源所属团队和 URL；对齐前显示加载状态。用户主动切换团队时返回新团队对应列表。
 - 合集由 URL 指定；现场上传在页面内选择。链接已指定但失效的合集不会被静默替换，用户需重新选择；未指定且团队只有一个合集时可自动选中。
 - 合集归档/恢复后重新加载地图与投放能力。
-- 网格/列表偏好存于 localStorage 的 `sanlin.workbench.view`；搜索和归档筛选保留在页面状态。
+- 网格/列表偏好存于 localStorage 的 `spatial-memory.workbench.view`；搜索和归档筛选保留在页面状态。
 
 原 workspace UUID 继续作为合集和二维码标识。地图读写的是 Placement，细节见 [地图交互](map-asset-interaction.md)；场景保存与播放见 [Scene](scene-asset.md)。
 

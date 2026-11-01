@@ -15,7 +15,7 @@ import { DEFAULT_SCENE_CAMERA } from '../app/manage/scenes/components/three-edit
 import type { SceneResource } from '../app/manage/scenes/components/types';
 import { performanceHosts, settleMedia } from './test-support/performance-hosts';
 
-const require = createRequire(import.meta.url), miniRoot = resolve('../xr-frame-plant-trees/miniprogram');
+const require = createRequire(import.meta.url), miniRoot = resolve('../spatial-memory-mini-program/miniprogram');
 const { createFixtureGLB } = require(`${miniRoot}/labs/xr-three/runtime`);
 const { THREE } = require(`${miniRoot}/lib/three-runtime/runtime`);
 const { ModelCache } = require(`${miniRoot}/lib/three-runtime/resources`);

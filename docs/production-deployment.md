@@ -6,7 +6,7 @@
 
 ## Web 发布记录（2026-10-29 17:00）
 
-应用已部署至 `57ccb54cc7f4cf0dd9e92ec30ff1d5b1ffe4de19`，[Deploy 运行记录](https://github.com/WangZhewei1027/sanlinlaojie/actions/runs/40844947452)于北京时间 17:00:58 成功完成。运行容器与该提交镜像一致（`sha256:0c403243582c…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
+应用已部署至 `57ccb54cc7f4cf0dd9e92ec30ff1d5b1ffe4de19`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40844947452)于北京时间 17:00:58 成功完成。运行容器与该提交镜像一致（`sha256:0c403243582c…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
 
 - 发布包含此前提交的流式媒体与提前预加载、512 MiB / 5 分钟视频上传和服务端压缩、米制网格与原点、右上角相机预览，以及本轮精简编辑界面、透明度/音量关键帧和空间音频。Web 空间音频以虚拟相机为听者，计算距离衰减与左右声像。
 - GitHub 的 `quality / validate`、`quality / database-migrations` 与部署均通过；包括 104 项离线测试、生产构建和 207 个客户端包语法检查，以及隔离数据库的迁移、回滚、服务、路由和上传去重检查。本地跨端回归包括 8,782 次变换比较与 18,328 次演出参数比较，精确参数最大误差均为 0。
@@ -17,7 +17,7 @@
 
 ## 上一版 Web 发布（2026-10-29 03:33）
 
-应用已部署至 `2cf5961f938ee1403b6069358d0139d669b20afd`，[Deploy 运行记录](https://github.com/WangZhewei1027/sanlinlaojie/actions/runs/40753808359)第二次运行于北京时间 03:33:55 成功完成。运行容器与该提交镜像一致（`sha256:40335dc076ce…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
+应用已部署至 `2cf5961f938ee1403b6069358d0139d669b20afd`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40753808359)第二次运行于北京时间 03:33:55 成功完成。运行容器与该提交镜像一致（`sha256:40335dc076ce…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
 
 - 发布包含独立活动模型、Island 演出编辑器、音视频与空间文字时间轴，以及服务端音频转码和图片压缩。本次 Web 的三个功能提交与配套小程序代码均已推送到各自远端。
 - GitHub 的 `quality / validate` 与 `quality / database-migrations` 均通过，覆盖类型、lint、75 项离线回归、生产构建、活动两阶段迁移、冲突回滚、服务、路由和上传去重。首次部署被尚未完成的生产迁移门禁阻止；数据库升级后重跑发布任务，门禁、镜像传输、重启与冒烟检查全部通过。
@@ -29,7 +29,7 @@
 
 ## 上一版 Web 发布（2026-10-28）
 
-应用已部署至 `eb349a902d17e4034b89d898a70c29ec33f9bc1d`，[Deploy 运行记录](https://github.com/WangZhewei1027/sanlinlaojie/actions/runs/40651717067)全部成功。运行容器与该提交的镜像摘要一致（`sha256:6d76fc03855f…`），健康状态为 `healthy`；首页与登录页返回 HTTP 200，未登录访问 `/api/organizations` 按现有认证代理规则返回 307 并跳转 `/auth/login`。
+应用已部署至 `eb349a902d17e4034b89d898a70c29ec33f9bc1d`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40651717067)全部成功。运行容器与该提交的镜像摘要一致（`sha256:6d76fc03855f…`），健康状态为 `healthy`；首页与登录页返回 HTTP 200，未登录访问 `/api/organizations` 按现有认证代理规则返回 307 并跳转 `/auth/login`。
 
 - 发布包含共享 Scene Core 与原生场景编辑器、模型底部中心对齐、文档整理、工程规范、零警告 lint、提交 hook 和数据库集成 CI。
 - 本地工程检查、49 项离线回归和数据库服务/路由/迁移检查通过；跨端播放 8,782 次比较的最大误差为 0。GitHub 的 `quality / validate` 与 `quality / database-migrations` 均通过。
@@ -116,7 +116,7 @@ Web 主机是阿里云**轻量应用服务器**，地域 `cn-shanghai`，部署�
 | 微信开放接口 | 获取 access token、生成合集和 Scene 的小程序码 | Next.js 服务端调用微信 API；生成图片按 `release/trial/develop` 分开缓存在 OSS，access token 缓存在应用进程内 | 已配置；二维码环境在 `/admin/settings` 浏览器端选择，默认 `release` |
 | 阿里云号码认证服务 | 发送、校验手机号验证码 | Next.js 内的 `lib/auth/sms.ts` 调用 Dypnsapi；使用服务端 RAM 凭据，不额外部署短信进程 | 已接入；本次未发送真实短信测试 |
 | Google 认证中转 | Google 令牌交换、刷新与签名公钥获取 | FC 3.0 中国香港 `cn-hongkong` 函数 `sanlin-google-oauth-relay`；Node.js 20、128 MiB、0.05 vCPU，按需运行；由 [独立脚本](../scripts/deploy-google-auth-relay.mjs) 发布，配置见 [中转说明](google-auth-relay.md) | 已上线；生产容器获取公钥、无效授权码回调与中转鉴权检查通过，真实账号授权仍需用户验证 |
-| 微信小程序 | 扫码入口、地图内容与 Scene 播放、手机端 AR | 兄弟项目 `xr-frame-plant-trees` 通过微信开发者工具独立编译、上传和发布；通过 `/api/miniapp/*` 访问 Web 后端 | 配套 Scene / 新内容模型版本仍待用户另行发布 |
+| 微信小程序 | 扫码入口、地图内容与 Scene 播放、手机端 AR | 兄弟项目 `spatial-memory-mini-program` 通过微信开发者工具独立编译、上传和发布；通过 `/api/miniapp/*` 访问 Web 后端 | 配套 Scene / 新内容模型版本仍待用户另行发布 |
 | GitHub Actions | 质量检查、镜像构建、Web 部署和冒烟检查 | [Deploy 工作流](../.github/workflows/deploy.yml)，push `main` 或手动触发 | 已启用；不发布小程序、SAGE 或香港 FC 函数 |
 
 SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`。Better Auth 运行在 Next.js 内，没有单独的认证容器。当前主链路不通过 Vercel 或 Supabase；历史迁移记录不代表仍在使用那些服务。
@@ -162,10 +162,10 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 日常自动部署以 [Deploy](../.github/workflows/deploy.yml) 和 [质量检查](../.github/workflows/ui-quality.yml) 为准：
 
 1. push `main` 或手动运行工作流，先完成 `npm run check`（类型、零警告 lint、离线回归、生产构建）以及隔离 PostGIS 的迁移、服务、路由与上传去重测试。
-2. 构建 `linux/amd64` 的 `sanlin-web:<commit SHA>` 镜像。`NEXT_PUBLIC_*` 在构建时写入前端包，修改这类配置需要重新构建。
+2. 构建 `linux/amd64` 的 `spatial-memory:<commit SHA>` 镜像。`NEXT_PUBLIC_*` 在构建时写入前端包，修改这类配置需要重新构建。
 3. 经 SSH 对目标数据库运行只读部署门禁，核对迁移账本和实际结构；缺迁移或残留旧结构时阻止部署。
 4. 使用 `docker save | gzip` 经 SSH 传输镜像，再在服务器 `docker load`；当前链路不使用镜像仓库。复制 Compose、Caddy 和备份脚本，保留服务器 `/opt/sanlin/.env`。
-5. 将目标镜像标为 `sanlin-web:latest`，执行 Compose 更新、Caddy reload，最后访问首页做 HTTP 200 冒烟检查。
+5. 将目标镜像标为 `spatial-memory:latest`，执行 Compose 更新、Caddy reload，最后访问首页做 HTTP 200 冒烟检查。
 
 手工发布入口是 [`scripts/deploy.sh`](../scripts/deploy.sh)（`npm run deploy`）：本地构建后走相同的 SSH 传输方式，并安装备份 cron。与 CI 不同，**手工脚本会用所选环境文件覆盖服务器 `.env`**；应先核对该文件，避免覆盖现有域名、SAGE 或凭据配置。
 

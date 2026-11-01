@@ -151,7 +151,7 @@
   },
   "home": {
     "hero": {
-      "title": "Mixed Reality & Cultural Heritage",
+      "title": "Spatial Memory",
       "subtitle": "IMA, DHL, NYU Shanghai",
       "description": "An AR platform for digitizing historic districts and cultural heritage — onsite capture, map-based asset management, and mixed-reality experiences."
     },
@@ -170,7 +170,7 @@
       }
     },
     "footer": {
-      "copyright": "© {{year}} Sanlin Old Street Digital Platform. All rights reserved.",
+      "copyright": "© {{year}} Spatial Memory. All rights reserved.",
       "credit": "NYU Shanghai · Digital Heritage Lab"
     },
     "cta": {
@@ -225,7 +225,7 @@
       "scan": "High-fidelity 3D scanning",
       "mesh": "Point-cloud & mesh reconstruction"
     },
-    "heroShotAlt": "The platform's 3D map workspace",
+    "heroShotAlt": "The Spatial Memory 3D map workspace",
     "ar": {
       "title": "AR on the real street",
       "subtitle": "Visitors scan a code into the WeChat Mini Program — digital creations layered over the streetscape.",

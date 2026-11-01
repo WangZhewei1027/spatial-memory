@@ -18,9 +18,9 @@ const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Interactive Heritage Experience",
+  title: "Spatial Memory",
   description:
-    "Explore the rich history and culture of Sanlin Old Street through immersive augmented reality experiences and interactive maps",
+    "Create and explore location-based digital experiences with Spatial Memory through augmented reality and interactive maps",
 };
 
 export const viewport = {
