@@ -45,6 +45,10 @@ export function removeKey<N extends Node>(instance: N, channel: AutomationChanne
   return frames.length ? { ...instance, tracks } : result;
 }
 
+/** Key a parameter as one edit, sampling each axis before any channel is changed. */
+export const keyAll = <N extends Node>(node: N, channels: readonly AutomationChannel[], time: number): N => channels.reduce((next, channel) => setKey(next, channel, time, sampleChannel(node, channel, time)), node);
+export const unkeyAll = <N extends Node>(node: N, channels: readonly AutomationChannel[], time: number): N => channels.reduce((next, channel) => frameAt(next.tracks?.[channel], time) >= 0 ? removeKey(next, channel, time) : next, node);
+
 /** Key times across the given channels, merged within the keyframe tolerance. */
 export function keyTimes(node: Pick<Node, 'tracks'>, channels: readonly AutomationChannel[]) {
   const times: number[] = [];

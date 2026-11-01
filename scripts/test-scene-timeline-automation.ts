@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { sampleChannel, setKey, moveKeys } from '../lib/scene/transform-authoring';
 import type { CompositionInstance } from '../lib/scene/protocol';
-import { keyAll, unkeyAll } from '../app/manage/scenes/components/SceneKeyLane';
+import { keyAll, unkeyAll } from '../lib/scene/transform-authoring';
 import { interpolationOf, setInterpolation, type KeySelection } from '../app/manage/scenes/components/timeline-keys';
 
 const instance: CompositionInstance = { id: 'video', asset: 'video', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], animation: null, opacity: .75,

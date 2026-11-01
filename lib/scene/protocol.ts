@@ -28,6 +28,8 @@ export interface InstanceAnimation {
 
 /** Position, Euler XYZ rotation, scale and optional tracks, local to the parent group. */
 export interface TransformNode {
+  /** Authoring visibility switch; compiled to opacity for existing players. */
+  hidden?: boolean;
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
@@ -88,6 +90,8 @@ export interface SceneText {
 
 export interface CompositionInstance {
   id: string;
+  /** Authoring visibility switch, independent of opacity tracks and media mute. */
+  hidden?: boolean;
   /** Exactly one of asset or text; text has no asset dependency. */
   asset?: string;
   text?: SceneText;

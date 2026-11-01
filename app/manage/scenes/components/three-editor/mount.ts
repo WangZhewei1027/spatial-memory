@@ -26,7 +26,8 @@ export function mountThreeEditor(host: HTMLDivElement, initial: ThreeViewportPro
   viewport.cameraControls.dom.classList.add('scene-three-camera-controls');
   // Only the editor camera is selectable; the phone camera has its own inset controls.
   viewport.cameraControls.dom.querySelector('[aria-label="Viewport camera"]')?.remove();
-  props.toolsRef.current?.append(toolbar.dom, viewport.cameraControls.dom);
+  props.toolsRef.current?.append(toolbar.dom);
+  props.shadingRef.current?.append(viewport.cameraControls.dom);
   const renderer = new WebGLRenderer({ antialias: true });
   renderer.domElement.tabIndex = 0;
   const focusViewport = () => renderer.domElement.focus({ preventScroll: true });
@@ -90,6 +91,7 @@ export function mountThreeEditor(host: HTMLDivElement, initial: ThreeViewportPro
     viewport.setEditable(props.editable); viewport.setHelpers(true);
     toolbar.dom.hidden = !props.editable; viewport.cameraControls.dom.hidden = false;
     spatial.grid.visible = props.grid;
+    spatial.setLabelsVisible(props.labels);
     spatial.update(props.cameraSettings, props.language);
     configurePreviewCamera(previewCamera, props.cameraSettings);
     // The upstream heavy grid spans 5 m; the adapter's uniformly spaced grid is exactly 1 m.

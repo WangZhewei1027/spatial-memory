@@ -10,7 +10,10 @@ export function useSceneEditorShortcuts(editor: SceneEditorState) {
         void actions.current.save(); return; }
       if (event.target instanceof HTMLElement && (event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); if (!actions.current.readOnly) (event.shiftKey ? actions.current.redo : actions.current.undo)(); }
-      if (event.code === "Space") { event.preventDefault(); actions.current.play(); }
+      if (event.code === "Space") {
+        if (event.target instanceof HTMLElement && event.target.closest('button, a, [role="button"], [role="tab"]')) return;
+        event.preventDefault(); actions.current.play();
+      }
     };
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);

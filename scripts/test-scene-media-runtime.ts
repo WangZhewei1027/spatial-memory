@@ -194,7 +194,7 @@ test('model fades are isolated per instance and geometry/material registries rel
   const content: CompositionContent = { kind: 'composition', units: 'meters', durationSeconds: 12, loop: false, assets: { model: { assetId: 'model' } }, instances: [a, b] };
   const session = createSceneCore({ content });
   const editor = new Editor({ config: { getKey: () => 'en', setKey() {} }, history: { clear() {}, execute() {} } });
-  const props: ThreeViewportProps = { session, instances: content.instances, resolveUrl: () => 'fixture.glb', onClips() {}, onSelect() {}, onTransform() {}, onError(message) { assert.fail(message); }, fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null }, cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: null, grid: true, editable: true, preview: false, language: 'en' };
+  const props: ThreeViewportProps = { session, instances: content.instances, resolveUrl: () => 'fixture.glb', onClips() {}, onSelect() {}, onTransform() {}, onError(message) { assert.fail(message); }, fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null }, shadingRef: { current: null }, cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: null, grid: true, labels: true, editable: true, preview: false, language: 'en' };
   let ready = 0; let finish!: () => void; const loaded = new Promise<void>(resolve => { finish = resolve; });
   const models = new EditorModels(editor, () => props, () => false, () => { if (++ready === 2) finish(); }, new ModelPool(async () => gltf));
   models.sync(); await loaded;

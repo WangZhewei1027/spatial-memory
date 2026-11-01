@@ -2,15 +2,15 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/typography';
-import type { CompositionContent } from '@/lib/scene/protocol';
+import { COMPOSITION_LIMITS, type CompositionContent } from '@/lib/scene/protocol';
 import { findNode, isGroup, trackRows, type SceneNode } from '@/lib/scene/hierarchy-authoring';
-import { roundTime, type TransformGroup } from '@/lib/scene/transform-authoring';
+import { hiddenNodeIds } from '@/lib/scene/visibility';
+import { roundTime, unkeyAll, type TransformGroup } from '@/lib/scene/transform-authoring';
 import { MODEL_DRAG_TYPE } from '@/lib/scene/editor-interactions';
 import { SceneTimelineRuler } from './SceneTimelineRuler';
 import { SceneTimelineToolbar } from './SceneTimelineToolbar';
 import { SceneTrack } from './SceneTrack';
 import type { DropPlace } from './SceneTrackHeader';
-import { unkeyAll } from './SceneKeyLane';
 import { interpolationOf, setInterpolation, type KeySelection } from './timeline-keys';
 import { TimelineContext, type TimelineView } from './timeline-context';
 import { gridSteps, snapTime, TIMELINE_LEAD } from './timeline-scale';
@@ -26,6 +26,7 @@ export interface SceneTimelineProps {
   time: number; duration: number; loop: boolean; playing: boolean; readOnly: boolean;
   onSeek(time: number): void; onPlay(): void; onDuration(time: number): void; onLoop(loop: boolean): void;
   tracks: SceneTrackActions;
+  onDuplicate(id: string): void;
   kindOf?(node: SceneNode): SceneTrackKind;
   /** The library registers the asset before dragging; timeline insertion uses the same resource lookup. */
   onAddAsset?(assetId: string, startSeconds: number): void;
@@ -37,7 +38,8 @@ export function SceneTimeline(p: SceneTimelineProps) {
   const { i18n } = useTranslation();
   const text = (zh: string, en: string) => i18n.language.startsWith('zh') ? zh : en;
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-  const [automation, setAutomation] = useState<ReadonlySet<string>>(new Set());
+  const [automationIds, setAutomationIds] = useState<ReadonlySet<string>>(new Set());
+  const toggleAutomation = (ids: string[]) => setAutomationIds(current => ids.reduce(toggle, current));
   const [params, setParams] = useState<ReadonlySet<string>>(new Set());
   const [storedKey, setSelectedKey] = useState<KeySelection | null>(null);
   const [endDraft, setEndDraft] = useState<number | null>(null);
@@ -46,6 +48,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
   const height = useTimelineHeight();
   const disabled = p.readOnly || p.playing, end = endDraft ?? p.duration;
   const rows = useMemo(() => trackRows(p.content), [p.content]);
+  const hidden = useMemo(() => hiddenNodeIds(p.content), [p.content]);
   const visible = rows.filter(row => { for (let at = row.node.parent; at; at = findNode(p.content, at)?.parent) if (collapsed.has(at)) return false; return true; });
   const lastKey = Math.max(0, ...rows.flatMap(row => Object.values(row.node.tracks ?? {}).map(frames => frames?.at(-1)?.time ?? 0)));
   const lastRegion = Math.max(0, ...p.content.instances.map(instance => instanceRegion(instance, end).end));
@@ -62,7 +65,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
   };
   const shortcuts = useRef({ automation: () => {}, group: () => {}, ungroup: () => {} });
   shortcuts.current = {
-    automation: () => setAutomation(current => p.selectedIds.reduce(toggle, current)),
+    automation: () => toggleAutomation(p.selectedIds),
     group: () => { if (!disabled && p.selectedIds.length) p.tracks.group(); },
     ungroup: () => { if (!disabled && primaryNode && isGroup(primaryNode)) p.tracks.ungroup(primaryNode.id); },
   };
@@ -146,13 +149,15 @@ export function SceneTimeline(p: SceneTimelineProps) {
             {visible.length > 0 && <><i className="scene-timeline-outside" style={{ left: left(end) }} /><i className="scene-end-line" style={{ left: left(end) }} /><i className="scene-playhead" style={{ left: left(p.time) }} /></>}
             {dropTime !== null && <div className="scene-timeline-drop-hint" style={{ left: left(dropTime) }} role="status"><span>{text('添加于', 'Add at')} {regionTime(dropTime)}</span></div>}
             {visible.map(row => <SceneTrack key={row.id} row={row} name={p.nameOf(row.node)} clips={p.clips[row.id]} selected={p.selectedIds.includes(row.id)}
-              kind={p.kindOf?.(row.node)} collapsed={collapsed.has(row.id)} automation={automation.has(row.id)} draggable={!disabled}
+              kind={p.kindOf?.(row.node)} collapsed={collapsed.has(row.id)} automation={automationIds.has(row.id)} hiddenByParent={!!row.node.parent && hidden.has(row.node.parent)} draggable={!disabled}
               expandedParams={new Set((['position', 'rotation', 'scale'] as TransformGroup[]).filter(group => params.has(`${row.id}:${group}`)))}
               onParam={group => setParams(current => toggle(current, `${row.id}:${group}`))}
               onSelect={event => select(event, row.id)} onStack={() => setCollapsed(current => toggle(current, row.id))}
-              onAutomation={() => setAutomation(current => toggle(current, row.id))} onRename={name => p.tracks.rename(row.id, name)}
+              onAutomation={() => toggleAutomation([row.id])} onRename={name => p.tracks.rename(row.id, name)}
               onDragStart={() => setDragId(row.id)} onDrop={place => { drop(row.id, place); setDragId(null); }}
-              onDelete={() => p.tracks.remove(p.selectedIds.includes(row.id) ? p.selectedIds : [row.id])} />)}
+              canDuplicate={!disabled && p.content.instances.length < COMPOSITION_LIMITS.maxInstances}
+              onDuplicate={isGroup(row.node) ? undefined : () => p.onDuplicate(row.id)}
+              onDelete={selection => { if (!disabled) p.tracks.remove(selection && p.selectedIds.includes(row.id) ? p.selectedIds : [row.id]); }} />)}
           </div>
         </TimelineContext.Provider>
       </div>

@@ -4,7 +4,9 @@ import { resolve } from 'node:path';
 import { Box3, type Material, type Mesh, type Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createSceneCore } from '@spatial-memory/scene-core';
-import type { CompositionContent, CompositionInstance, SceneAssetManifest } from '../lib/scene/protocol';
+import type { CompositionContent, CompositionInstance } from '../lib/scene/protocol';
+import { compileSceneManifest } from '../lib/scene/compile';
+import { hiddenNodeIds } from '../lib/scene/visibility';
 import { Editor } from '../vendor/three-editor';
 import { EditorModels } from '../app/manage/scenes/components/three-editor/models';
 import { ModelPool } from '../app/manage/scenes/components/three-editor/model-pool';
@@ -64,13 +66,15 @@ function materials(object: Object3D) {
 }
 
 async function main() {
-  for (const loop of [false, true]) {
+  for (const { loop, hidden } of [{ loop: false, hidden: false }, { loop: true, hidden: false }, { loop: false, hidden: true }]) {
     const hosts = performanceHosts();
     const content = definition(loop), bytes = createFixtureGLB();
+    if (hidden) { content.groups![0].hidden = true; content.instances.find(instance => instance.id === 'model')!.hidden = true; }
+    const hiddenIds = hiddenNodeIds(content);
     const webGLB = await new GLTFLoader().parseAsync(bytes.slice(0), '');
     const miniGLB = await new Promise((resolve, reject) => new THREE.GLTFLoader().parse(bytes.slice(0), '', resolve, reject));
     const cache = new ModelCache(hosts.canvas, 8, async () => miniGLB);
-    const manifest: SceneAssetManifest = { schemaVersion: 8, assetId: 'parity', content: structuredClone(content), resources: Object.fromEntries(Object.entries(resources).map(([alias, resource]) => [alias, { assetId: resource.assetId, url: resource.url!, kind: resource.kind }])) };
+    const manifest = compileSceneManifest('parity', { schemaVersion: 6, content }, Object.fromEntries(Object.entries(resources).map(([alias, resource]) => [alias, { assetId: resource.assetId, url: resource.url!, kind: resource.kind }])));
     const listenerCamera = new THREE.PerspectiveCamera(); listenerCamera.position.set(0, 0, 2);
     const player = createCompositionPlayer(manifest, { modelCache: cache, canvas: hosts.canvas, getListenerCamera: () => listenerCamera });
     const session = createSceneCore({ content });
@@ -78,7 +82,7 @@ async function main() {
     const errors: string[] = [];
     const props: ThreeViewportProps = { session, instances: content.instances, groups: content.groups, resolveUrl: instance => instance.asset ? resources[instance.asset]?.url : undefined,
       resolveResource: instance => instance.asset ? resources[instance.asset] : undefined, onClips() {}, onSelect() {}, onTransform() {}, onError(message) { errors.push(message); },
-      fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null }, cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: null, grid: false, editable: false, preview: true, language: 'en' };
+      fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null }, shadingRef: { current: null }, cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: null, grid: false, labels: false, editable: false, preview: true, language: 'en' };
     let readyCount = 0, ready!: () => void; const loaded = new Promise<void>(resolve => { ready = resolve; });
     const models = new EditorModels(editor, () => props, () => false, () => { if (++readyCount === content.instances.length) ready(); }, new ModelPool(async () => webGLB));
     try {
@@ -103,7 +107,10 @@ async function main() {
           web.root!.matrixWorld.elements.forEach((value, index) => near(value, mini.instanceRoot.matrixWorld.elements[index], `${label} ${instance.id} world[${index}]`));
           const kind = instance.text ? 'text' : resources[instance.asset!].kind;
           if (kind !== 'audio') {
-            assert.equal(mini.instanceRoot.visible, web.root!.visible, `${label} ${instance.id} visibility`);
+            if (hiddenIds.has(instance.id)) {
+              assert.equal(web.root!.visible, false, `${label} ${instance.id} hidden in editor`);
+              materials(mini.instanceRoot).forEach(material => assert.equal(material.opacity, 0, `${label} ${instance.id} hidden in released mini player`));
+            } else assert.equal(mini.instanceRoot.visible, web.root!.visible, `${label} ${instance.id} visibility`);
             const webMaterials = materials(web.root!), miniMaterials = materials(mini.instanceRoot);
             assert.equal(miniMaterials.length, webMaterials.length, `${instance.id} material count`);
             webMaterials.forEach((material, index) => near(material.opacity, miniMaterials[index].opacity, `${label} ${instance.id} opacity`));
@@ -191,6 +198,6 @@ async function main() {
       assert.equal(hosts.files.size, 0, 'native temporary downloads released');
     } finally { models.dispose(); session.dispose(); player.dispose(); cache.dispose(); hosts.restore(); }
   }
-  console.log(JSON.stringify({ result: 'PASS', samples, comparisons, maximumExactError, maximumMediaDrift, coverage: 'actual Web EditorModels vs mini CompositionPlayer; schema8 images/video/audio/scene text, text layout, group transforms and planar bounds, keyed opacity/volume, camera-relative spatial distance gain, GLB fade isolation, visibility/fades, source trims/.1–4 rates/loop/volume/mute, decoded video frame targets, forward/reverse/playing seeks/play/pause/resume/restart/end, asynchronous decoder errors and disposal' }));
+  console.log(JSON.stringify({ result: 'PASS', samples, comparisons, maximumExactError, maximumMediaDrift, coverage: 'actual Web EditorModels vs mini CompositionPlayer; schema8 images/video/audio/scene text, text layout, group transforms and planar bounds, keyed opacity/volume, camera-relative spatial distance gain, GLB fade isolation, persisted instance/group visibility without silencing video, visibility/fades, source trims/.1–4 rates/loop/volume/mute, decoded video frame targets, forward/reverse/playing seeks/play/pause/resume/restart/end, asynchronous decoder errors and disposal' }));
 }
 main().then(() => process.exit(0), error => { console.error(error); process.exit(1); });

@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, type PointerEvent } from 'react';
-import { Box, Film, ImageIcon, Music2, Type } from 'lucide-react';
+import { Diamond } from 'lucide-react';
 import { AUTOMATION_CHANNELS, type CompositionInstance } from '@/lib/scene/protocol';
 import { isGroup, type SceneNode } from '@/lib/scene/hierarchy-authoring';
 import { keyTimes, roundTime, type TransformGroup } from '@/lib/scene/transform-authoring';
@@ -22,7 +22,6 @@ function PerformanceRegion({ instance, clips, kind, name }: { instance: Composit
   const original = instanceRegion(instance, view.end, clip?.duration), range = draft ?? original;
   const length = range.end - range.start;
   const repeats = animation?.loop && clip && clip.duration > 0 ? Math.min(64, Math.floor(length / clip.duration)) : 0;
-  const Icon = { model: Box, image: ImageIcon, audio: Music2, video: Film, text: Type, group: Box }[kind];
   const timeAt = (clientX: number, lane: HTMLElement) => { const rect = lane.getBoundingClientRect(); return (clientX - rect.left) / rect.width * view.span; };
   const commit = (before: RegionRange, after: RegionRange, mode: RegionEdit) => {
     if (view.disabled) return;
@@ -69,8 +68,6 @@ function PerformanceRegion({ instance, clips, kind, name }: { instance: Composit
         const delta = (event.key === 'ArrowLeft' ? -1 : 1) * (event.altKey ? .001 : view.steps.minor) * (event.shiftKey ? 10 : 1);
         commit(original, changeRegion(original, edge, original[edge] + delta), edge);
       }} />)}
-    <Icon className="scene-region-icon" aria-hidden="true" />
-    <span className="scene-clip-name">{instance.text?.content || clip?.name || name}</span>
     {Array.from({ length: repeats }, (_, i) => <i key={i} className="scene-clip-repeat" style={{ left: `${(i + 1) * (clip?.duration ?? 0) / length * 100}%` }} />)}
   </div>;
 }
@@ -86,11 +83,11 @@ export function SceneTrack({ clips, expandedParams, onParam, ...header }: SceneT
   const kind = header.kind ?? (isGroup(node) ? 'group' : node.text ? 'text' : 'model');
   const labels = { position: view.text('位置', 'Position'), rotation: view.text('旋转', 'Rotation'), scale: view.text('缩放', 'Scale') };
   return <>
-    <div className="scene-track-row" data-kind={header.row.kind} data-selected={header.selected || undefined}>
+    <div className="scene-track-row" data-kind={header.row.kind} data-hidden={node.hidden || header.hiddenByParent || undefined} data-selected={header.selected || undefined}>
       <SceneTrackHeader {...header} />
       <div className="scene-track-lane scene-region-lane" onPointerDownCapture={e => { if (!e.button) header.onSelect(e); }}>
         {!isGroup(node) && <PerformanceRegion instance={node} clips={clips} kind={header.kind ?? (node.text ? 'text' : 'model')} name={header.name} />}
-        {!header.automation && keyTimes(node, AUTOMATION_CHANNELS).map(time => <i key={time} className="scene-key-tick" data-outside={time > view.end || undefined} style={{ left: view.pct(time) }} />)}
+        {!header.automation && keyTimes(node, AUTOMATION_CHANNELS).map(time => <Diamond key={time} className="scene-key-summary" aria-hidden="true" data-outside={time > view.end || undefined} style={{ left: view.pct(time) }} />)}
       </div>
     </div>
     {header.automation && !isGroup(node) && <>

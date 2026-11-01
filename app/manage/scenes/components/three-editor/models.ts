@@ -3,6 +3,7 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { applyTransform, clipTime, mediaPreloadIds, samplePresentation, sampleSpatialAudio } from '@spatial-memory/scene-core';
 import type { Editor } from '@/vendor/three-editor';
 import type { CompositionGroup, CompositionInstance } from '@/lib/scene/protocol';
+import { hiddenNodeIds } from '@/lib/scene/visibility';
 import { ModelPool, disposeModel } from './model-pool';
 import { registerInstance } from './transform-bridge';
 import type { ThreeViewportProps } from './types';
@@ -28,6 +29,7 @@ type GroupEntry = { group: CompositionGroup; object: Group; stop(): void };
 export class EditorModels {
   readonly entries = new Map<string, Entry>();
   readonly groups = new Map<string, GroupEntry>();
+  private hidden = new Set<string>();
   private audio = new SpatialAudioMixer();
   private listenerCamera = new PerspectiveCamera();
   private listener = { position: new Vector3(), forward: new Vector3(), up: new Vector3() };
@@ -84,6 +86,7 @@ export class EditorModels {
   }
   sync() {
     const props = this.props();
+    this.hidden = hiddenNodeIds(props);
     const replaced = new Set<string>();
     this.syncGroups();
     for (const [id, entry] of this.entries) {
@@ -142,9 +145,10 @@ export class EditorModels {
   private present(entry: Entry, preview: boolean) {
     const props = this.props(), { session } = props;
     const presentation = samplePresentation(entry.instance, session.time, session.duration);
-    const ghost = !preview && !session.playing && props.selectedId === entry.instance.id && (!presentation.visible || presentation.opacity === 0);
-    if (entry.root) entry.root.visible = (presentation.visible || ghost) && !(preview && entry.surface?.audioMarker);
-    const opacity = ghost ? 0.2 : presentation.opacity;
+    const hidden = this.hidden.has(entry.instance.id);
+    const ghost = !hidden && !preview && !session.playing && props.selectedId === entry.instance.id && (!presentation.visible || presentation.opacity === 0);
+    if (entry.root) entry.root.visible = !hidden && (presentation.visible || ghost) && !(preview && entry.surface?.audioMarker);
+    const opacity = hidden ? 0 : ghost ? 0.2 : presentation.opacity;
     for (const original of entry.materials ?? []) {
       const transparent = original.transparent || opacity < 1;
       if (original.material.transparent !== transparent) { original.material.transparent = transparent; original.material.needsUpdate = true; }

@@ -26,8 +26,8 @@ test('live inset hides editing ghosts and audio markers without changing the edi
     resolveUrl: instance => instance.asset ? resources[instance.asset]?.url : undefined,
     resolveResource: instance => instance.asset ? resources[instance.asset] : undefined,
     onClips() {}, onSelect() {}, onTransform() {}, onError(message) { assert.fail(message); },
-    fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null },
-    cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: 'future', grid: true, editable: true, preview: false, language: 'en',
+    fitRef: { current: null }, originRef: { current: null }, previewRef: { current: null }, placementRef: { current: null }, toolsRef: { current: null }, shadingRef: { current: null },
+    cameraSettings: DEFAULT_SCENE_CAMERA, selectedId: 'future', grid: true, labels: true, editable: true, preview: false, language: 'en',
   };
   const models = new EditorModels(editor, () => props, () => false, () => {});
   const state = () => [...models.entries.values()].map(entry => ({
@@ -65,6 +65,18 @@ test('live inset hides editing ghosts and audio markers without changing the edi
     assert.deepEqual(syncSpies.map(spy => spy.mock.callCount()), syncCalls, 'rendering another camera does not synchronize media a second time');
     assert.deepEqual(hosts.browserMedia.map(media => media.plays), plays, 'camera preview cannot restart or duplicate audio');
     assert.equal(hosts.browserMedia.length, 2);
+    session.pause();
+    const hiddenProps = props.instances.map(instance => ({ ...instance, hidden: true }));
+    props.instances = hiddenProps; models.sync(); models.frame();
+    assert.equal(future.root!.visible, false, 'explicitly hidden selection must never become an editing ghost');
+    assert.equal(video.root!.visible, false);
+    models.withPreviewPresentation(() => {
+      assert.equal(video.root!.visible, false, 'camera inset respects authoring visibility');
+      assert.equal(video.materials![0].material.opacity, 0);
+    });
+    props.instances = content.instances; models.sync(); models.frame();
+    assert.equal(future.root!.visible, true, 'showing restores the original editing presentation');
+    assert.equal(video.materials![0].material.opacity, .5, 'showing restores the sampled opacity without rewriting it');
   } finally {
     models.dispose(); session.dispose(); hosts.restore();
   }

@@ -1,6 +1,6 @@
 import type { AssetDto, SceneResolvedResourceDto } from "@/lib/content-model/contracts";
 import type { CompositionInstance } from "@/lib/scene/protocol";
-import { primaryResource } from "../../lib/content-mappers";
+import { primaryResource, thumbnailOf } from "../../lib/content-mappers";
 import type { SceneResource } from "./types";
 
 export const PERFORMANCE_KINDS = ["model", "image", "video", "audio"] as const;
@@ -12,7 +12,7 @@ export function resourceFromAsset(asset: AssetDto): SceneResource | null {
   if (!isPerformanceKind(asset.payload.kind)) return null;
   const duration = asset.payload.attributes?.duration_seconds ?? asset.payload.attributes?.duration;
   return { assetId: asset.id, assetLockVersion: asset.lock_version, name: asset.name,
-    url: primaryResource(asset)?.url ?? null, assetState: asset.state, kind: asset.payload.kind,
+    url: primaryResource(asset)?.url ?? null, thumbnailUrl: thumbnailOf(asset), assetState: asset.state, kind: asset.payload.kind,
     ...(typeof duration === "number" && duration > 0 ? { durationSeconds: duration } : {}),
     animations: asset.payload.kind === "model" ? asset.payload.animations : undefined };
 }

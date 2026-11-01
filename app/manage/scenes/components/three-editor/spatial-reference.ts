@@ -99,7 +99,10 @@ export function createSpatialReference() {
       object.scale.set(height * canvas.width / canvas.height, height, 1);
     });
   };
-  return { root, grid, origin, camera, update, resizeLabels, dispose() {
+  const setLabelsVisible = (visible: boolean) => {
+    root.traverse(object => { if (object instanceof Sprite) object.visible = visible; });
+  };
+  return { root, grid, origin, camera, update, resizeLabels, setLabelsVisible, dispose() {
     if (disposed) return; disposed = true;
     const geometries = new Set<BufferGeometry>(), materials = new Set<Material>(), textures = new Set<Texture>();
     root.traverse(object => {

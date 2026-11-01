@@ -62,7 +62,7 @@ function validateAnimation(
 export function validateCompositionContent(
   issues: IssueList,
   content: Record<string, unknown>,
-  options: { groups: boolean; presentation?: boolean; automation?: boolean } = { groups: true, presentation: true, automation: true },
+  options: { groups: boolean; presentation?: boolean; automation?: boolean; visibility?: boolean } = { groups: true, presentation: true, automation: true, visibility: true },
 ): void {
   rejectUnknownKeys(issues, "content", content, [
     "kind",
@@ -186,7 +186,8 @@ export function validateCompositionContent(
         const path = `content.groups[${index}]`;
         const group = requireObject(issues, path, raw);
         if (!group) return;
-        rejectUnknownKeys(issues, path, group, GROUP_KEYS);
+        rejectUnknownKeys(issues, path, group, options.visibility ? [...GROUP_KEYS, 'hidden'] : GROUP_KEYS);
+        if (group.hidden !== undefined) requireBoolean(issues, `${path}.hidden`, group.hidden);
         nodeId(path, group.id);
         nodeName(path, group.name);
         transform(path, group);
@@ -213,7 +214,8 @@ export function validateCompositionContent(
     const path = `content.instances[${index}]`;
     const inst = requireObject(issues, path, raw);
     if (!inst) return;
-    rejectUnknownKeys(issues, path, inst, INSTANCE_KEYS);
+    rejectUnknownKeys(issues, path, inst, options.visibility ? [...INSTANCE_KEYS, 'hidden'] : INSTANCE_KEYS);
+    if (inst.hidden !== undefined) requireBoolean(issues, `${path}.hidden`, inst.hidden);
     nodeId(path, inst.id);
     if (inst.name !== undefined) nodeName(path, inst.name);
     checkParent(path, inst.parent);

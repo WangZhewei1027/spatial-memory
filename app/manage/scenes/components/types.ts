@@ -12,5 +12,7 @@ export interface SceneResource {
   /** Omitted only by legacy model fixtures. */
   kind?: SceneResourceKind;
   durationSeconds?: number;
+  /** Library artwork only; never load an entire video or model to draw a tile. */
+  thumbnailUrl?: string | null;
   animations?: ModelAnimationInfo[];
 }

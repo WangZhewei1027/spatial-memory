@@ -3,12 +3,10 @@ import { useRef, useState } from 'react';
 import { Diamond } from 'lucide-react';
 import { COMPOSITION_LIMITS, type AutomationChannel, type TransformKeyframe } from '@/lib/scene/protocol';
 import type { SceneNode } from '@/lib/scene/hierarchy-authoring';
-import { frameAt, keyTimes, moveKeys, removeKey, sampleChannel, setKey } from '@/lib/scene/transform-authoring';
+import { frameAt, keyAll, keyTimes, moveKeys, unkeyAll } from '@/lib/scene/transform-authoring';
 import { useTimeline } from './timeline-context';
 
 const trackFrames = (node: SceneNode): Partial<Record<AutomationChannel, TransformKeyframe[]>> => node.tracks ?? {};
-export const keyAll = <N extends SceneNode>(node: N, channels: readonly AutomationChannel[], time: number) => channels.reduce((next, channel) => setKey(next, channel, time, sampleChannel(node, channel, time)), node);
-export const unkeyAll = <N extends SceneNode>(node: N, channels: readonly AutomationChannel[], time: number) => channels.reduce((next, channel) => frameAt(trackFrames(next)[channel], time) >= 0 ? removeKey(next, channel, time) : next, node);
 
 /** One keyframe lane. With several channels, a diamond stands for every key at that time. */
 export function SceneKeyLane({ node, channels, label }: { node: SceneNode; channels: readonly AutomationChannel[]; label: string }) {

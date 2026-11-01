@@ -1,4 +1,5 @@
 import type { ModelAnimationInfo } from "@/lib/content-model/contracts";
+import { compileVisibility } from "./visibility";
 import { SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, isSceneResourceKind, type SceneAssetManifest, type SceneDocument } from "./protocol";
 
 /**
@@ -15,13 +16,14 @@ export function compileSceneManifest(
     if (!resources[alias]) throw new Error(`scene resource ${alias} is not resolved`);
     assets[alias] = { assetId: ref.assetId };
   }
-  const automation = document.content.instances.some(instance => instance.opacity !== undefined || instance.tracks?.opacity || instance.tracks?.volume || instance.media?.spatial);
+  const content = compileVisibility({ ...document.content, assets });
+  const automation = content.instances.some(instance => instance.opacity !== undefined || instance.tracks?.opacity || instance.tracks?.volume || instance.media?.spatial);
   const performance = document.content.instances.some(instance => instance.text || instance.timing || instance.media)
     || Object.values(resources).some(resource => resource.kind && resource.kind !== "model");
   return {
     assetId: publicId,
     schemaVersion: automation ? SCENE_AUTOMATION_SCHEMA_VERSION : performance ? SCENE_PERFORMANCE_SCHEMA_VERSION : document.content.groups?.length ? SCENE_SCHEMA_VERSION : SCENE_FLAT_SCHEMA_VERSION,
-    content: flatten({ ...document.content, assets }),
+    content: flatten(content),
     resources,
   };
 }

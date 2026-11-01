@@ -14,5 +14,6 @@ export interface ThreeViewportProps {
   originRef: RefObject<(() => void) | null>; cameraSettings: SceneCameraSettings;
   previewRef: RefObject<HTMLDivElement | null>;
   toolsRef: RefObject<HTMLDivElement | null>;
-  selectedId: string | null; grid: boolean; editable: boolean; preview: boolean; language: string;
+  shadingRef: RefObject<HTMLDivElement | null>;
+  selectedId: string | null; grid: boolean; labels: boolean; editable: boolean; preview: boolean; language: string;
 }

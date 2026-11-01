@@ -89,6 +89,19 @@ test('spatial helpers have one-metre grid cells and axes, cannot be picked, and 
     reference.update(MAP_SCENE_CAMERA, 'en');
     vectorNear(reference.camera.position, [0, 1.4, 2], 'helper follows virtual camera');
 
+    const labels: Sprite[] = [];
+    reference.root.traverse(node => { if (node instanceof Sprite) labels.push(node); });
+    assert.equal(labels.length, 5, 'origin, camera and three axis labels share one switch');
+    const labelMaps = labels.map(node => node.material.map);
+    reference.setLabelsVisible(false);
+    reference.update(DEFAULT_SCENE_CAMERA, 'zh'); reference.resizeLabels(600, 60);
+    assert.ok(labels.every(node => !node.visible), 'camera, language and viewport updates keep labels hidden');
+    assert.ok(reference.grid.visible && reference.origin.visible && reference.camera.visible && axes.visible, 'the label switch preserves grid and spatial guides');
+    reference.grid.visible = false; reference.setLabelsVisible(true);
+    assert.ok(labels.every(node => node.visible), 'all labels return together');
+    assert.equal(reference.grid.visible, false, 'label and grid visibility remain independent');
+    assert.deepEqual(labels.map(node => node.material.map), labelMaps, 'toggling reuses the same GPU resources');
+
     const resources = new Set<BufferGeometry | Material | Texture>();
     reference.root.traverse(node => {
       if (node instanceof Mesh || node instanceof LineSegments) resources.add(node.geometry);
