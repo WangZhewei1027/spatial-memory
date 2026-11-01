@@ -1,11 +1,11 @@
-// 手机号账号以虚拟邮箱存储；域名是既有账号的持久化标识。
-// Spatial Memory 改名保留此标识，避免已有用户登录、重置密码和账号展示失效。
-// 13800138000 → 13800138000@phone.sanlinlaojie.local
+// 手机号账号以虚拟邮箱存储；域名是账号的持久化标识。
+// 改名时通过 20261101000000_spatial_memory_identity.sql 同步迁移既有账号。
+// 13800138000 → 13800138000@phone.spatialmemory.local
 // 该域名只是存储实现细节，任何 UI 都不应把它展示给用户——
 // 展示时一律用 displayAccount() 还原成手机号。
 // 纯函数、无依赖，Client / Server 均可导入。
 
-export const PHONE_EMAIL_DOMAIN = "phone.sanlinlaojie.local";
+export const PHONE_EMAIL_DOMAIN = "phone.spatialmemory.local";
 
 const PHONE_EMAIL_SUFFIX = `@${PHONE_EMAIL_DOMAIN}`;
 

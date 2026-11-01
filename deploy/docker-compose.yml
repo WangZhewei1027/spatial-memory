@@ -1,5 +1,5 @@
-# Spatial Memory production stack; existing deployment identity stays /opt/sanlin.
-# Database roles, Compose volumes and paths require a separate resource migration.
+# Spatial Memory production stack. Resource migration is documented in
+# docs/spatial-memory-migration.md; do not change names on an existing stack.
 # Deployed by
 # scripts/deploy.sh, which copies this file, Caddyfile and the .env file.
 #
@@ -9,13 +9,15 @@
 #            127.0.0.1 only so migrations run through an SSH tunnel
 #   pgadmin — browser database console, reached only through Caddy
 
+name: spatial-memory
+
 services:
   db:
     image: postgis/postgis:17-3.5
     restart: unless-stopped
     environment:
-      POSTGRES_DB: sanlin
-      POSTGRES_USER: sanlin
+      POSTGRES_DB: spatial_memory
+      POSTGRES_USER: spatial_memory
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     command:
       - postgres
@@ -29,7 +31,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sanlin -d sanlin"]
+      test: ["CMD-SHELL", "pg_isready -U spatial_memory -d spatial_memory"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -39,7 +41,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://sanlin:${POSTGRES_PASSWORD}@db:5432/sanlin
+      DATABASE_URL: postgres://spatial_memory:${POSTGRES_PASSWORD}@db:5432/spatial_memory
     depends_on:
       db:
         condition: service_healthy
@@ -115,3 +117,11 @@ volumes:
   caddy-data:
   caddy-config:
   pgadmin-data:
+
+# SAGE binds this host gateway; preserve it when replacing the Compose project.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1

@@ -6,7 +6,7 @@ from pathlib import Path
 import secrets
 import subprocess
 
-ROOT = Path('/opt/sanlin')
+ROOT = Path('/opt/spatial-memory')
 PRIVATE = ROOT / 'pgadmin/private'
 os.umask(0o077)
 PRIVATE.mkdir(parents=True, exist_ok=True)
@@ -19,9 +19,9 @@ else:
         'url': 'https://db.spatialmemory.online',
         'email': 'admin@spatialmemory.online',
         'login_password': secrets.token_urlsafe(30),
-        'readonly_username': 'sanlin_readonly',
+        'readonly_username': 'spatial_memory_readonly',
         'readonly_password': secrets.token_urlsafe(30),
-        'maintenance_username': 'sanlin_maintenance',
+        'maintenance_username': 'spatial_memory_maintenance',
         'maintenance_password': secrets.token_urlsafe(30),
     }
     credentials_path.write_text(json.dumps(credentials, ensure_ascii=False, indent=2) + '\n')
@@ -41,35 +41,35 @@ sql = """
 BEGIN;
 DO $roles$
 BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sanlin_readonly') THEN
-    CREATE ROLE sanlin_readonly LOGIN;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='spatial_memory_readonly') THEN
+    CREATE ROLE spatial_memory_readonly LOGIN;
   END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sanlin_maintenance') THEN
-    CREATE ROLE sanlin_maintenance LOGIN;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='spatial_memory_maintenance') THEN
+    CREATE ROLE spatial_memory_maintenance LOGIN;
   END IF;
 END
 $roles$;
-ALTER ROLE sanlin_readonly NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5;
-ALTER ROLE sanlin_maintenance NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5;
-ALTER ROLE sanlin_readonly SET default_transaction_read_only=on;
-ALTER ROLE sanlin_readonly SET statement_timeout='30s';
-ALTER ROLE sanlin_maintenance SET statement_timeout='60s';
-ALTER ROLE sanlin_readonly SET idle_in_transaction_session_timeout='60s';
-ALTER ROLE sanlin_maintenance SET idle_in_transaction_session_timeout='60s';
-GRANT CONNECT ON DATABASE sanlin TO sanlin_readonly, sanlin_maintenance;
-GRANT USAGE ON SCHEMA public, auth, migration_archive TO sanlin_readonly, sanlin_maintenance;
-GRANT SELECT ON ALL TABLES IN SCHEMA public, auth, migration_archive TO sanlin_readonly;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, auth TO sanlin_maintenance;
-GRANT SELECT ON ALL TABLES IN SCHEMA migration_archive TO sanlin_maintenance;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, auth TO sanlin_maintenance;
-ALTER DEFAULT PRIVILEGES FOR ROLE sanlin IN SCHEMA public, auth, migration_archive
-  GRANT SELECT ON TABLES TO sanlin_readonly;
-ALTER DEFAULT PRIVILEGES FOR ROLE sanlin IN SCHEMA public, auth
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO sanlin_maintenance;
-ALTER DEFAULT PRIVILEGES FOR ROLE sanlin IN SCHEMA migration_archive
-  GRANT SELECT ON TABLES TO sanlin_maintenance;
-ALTER DEFAULT PRIVILEGES FOR ROLE sanlin IN SCHEMA public, auth
-  GRANT USAGE, SELECT ON SEQUENCES TO sanlin_maintenance;
+ALTER ROLE spatial_memory_readonly NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5;
+ALTER ROLE spatial_memory_maintenance NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5;
+ALTER ROLE spatial_memory_readonly SET default_transaction_read_only=on;
+ALTER ROLE spatial_memory_readonly SET statement_timeout='30s';
+ALTER ROLE spatial_memory_maintenance SET statement_timeout='60s';
+ALTER ROLE spatial_memory_readonly SET idle_in_transaction_session_timeout='60s';
+ALTER ROLE spatial_memory_maintenance SET idle_in_transaction_session_timeout='60s';
+GRANT CONNECT ON DATABASE spatial_memory TO spatial_memory_readonly, spatial_memory_maintenance;
+GRANT USAGE ON SCHEMA public, auth, migration_archive TO spatial_memory_readonly, spatial_memory_maintenance;
+GRANT SELECT ON ALL TABLES IN SCHEMA public, auth, migration_archive TO spatial_memory_readonly;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, auth TO spatial_memory_maintenance;
+GRANT SELECT ON ALL TABLES IN SCHEMA migration_archive TO spatial_memory_maintenance;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, auth TO spatial_memory_maintenance;
+ALTER DEFAULT PRIVILEGES FOR ROLE spatial_memory IN SCHEMA public, auth, migration_archive
+  GRANT SELECT ON TABLES TO spatial_memory_readonly;
+ALTER DEFAULT PRIVILEGES FOR ROLE spatial_memory IN SCHEMA public, auth
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO spatial_memory_maintenance;
+ALTER DEFAULT PRIVILEGES FOR ROLE spatial_memory IN SCHEMA migration_archive
+  GRANT SELECT ON TABLES TO spatial_memory_maintenance;
+ALTER DEFAULT PRIVILEGES FOR ROLE spatial_memory IN SCHEMA public, auth
+  GRANT USAGE, SELECT ON SEQUENCES TO spatial_memory_maintenance;
 DO $functions$
 DECLARE fn record;
 BEGIN
@@ -80,17 +80,17 @@ BEGIN
       AND p.prorettype <> 'trigger'::regtype
   LOOP
     EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', fn.signature);
-    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO sanlin_maintenance', fn.signature);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO spatial_memory_maintenance', fn.signature);
   END LOOP;
 END
 $functions$;
 """
-sql += 'ALTER ROLE sanlin_readonly PASSWORD ' + literal(credentials['readonly_password']) + ';\n'
-sql += 'ALTER ROLE sanlin_maintenance PASSWORD ' + literal(credentials['maintenance_password']) + ';\n'
+sql += 'ALTER ROLE spatial_memory_readonly PASSWORD ' + literal(credentials['readonly_password']) + ';\n'
+sql += 'ALTER ROLE spatial_memory_maintenance PASSWORD ' + literal(credentials['maintenance_password']) + ';\n'
 sql += 'COMMIT;\n'
 result = subprocess.run(
     ['docker', 'compose', 'exec', '-T', 'db', 'psql', '-X', '-q', '-v',
-     'ON_ERROR_STOP=1', '-U', 'sanlin', '-d', 'sanlin'],
+     'ON_ERROR_STOP=1', '-U', 'spatial_memory', '-d', 'spatial_memory'],
     cwd=ROOT, input=sql, text=True, capture_output=True,
 )
 if result.returncode:

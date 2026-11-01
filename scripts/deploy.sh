@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.."
 
 ENV_FILE=${1:-deploy/.env.production}
 HOST=${DEPLOY_HOST:-root@139.196.189.102}
-# Existing production directory and DB identity are retained across the rebrand.
-DIR=${DEPLOY_DIR:-/opt/sanlin}
+# Production resource identity; provision/migrate it before deploying.
+DIR=${DEPLOY_DIR:-/opt/spatial-memory}
 TAG=$(git rev-parse --short HEAD)$( [ -n "$(git status --porcelain)" ] && echo "-dirty" || true )
 IMAGE=spatial-memory
 
@@ -26,7 +26,7 @@ env_value() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- ; }
 
 echo "▶ checking target database migrations (read-only)"
 node scripts/db/deployment-check.mjs | ssh "$HOST" \
-  "cd $DIR && docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U sanlin -d sanlin"
+  "cd $DIR && docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U spatial_memory -d spatial_memory"
 
 if [ -z "${SKIP_BUILD:-}" ]; then
   echo "▶ building $IMAGE:$TAG (linux/amd64)"
@@ -71,7 +71,7 @@ ssh "$HOST" "chmod 600 $DIR/.env; chmod +x $DIR/backup.sh"
 
 echo "▶ nightly backup cron (03:30 server time) + ossutil"
 ssh "$HOST" 'command -v ossutil >/dev/null || (curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | bash >/dev/null 2>&1) || echo "ossutil install failed — backups will not upload"
-printf "30 3 * * * root /opt/sanlin/backup.sh >> /var/log/sanlin-backup.log 2>&1\n" > /etc/cron.d/sanlin-backup && chmod 644 /etc/cron.d/sanlin-backup'
+printf "30 3 * * * root /opt/spatial-memory/backup.sh >> /var/log/spatial-memory-backup.log 2>&1\n" > /etc/cron.d/spatial-memory-backup && chmod 644 /etc/cron.d/spatial-memory-backup'
 
 echo "▶ starting"
 ssh "$HOST" "cd $DIR && docker tag $IMAGE:$TAG $IMAGE:latest && docker compose up -d --wait --wait-timeout 180 --remove-orphans && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile && docker image prune -f >/dev/null && docker compose ps"

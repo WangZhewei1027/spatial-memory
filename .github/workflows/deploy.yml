@@ -2,9 +2,9 @@
 # push to main (after the UI quality checks pass).
 #
 # Mirrors scripts/deploy.sh: buildx (linux/amd64) → docker save | ssh docker
-# load → docker compose up. The server keeps its own /opt/sanlin/.env, so the
+# load → docker compose up. The server keeps its own /opt/spatial-memory/.env, so the
 # only secret this workflow needs is an SSH key that can log in as root.
-# Legacy deployment paths/DB names are retained; only the application image is renamed.
+# Production resource identity must already be migrated before deployment.
 #
 # Repository settings:
 #   secrets.DEPLOY_SSH_KEY     private key (ed25519) authorized on the server
@@ -82,29 +82,29 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/db/deployment-check.mjs | ssh deploy \
-            "cd /opt/sanlin && docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U sanlin -d sanlin"
+            "cd /opt/spatial-memory && docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U spatial_memory -d spatial_memory"
 
       - name: Ship image and restart
         run: |
           set -euo pipefail
           TAG=${{ github.sha }}
-          ssh deploy "test -s /opt/sanlin/pgadmin/private/login-password || { echo 'Provision pgAdmin first (docs/pgadmin.md)'; exit 1; }"
+          ssh deploy "test -s /opt/spatial-memory/pgadmin/private/login-password || { echo 'Provision pgAdmin first (docs/pgadmin.md)'; exit 1; }"
           PGADMIN_IMAGE=$(awk '/^  pgadmin:$/ {found=1; next} found && $1=="image:" {print $2; exit}' deploy/docker-compose.yml)
           if ! ssh deploy "docker image inspect '$PGADMIN_IMAGE' >/dev/null 2>&1"; then
             docker pull --platform linux/amd64 "$PGADMIN_IMAGE"
             docker save "$PGADMIN_IMAGE" | gzip -1 | ssh deploy "gunzip | docker load"
           fi
           docker save spatial-memory:$TAG | gzip -1 | ssh deploy "gunzip | docker load"
-          ssh deploy "mkdir -p /opt/sanlin"
-          scp -q deploy/docker-compose.yml deploy/backup.sh deploy:/opt/sanlin/
-          scp -q deploy/pgadmin/servers.json deploy/pgadmin/provision.py deploy:/opt/sanlin/pgadmin/
-          scp -q deploy/Caddyfile deploy:/opt/sanlin/Caddyfile.domain
-          scp -q deploy/Caddyfile.ip deploy:/opt/sanlin/Caddyfile.ip
-          ssh deploy "cd /opt/sanlin && test -f .env || { echo 'missing /opt/sanlin/.env on server'; exit 1; }"
+          ssh deploy "mkdir -p /opt/spatial-memory"
+          scp -q deploy/docker-compose.yml deploy/backup.sh deploy:/opt/spatial-memory/
+          scp -q deploy/pgadmin/servers.json deploy/pgadmin/provision.py deploy:/opt/spatial-memory/pgadmin/
+          scp -q deploy/Caddyfile deploy:/opt/spatial-memory/Caddyfile.domain
+          scp -q deploy/Caddyfile.ip deploy:/opt/spatial-memory/Caddyfile.ip
+          ssh deploy "cd /opt/spatial-memory && test -f .env || { echo 'missing /opt/spatial-memory/.env on server'; exit 1; }"
           # The server's .env decides which Caddyfile is live (CADDYFILE=Caddyfile
           # for the domain + Let's Encrypt, Caddyfile.ip while ICP filing is pending).
-          ssh deploy 'cd /opt/sanlin && f=$(grep -E "^CADDYFILE=" .env | cut -d= -f2-); f=${f:-Caddyfile}; [ "$f" = Caddyfile ] && f=Caddyfile.domain; cp "$f" Caddyfile && echo "Caddyfile <- $f"'
-          ssh deploy "cd /opt/sanlin && docker tag spatial-memory:$TAG spatial-memory:latest && docker compose up -d --wait --wait-timeout 180 --remove-orphans && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile && docker image prune -f >/dev/null && docker compose ps"
+          ssh deploy 'cd /opt/spatial-memory && f=$(grep -E "^CADDYFILE=" .env | cut -d= -f2-); f=${f:-Caddyfile}; [ "$f" = Caddyfile ] && f=Caddyfile.domain; cp "$f" Caddyfile && echo "Caddyfile <- $f"'
+          ssh deploy "cd /opt/spatial-memory && docker tag spatial-memory:$TAG spatial-memory:latest && docker compose up -d --wait --wait-timeout 180 --remove-orphans && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile && docker image prune -f >/dev/null && docker compose ps"
 
       - name: Smoke test
         env:

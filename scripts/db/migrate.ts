@@ -37,8 +37,9 @@ async function main() {
   try {
     // A single migration owner per database also protects the fresh-baseline
     // decision. App instances must not race while both see an empty ledger.
-    // Keep the legacy lock identity so old and new migration runners serialize.
-    await client.query("select pg_advisory_lock(hashtext('sanlin.schema-migrations'))");
+    // Production identity cutover stops every old migration runner before
+    // switching this lock; do not run pre-cutover runners on the renamed DB.
+    await client.query("select pg_advisory_lock(hashtext('spatial-memory.schema-migrations'))");
     const { rows } = await client.query<{ exists: boolean }>(
       "select to_regclass('public.schema_migrations') is not null as exists",
     );
@@ -95,7 +96,7 @@ async function main() {
     }
     console.log("database is up to date");
   } finally {
-    try { await client.query("select pg_advisory_unlock(hashtext('sanlin.schema-migrations'))"); }
+    try { await client.query("select pg_advisory_unlock(hashtext('spatial-memory.schema-migrations'))"); }
     finally { await client.end(); }
   }
 }

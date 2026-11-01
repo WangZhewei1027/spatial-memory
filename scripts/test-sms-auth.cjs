@@ -44,7 +44,15 @@ function loader(mocks = {}) {
 }
 
 const PHONE = "13800138000";
-const EMAIL = `${PHONE}@phone.sanlinlaojie.local`;
+const EMAIL = `${PHONE}@phone.spatialmemory.local`;
+
+test("migrated phone identities display as phone numbers", () => {
+  const phoneEmail = loader()("lib/phone-email.ts");
+  assert.equal(phoneEmail.PHONE_EMAIL_DOMAIN, "phone.spatialmemory.local");
+  assert.equal(phoneEmail.displayAccount(EMAIL), PHONE);
+  assert.equal(phoneEmail.displayAccount(EMAIL.toUpperCase()), PHONE);
+  assert.equal(phoneEmail.displayAccount("retained@example.invalid"), "retained@example.invalid");
+});
 
 function loadSms({ users = [], verifyResult = "PASS" } = {}) {
   const calls = { findUser: [], setPassword: [], createUser: [], send: [], check: [] };
@@ -91,13 +99,13 @@ test("ticket verifies only for the same account before expiry", () => {
   const now = 1_700_000_000_000;
   const issued = ticket.issueSmsTicket(EMAIL, now);
   assert.equal(ticket.verifySmsTicket(issued, EMAIL, now + 60_000), true);
-  assert.equal(ticket.verifySmsTicket(issued, `13900139000@phone.sanlinlaojie.local`, now), false);
+  assert.equal(ticket.verifySmsTicket(issued, `13900139000@phone.spatialmemory.local`, now), false);
   assert.equal(ticket.verifySmsTicket(issued, EMAIL, now + 10 * 60 * 1000), false);
 });
 
 test("forged, tampered and malformed tickets are rejected", () => {
   const { ticket } = loadSms();
-  const issued = ticket.issueSmsTicket("13900139000@phone.sanlinlaojie.local");
+  const issued = ticket.issueSmsTicket("13900139000@phone.spatialmemory.local");
   const [, signature] = issued.split(".");
   const forgedPayload = Buffer.from(`${EMAIL}|${Date.now() + 60_000}`).toString("base64url");
   assert.equal(ticket.verifySmsTicket(`${forgedPayload}.${signature}`, EMAIL), false);
@@ -128,7 +136,7 @@ test("CheckSmsVerifyCode issues a ticket only when the code passes", async () =>
 
 test("resetPasswordByPhone refuses without a valid ticket for that phone", async () => {
   const { sms, ticket, calls } = loadSms({ users: [{ id: "victim", email: EMAIL }] });
-  const otherPhoneTicket = ticket.issueSmsTicket("13900139000@phone.sanlinlaojie.local");
+  const otherPhoneTicket = ticket.issueSmsTicket("13900139000@phone.spatialmemory.local");
   for (const t of [undefined, "", "forged.ticket", otherPhoneTicket]) {
     const result = await sms.resetPasswordByPhone({ phone: PHONE, newPassword: "hacked123", ticket: t });
     assert.equal(result.success, false);

@@ -10,8 +10,8 @@ const { default: Client, Config, Params, OpenApiRequest } = require("@alicloud/o
 const { RuntimeOptions } = require("@alicloud/tea-util");
 const input = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const region = "cn-hongkong";
-// Existing cloud-function identity; changing the product name must not create a new relay.
-const name = input.functionName ?? "sanlin-google-oauth-relay";
+// Deploy the current production identity; input can target an isolated test function.
+const name = input.functionName ?? "spatial-memory-google-oauth-relay";
 const root = `/2023-03-30/functions/${name}`;
 const client = new Client(new Config({
   accessKeyId: input.accessKeyId, accessKeySecret: input.accessKeySecret,

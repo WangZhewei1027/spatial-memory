@@ -42,6 +42,10 @@ jobs:
       - run: npm ci
       - name: Verify fresh database and deployment gate
         run: node --import tsx scripts/test-deployment-check.ts
+      - name: Verify phone account identity cutover and rollback
+        run: node --import tsx scripts/test-spatial-memory-identity-migration.ts
+      - name: Verify media origin migration and content preservation
+        run: node --import tsx scripts/test-spatial-memory-media-migration.ts
       - name: Verify activity-owned location upgrade and conflicts
         run: node --import tsx scripts/test-activity-owned-locations-migration.ts
       - name: Create isolated migration and service fixture databases

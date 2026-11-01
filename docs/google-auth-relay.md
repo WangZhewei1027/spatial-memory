@@ -3,8 +3,8 @@
 ## 生产配置
 
 - 地域：阿里云函数计算 3.0 `cn-hongkong`。
-- 函数：`sanlin-google-oauth-relay`，Node.js 20，128 MiB，0.05 vCPU，15 秒超时；按需实例，无常驻预留实例，`reservedConcurrency=2` 限制扩容上限。
-- HTTP 触发器：`authenticated-http`，地址 `https://sanlin-th-relay-vchqmnnrvk.cn-hongkong.fcapp.run`。
+- 函数：`spatial-memory-google-oauth-relay`，Node.js 20，128 MiB，0.05 vCPU，15 秒超时；按需实例，无常驻预留实例，`reservedConcurrency=2` 限制扩容上限。
+- HTTP 触发器：`authenticated-http`，地址 `https://spatialth-relay-vsuiocyxbq.cn-hongkong.fcapp.run`。
 - 触发器由函数校验独立 Bearer 密钥。仅支持 `GET /jwks`、`POST /token`，不能指定上游 URL。
 - 函数源代码：[index.mjs](../deploy/google-auth-relay/index.mjs)、[google.mjs](../deploy/google-auth-relay/google.mjs)。
 - 网站插件：[google-relay.server.ts](../lib/auth/google-relay.server.ts)。插件只替换 Google 传输方法，不修改全局 fetch。
@@ -15,7 +15,7 @@ Google 回调保持 `https://www.spatialmemory.online/api/auth/callback/google`�
 
 ## 密钥与更新
 
-网站 `/opt/sanlin/.env`：`GOOGLE_RELAY_URL`、`GOOGLE_RELAY_SECRET`，并保留已有 Google client ID / secret。
+网站 `/opt/spatial-memory/.env`：`GOOGLE_RELAY_URL`、`GOOGLE_RELAY_SECRET`，并保留已有 Google client ID / secret。
 函数环境变量：相同的 `GOOGLE_RELAY_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、精确匹配的 `GOOGLE_REDIRECT_URI`。
 这些配置均不提交 Git，调用密钥不放入浏览器包。
 

@@ -5,9 +5,9 @@
       "Group": "Spatial Memory",
       "Host": "db",
       "Port": 5432,
-      "MaintenanceDB": "sanlin",
-      "Username": "sanlin_readonly",
-      "DBRestriction": "sanlin",
+      "MaintenanceDB": "spatial_memory",
+      "Username": "spatial_memory_readonly",
+      "DBRestriction": "spatial_memory",
       "Comment": "默认浏览连接：可查看业务表、账号表及迁移归档，不能修改数据。",
       "ConnectionParameters": { "sslmode": "disable", "connect_timeout": 10 }
     },
@@ -16,9 +16,9 @@
       "Group": "Spatial Memory",
       "Host": "db",
       "Port": 5432,
-      "MaintenanceDB": "sanlin",
-      "Username": "sanlin_maintenance",
-      "DBRestriction": "sanlin",
+      "MaintenanceDB": "spatial_memory",
+      "Username": "spatial_memory_maintenance",
+      "DBRestriction": "spatial_memory",
       "Comment": "维护连接：可修改 public/auth 数据；结构迁移仍通过项目迁移脚本执行。数据库密码需单独输入。",
       "ConnectionParameters": { "sslmode": "disable", "connect_timeout": 10 }
     }
