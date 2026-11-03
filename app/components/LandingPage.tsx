@@ -292,7 +292,7 @@ export function LandingPage({ cta }: { cta: React.ReactNode }) {
           <Text as="h2" variant="headingLg">
             {t("home.bottomCta.title")}
           </Text>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild variant="outline" size="lg">
               <Link href="/auth/sign-up">{t("home.bottomCta.signUp")}</Link>
             </Button>
@@ -338,9 +338,20 @@ export function LandingPage({ cta }: { cta: React.ReactNode }) {
             </Link>
           </nav>
           <div className="h-px w-16 bg-border" aria-hidden />
-          <p className="text-xs text-muted-foreground">
-            {t("home.footer.copyright", { year: new Date().getFullYear() })}
-          </p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              {t("home.footer.copyright", { year: new Date().getFullYear() })}
+            </p>
+            <Link
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              lang="zh-CN"
+              className="inline-flex min-h-6 items-center rounded-sm text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              沪ICP备2026007411号-1
+            </Link>
+          </div>
         </div>
       </footer>
     </main>

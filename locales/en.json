@@ -153,7 +153,7 @@
     "hero": {
       "title": "Spatial Memory",
       "subtitle": "IMA, DHL, NYU Shanghai",
-      "description": "An AR platform for digitizing historic districts and cultural heritage — onsite capture, map-based asset management, and mixed-reality experiences."
+      "description": "Connect real places with digital content. Capture onsite, compose 3D scenes, and share and explore spatial memories through maps and AR."
     },
     "quickLinks": {
       "onsite": {
@@ -178,21 +178,21 @@
       "instructions": "User Guide",
       "enter": "Enter Workspace"
     },
-    "badge": "Web AR Cultural Heritage Platform",
+    "badge": "Spatial Content Creation & AR Experiences",
     "features": {
       "title": "What you can do",
-      "subtitle": "A complete digital-heritage pipeline, from onsite capture to AR experiences.",
+      "subtitle": "Create and share with Spatial Memory, from onsite capture and scene composition to AR experiences.",
       "capture": {
         "title": "Onsite Capture",
         "desc": "Works right in the mobile browser: GPS auto-locating, EXIF-aware image compression, with audio, video and text alongside."
       },
       "map": {
         "title": "3D Map Workspace",
-        "desc": "Place, filter, box-select and batch-move assets on an interactive 3D street map — arrange digital content visually."
+        "desc": "Place, filter, box-select and batch-move assets and scenes on an interactive 3D map to arrange spatial content visually."
       },
       "ar": {
         "title": "AR in Mini Program",
-        "desc": "Visitors scan a QR code and explore AR content in the real street — no app download required."
+        "desc": "Scan a QR code to open the WeChat Mini Program and explore AR content in real spaces, with no extra app to download."
       },
       "org": {
         "title": "Team Collaboration",
@@ -200,7 +200,7 @@
       }
     },
     "workflow": {
-      "title": "From street to screen in three steps",
+      "title": "From capture to experience in three steps",
       "step1": {
         "title": "Capture",
         "desc": "Shoot and record onsite"
@@ -211,26 +211,26 @@
       },
       "step3": {
         "title": "Experience",
-        "desc": "Scan and explore in AR"
+        "desc": "Scan and explore spatial content in AR"
       }
     },
     "bottomCta": {
-      "title": "Start building your digital street",
+      "title": "Create your spatial experience with Spatial Memory",
       "signUp": "Create an account"
     },
     "gallery": {
-      "title": "A digital twin of Sanlin Old Street",
-      "subtitle": "From street scenes to high-fidelity 3D reconstruction — every detail preserved.",
-      "street": "Sanlin Old Street",
+      "title": "From real places to digital scenes",
+      "subtitle": "Bring onsite records, 3D scans and models together in Spatial Memory.",
+      "street": "Onsite capture",
       "scan": "High-fidelity 3D scanning",
       "mesh": "Point-cloud & mesh reconstruction"
     },
     "heroShotAlt": "The Spatial Memory 3D map workspace",
     "ar": {
-      "title": "AR on the real street",
-      "subtitle": "Visitors scan a code into the WeChat Mini Program — digital creations layered over the streetscape.",
+      "title": "Bring digital creations into real spaces",
+      "subtitle": "Scan a code to open the WeChat Mini Program and explore digital content in the places around you.",
       "point1": "Scan to enter — no app install",
-      "point2": "Digital layers rendered over the live street view",
+      "point2": "Digital content layered over your surroundings",
       "point3": "Workspace updates go live instantly"
     }
   },
