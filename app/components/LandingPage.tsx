@@ -30,7 +30,7 @@ export function LandingPage({ cta }: { cta: React.ReactNode }) {
   return (
     <main className="overflow-hidden">
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center gap-6 px-6 pt-24 pb-28 text-center min-h-[calc(85vh-3.5rem)]">
+      <section className="relative flex flex-col items-center justify-center gap-6 px-6 pt-24 pb-28 text-center min-h-[calc(85vh-var(--app-navbar-height))]">
         {/* Decorative glow, semantic tokens only */}
         <div
           aria-hidden

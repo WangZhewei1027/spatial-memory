@@ -59,7 +59,7 @@ export function BreadcrumbNav() {
                 {/* After Home, insert org switcher if applicable */}
                 {index === 1 && showOrgSwitcher && (
                   <>
-                    <BreadcrumbItem>
+                    <BreadcrumbItem className="min-w-0 shrink-0">
                       <OrgSwitcher />
                     </BreadcrumbItem>
                     <BreadcrumbSeparator
@@ -80,7 +80,7 @@ export function BreadcrumbNav() {
                   )}
                 >
                   {isCurrentPage ? (
-                    <BreadcrumbPage className="truncate whitespace-nowrap font-medium">
+                    <BreadcrumbPage className="truncate whitespace-nowrap font-medium" title={item.label}>
                       {item.label}
                     </BreadcrumbPage>
                   ) : (

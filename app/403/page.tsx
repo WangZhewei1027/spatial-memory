@@ -16,7 +16,7 @@ export default function ForbiddenPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-[calc(100dvh-var(--app-navbar-height))] flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">

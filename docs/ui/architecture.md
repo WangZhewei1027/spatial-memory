@@ -18,6 +18,13 @@ Use an existing `components/ui` primitive directly when its API and appearance a
 
 Do not import Radix directly outside `components/ui/`. Follow the typography and semantic-token rules in `docs/design-system.md`.
 
+## Navigation
+
+- `components/ui/navigation-island.tsx` owns only the shared navigation surface; its radius, shadow and row/gutter tokens live in `app/globals.css`.
+- `components/navbar.tsx` composes the global header, breadcrumbs and account controls. Collection and scene editors own their full-window headers and reuse the same surface.
+- `components/console-navigation.tsx` composes the desktop island and labeled mobile drawer for team, admin and super-admin routes. Callers supply links and permission filtering; the wrapper only handles drawer visibility.
+- Standard pages subtract `--app-navbar-height` when filling the remaining viewport. Editors use flex layout beneath their own headers so notices can grow without covering the workspace.
+
 ## Protected boundaries
 
 - Never edit `.next/`, `next-env.d.ts` or `*.tsbuildinfo`.

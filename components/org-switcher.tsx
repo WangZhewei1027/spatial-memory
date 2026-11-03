@@ -138,6 +138,7 @@ export function OrgSwitcher({ className }: { className?: string }) {
           variant="ghost"
           role="combobox"
           aria-expanded={open}
+          title={selectedOrganization?.name || t("organization.selectPlaceholder", "Select organization")}
           className={cn(
             "flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1.5 h-auto min-w-0 font-medium text-sm max-w-[110px] sm:max-w-[180px]",
             className,

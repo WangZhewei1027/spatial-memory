@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeft, MapPinned } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
+import { NavigationIsland } from "@/components/ui/navigation-island";
 import { ContentStatusBadge } from "./ContentStatusBadge";
 
 export interface CollectionHeaderBarProps {
@@ -17,11 +18,12 @@ export interface CollectionHeaderBarProps {
   actions?: ReactNode;
 }
 
-/** Thin bar above the map: where the user is, how to get back, the collection QR. */
+/** Navigation island above the map: collection identity, return link and QR. */
 export function CollectionHeaderBar({ name, archived, backHref, actions }: CollectionHeaderBarProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2 border-b bg-background px-2 sm:px-3">
+    <header className="shrink-0 px-[var(--navigation-gutter)] pt-[var(--navigation-gutter)]">
+    <NavigationIsland className="navigation-row">
       <Button variant="ghost" size="sm" asChild className="shrink-0 px-2">
         <Link href={backHref}><ChevronLeft aria-hidden /><span className="max-sm:sr-only">{t("contentModel.collections.title")}</span></Link>
       </Button>
@@ -32,6 +34,7 @@ export function CollectionHeaderBar({ name, archived, backHref, actions }: Colle
       </Text>
       {archived && <ContentStatusBadge kind="archived" className="shrink-0" />}
       <div className="ms-auto flex shrink-0 items-center gap-1">{actions}</div>
-    </div>
+    </NavigationIsland>
+    </header>
   );
 }

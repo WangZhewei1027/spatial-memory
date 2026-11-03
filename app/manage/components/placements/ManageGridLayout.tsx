@@ -103,7 +103,7 @@ export function ManageGridLayout({ list, viewer, sidebar, fill }: ManageGridLayo
   }, [containerRef, mounted]);
 
   return (
-    <div ref={containerRef} className={`w-full ${fill ? "h-full" : "h-[calc(100vh-4rem)]"} overflow-y-auto overflow-x-hidden bg-background`}>
+    <div ref={containerRef} className={`w-full ${fill ? "h-full" : "h-[calc(100dvh-var(--app-navbar-height))]"} overflow-y-auto overflow-x-hidden`}>
       {mounted && (
         <Responsive
           className="layout"

@@ -80,7 +80,7 @@ export function OnsiteUpload({ team, teamArchived }: { team: TeamContext; teamAr
   const captureDisabled = !confirmed || submitting;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5">
+    <div className="min-h-[calc(100dvh-var(--app-navbar-height))] bg-gradient-to-b from-background to-muted/20 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5">
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="space-y-1">
           <Text as="h1" variant="headingLg" fontWeight="bold">

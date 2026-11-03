@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { NavbarSidebar } from "@/components/navbar-sidebar";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { UserAvatarMenu } from "@/components/user-avatar-menu";
+import { NavigationIsland } from "@/components/ui/navigation-island";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -13,8 +14,8 @@ export function Navbar() {
   if (/^\/manage\/(collections|scenes)\/[^/]+\/?$/.test(pathname)) return null;
 
   return (
-    <nav className="w-full flex justify-center border-b border-b-foreground/10 h-14">
-      <div className="w-full flex justify-between items-center px-3 sm:px-5 text-sm gap-2">
+    <header className="app-navbar">
+      <NavigationIsland className="navigation-row justify-between text-sm">
         <Suspense>
           <BreadcrumbNav />
         </Suspense>
@@ -31,7 +32,7 @@ export function Navbar() {
             <NavbarSidebar />
           </div>
         </div>
-      </div>
-    </nav>
+      </NavigationIsland>
+    </header>
   );
 }

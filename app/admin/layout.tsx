@@ -1,14 +1,12 @@
 "use client";
 
 import { useManageStore } from "@/app/manage/store";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ConsoleNavigation } from "@/components/console-navigation";
 import { isSidebarItemVisible } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { Menu, Settings, Users } from "lucide-react";
+import { Building2, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface SidebarItem {
@@ -50,7 +48,6 @@ function SidebarNav({
   items: SidebarItem[];
   onItemClick?: () => void;
 }) {
-  const { t } = useTranslation();
   const pathname = usePathname();
 
   const isActive = (href: string) => pathname.startsWith(href);
@@ -64,8 +61,9 @@ function SidebarNav({
         key={item.href}
         href={item.href}
         onClick={onItemClick}
+        aria-current={active ? "page" : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "console-nav-link",
           active
             ? "bg-accent text-accent-foreground"
             : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
@@ -79,12 +77,6 @@ function SidebarNav({
 
   return (
     <nav className="flex flex-col gap-1">
-      {/* Organization section */}
-      <div className="px-3 py-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("admin.sidebar.orgSection", "Team")}
-        </h3>
-      </div>
       {items.map(renderItem)}
     </nav>
   );
@@ -97,41 +89,13 @@ export default function AdminLayout({
 }) {
   const { t } = useTranslation();
   const items = useSidebarItems();
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 flex-shrink-0 flex-col border-r border-border bg-muted/30 p-4 overflow-y-auto">
-        <SidebarNav items={items} />
-      </aside>
-
-      {/* Mobile sidebar trigger */}
-      <div className="md:hidden fixed bottom-4 left-4 z-50">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              className="rounded-full shadow-lg"
-              aria-label={t("admin.sidebar.orgSection", "Team")}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-56 p-4">
-            <div className="mt-4">
-              <SidebarNav
-                items={items}
-                onItemClick={() => setSheetOpen(false)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+    <div className="console-layout h-[calc(100dvh-var(--app-navbar-height))]">
+      <ConsoleNavigation title={t("admin.sidebar.orgSection", "Team")} icon={Building2}>
+        {(onNavigate) => <SidebarNav items={items} onItemClick={onNavigate} />}
+      </ConsoleNavigation>
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-[var(--navigation-radius)] bg-background">{children}</main>
     </div>
   );
 }

@@ -42,7 +42,7 @@ export function ContentNav({ organizationId, showSettings = true, className, onN
             onClick={onNavigate}
             aria-current={current ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "console-nav-link",
               key === "settings" && "mt-6",
               current ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
             )}

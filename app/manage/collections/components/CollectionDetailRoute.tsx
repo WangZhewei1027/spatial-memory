@@ -49,7 +49,7 @@ function CollectionDetailView({ id }: { id: string }) {
 
   const archived = !!collection?.archived_at;
   const frame = (body: ReactNode) => (
-    <main className="flex h-dvh flex-col overflow-hidden bg-background">
+    <main className="flex h-dvh flex-col overflow-hidden bg-muted/40">
       <CollectionHeaderBar
         name={collection?.name ?? null}
         archived={archived}

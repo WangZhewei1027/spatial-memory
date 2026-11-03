@@ -2,6 +2,7 @@
 import { SceneQrButton } from "@/components/scene-qr-button";
 import { ContentNotice } from "@/app/manage/content/ContentFeedback";
 import { Button } from "@/components/ui/button";
+import { NavigationIsland } from "@/components/ui/navigation-island";
 import { Text } from "@/components/ui/typography";
 import type { SceneDetailDto } from "@/lib/content-model/contracts";
 import type { PlacementReader, ScenePosition } from "@/lib/scene/editor-interactions";
@@ -124,12 +125,12 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const selectedResource = instance ? resourceOf(instance) : undefined;
   const hidden = hiddenNodeIds(document.definition.content);
   return <main className="scene-workspace-theme scene-native-stage fixed inset-0 z-50 bg-background" aria-label={t("sceneEditor.sceneView")}>
-    <div ref={setHeaderElement} className="scene-project-island">
+    <NavigationIsland ref={setHeaderElement} className="scene-project-island">
       <SceneToolbar panelOpen={panelOpen} onTogglePanel={togglePanel} title={document.title} dirty={editor.dirty} saving={editor.saving} preview={preview} canUndo={editor.canUndo} canRedo={editor.canRedo} onUndo={editor.undo} onRedo={editor.redo} onTitle={title => commit(current => ({ ...current, title }))} onPreview={() => setPreview(!preview)} onSave={() => void editor.save()} onAddText={addText} canAddText={canAdd} backHref={teamHref("/manage/scenes", sceneOrganizationId)} readOnly={readOnly} qr={detail?.state === "active" ? <SceneQrButton sceneId={sceneId} dirty={editor.dirty} portalContainer={headerElement} /> : undefined} />
       {editor.conflict && <SceneConflictBanner draftJson={() => JSON.stringify({ name: document.title, document: document.definition }, null, 2)} fileName={`${document.title || "scene"}-draft.json`} onReload={editor.retry} onDismiss={editor.dismissConflict} />}
       {editor.error && <div role="alert" className="flex items-start gap-3 border-t bg-background p-3"><Text as="p" variant="bodySm" tone="critical" className="flex-1">{editor.error}</Text><Button variant="ghost" size="icon" className="size-6" aria-label={text("关闭提示", "Dismiss message")} onClick={() => editor.setError("")}><X /></Button></div>}
       {readOnly && <ContentNotice title={text("只读场景", "Read-only scene")} description={text("可以预览播放；当前权限或归档状态不允许编辑。", "Preview and playback are available. Editing is unavailable for this permission or archive status.")} />}
-    </div>
+    </NavigationIsland>
     <div className="scene-workbench">
         <aside id="scene-assets" className="scene-workspace-sidebar scene-island" hidden={!panelOpen} aria-label={text("素材库", "Asset library")}>
           <SceneLibraryPanel organizationId={sceneOrganizationId} canAdd={canAdd} canUpload={!readOnly} onRegister={editor.registerResource} onAdd={resource => addAsset(resource.assetId, undefined, resource)} onAddText={addText} />

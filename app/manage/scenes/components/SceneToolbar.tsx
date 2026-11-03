@@ -28,7 +28,7 @@ export function SceneToolbar(props: SceneToolbarProps) {
   const [draft, setDraft] = useState(props.title);
   useEffect(() => setDraft(props.title), [props.title]);
   const saveStatus = <><span className={`size-1.5 shrink-0 rounded-full ${props.dirty ? "bg-warning" : "bg-success"}`} /><Text as="span" variant="bodyXs" tone="subdued">{t(props.saving ? "sceneEditor.saving" : props.dirty ? "sceneEditor.unsaved" : "sceneEditor.saved")}</Text></>;
-  return <header className="scene-toolbar" aria-label={t("sceneEditor.controls")}>
+  return <header className="navigation-row scene-toolbar" aria-label={t("sceneEditor.controls")}>
     <Text as="h1" variant="headingMd" className="sr-only">{t("sceneEditor.heading")}</Text>
     <Button variant="ghost" size="icon" asChild title={t("sceneEditor.back")}><a target="_top" href={props.backHref ?? "/manage"} aria-label={t("sceneEditor.back")}><ArrowLeft /></a></Button>
     {props.onTogglePanel ? <Button variant="ghost" size="icon" aria-label={panelLabel} title={panelLabel} aria-expanded={props.panelOpen} aria-controls="scene-assets" onClick={props.onTogglePanel}>{props.panelOpen ? <PanelLeftClose /> : <PanelLeftOpen />}</Button> : <Box className="size-5 shrink-0 text-muted-foreground max-sm:hidden" />}

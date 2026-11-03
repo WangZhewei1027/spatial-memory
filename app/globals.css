@@ -34,6 +34,11 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --navigation-gutter: 12px;
+    --navigation-radius: 12px;
+    --navigation-row-height: 48px;
+    --navigation-shadow: 0 3px 16px hsl(0 0% 3.9% / .1);
+    --app-navbar-height: calc(var(--navigation-row-height) + var(--navigation-gutter) * 2);
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -64,6 +69,66 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --navigation-shadow: 0 3px 16px hsl(0 0% 0% / .3);
+  }
+  @media (max-width: 639px) {
+    :root,
+    .scene-workspace-theme {
+      --navigation-gutter: 8px;
+    }
+  }
+}
+
+@layer components {
+  .navigation-island {
+    border-radius: var(--navigation-radius);
+    background: hsl(var(--background));
+    box-shadow: var(--navigation-shadow);
+  }
+  .navigation-row {
+    display: flex;
+    align-items: center;
+    min-height: var(--navigation-row-height);
+    gap: 8px;
+    padding: 6px 12px;
+  }
+  .app-navbar {
+    position: relative;
+    z-index: 40;
+    padding: var(--navigation-gutter);
+    background: hsl(var(--muted) / .4);
+  }
+  .console-layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--navigation-gutter);
+    min-height: calc(100dvh - var(--app-navbar-height));
+    padding: 0 var(--navigation-gutter) var(--navigation-gutter);
+    background: hsl(var(--muted) / .4);
+  }
+  .console-sidebar {
+    position: sticky;
+    top: var(--navigation-gutter);
+    align-self: flex-start;
+    flex: 0 0 224px;
+    width: 224px;
+    max-height: calc(100dvh - var(--app-navbar-height) - var(--navigation-gutter));
+  }
+  .console-sidebar > .navigation-island {
+    max-height: inherit;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .console-nav-link {
+    @apply flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+  @media (min-width: 768px) {
+    .console-layout { flex-direction: row; }
+  }
+  @media (max-width: 639px) {
+    .navigation-row { padding-inline: 8px; }
   }
 }
 

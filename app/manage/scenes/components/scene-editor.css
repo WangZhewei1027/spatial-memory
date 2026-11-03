@@ -1,7 +1,7 @@
 @import "./scene-workspace-theme.css";
 @import "./scene-library.css";
 /* One DOM and one semantic theme for the viewport, properties and timeline. */
-.scene-toolbar { min-height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--background)); }
+.scene-toolbar { flex: none; gap: 4px; border-radius: var(--navigation-radius); }
 .scene-toolbar > button, .scene-toolbar > a { flex-shrink: 0; }
 .scene-workspace-sidebar { flex: none; min-height: 0; background: hsl(var(--background)); }
 .scene-workspace-sidebar[hidden] { display: none; }
@@ -49,8 +49,6 @@
 .scene-three-camera-controls select { width: 100%; min-width: 0; height: 32px; margin: 0 !important; padding: 0 8px; font: inherit; font-size: .75rem; background: hsl(var(--background)); color: hsl(var(--foreground)); border: 1px solid hsl(var(--input)); border-radius: calc(var(--radius) - 2px); }
 .scene-three-tools #toolbar[hidden], .scene-three-camera-controls[hidden] { display: none; }
 @media (max-width: 639px) {
-  .scene-toolbar { gap: 2px; padding: 8px; }
-  .scene-toolbar > button, .scene-toolbar > a { min-width: 36px; min-height: 36px; }
   .scene-three-tools button, .scene-view-actions button { width: 36px; height: 36px; }
 }
 
@@ -158,9 +156,8 @@
 @media (max-width: 639px) { .scene-timeline { height: 36vh; } .scene-timeline-toolbar { padding-inline: 6px; } }
 
 /* Map-editor layout: a full-height library beside the stage and its timeline. */
-.scene-native-stage { --scene-gutter: 12px; --scene-stage-min: 160px; background: hsl(var(--muted)); }
-.scene-project-island { position: relative; z-index: 50; flex: none; margin: var(--scene-gutter) var(--scene-gutter) 0; border-radius: 10px; background: hsl(var(--background)); box-shadow: 0 3px 16px hsl(var(--foreground) / .1); }
-.scene-toolbar { min-height: 48px; border: 0; border-radius: 10px; padding: 4px 8px; }
+.scene-native-stage { --scene-gutter: var(--navigation-gutter); --scene-stage-min: 160px; background: hsl(var(--muted)); }
+.scene-project-island { position: relative; z-index: 50; flex: none; margin: var(--scene-gutter) var(--scene-gutter) 0; }
 .scene-toolbar > button, .scene-toolbar > a { height: 32px; min-width: 32px; }
 .scene-workbench { padding: var(--scene-gutter); gap: var(--scene-gutter); }
 .scene-stage-content { gap: var(--scene-gutter); }
@@ -236,8 +233,7 @@
   .scene-stage-empty { width: min(320px, 80%); }
 }
 @media (max-width: 639px) {
-  .scene-native-stage { --scene-gutter: 6px; }
-  .scene-toolbar { padding: 4px; gap: 0; }
+  .scene-toolbar { padding-inline: 4px; gap: 0; }
   .scene-toolbar > button, .scene-toolbar > a { min-width: 30px; min-height: 32px; padding-inline: 5px; }
   .scene-toolbar > button[title*="Ctrl"] { display: none; }
   .scene-toolbar > button[title="Ctrl/⌘ S"] { display: inline-flex; }
