@@ -336,6 +336,7 @@ export interface UploadReceipt {
   reused: Generated<boolean>;
   size_bytes: number;
   storage_key: string;
+  thumbnail_receipt_id: string | null;
   upload_type: string | null;
   workspace_id: string | null;
 }

@@ -8,7 +8,7 @@ import type { AssetContentDto } from "@/lib/content-model/contracts";
 import { AssetAudioPreview } from "@/app/manage/components/AssetEditor/previews/AssetAudioPreview";
 import { AssetImagePreview } from "@/app/manage/components/AssetEditor/previews/AssetImagePreview";
 import { AssetVideoPreview } from "@/app/manage/components/AssetEditor/previews/AssetVideoPreview";
-import { primaryResource } from "@/app/manage/lib/content-mappers";
+import { primaryResource, thumbnailOf } from "@/app/manage/lib/content-mappers";
 import type { IntegrationT } from "@/app/manage/lib/integration-text";
 
 // three.js and the GLTF stack load only when a model is actually previewed.
@@ -57,7 +57,7 @@ export function AssetPreview({ content, name, tx }: { content: AssetContentDto |
   if (!url) return null;
   if (payload.kind === "image") return frame(<AssetImagePreview fileUrl={url} fileName={name} />);
   if (payload.kind === "audio") return frame(<AssetAudioPreview fileUrl={url} fileName={name} />);
-  if (payload.kind === "video") return frame(<AssetVideoPreview fileUrl={url} fileName={name} />);
+  if (payload.kind === "video") return frame(<AssetVideoPreview fileUrl={url} fileName={name} posterUrl={thumbnailOf(content)} />);
   if (payload.kind === "model") return frame(<AssetModelPreview fileUrl={url} fileName={name} />);
   return null;
 }

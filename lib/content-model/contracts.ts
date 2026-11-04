@@ -204,8 +204,10 @@ export interface UploadReceiptDto {
  * The organization comes from the database, never from the form alone: the
  * caller must be a team writer, and a given workspace_id must be an open
  * collection of that organization. Every upload returns a receipt.
- * Files are originals; image/audio/video processing runs on the server. Receipt
- * URL, MIME, size and content hash describe the processed object.
+ * Files are originals; media processing and model/video thumbnail generation
+ * run on the server. Receipt URL, MIME, size and hash describe the main object.
+ * When this receipt is submitted as a model/video primary resource, the server
+ * also attaches its generated thumbnail; clients need not submit a second file.
  */
 export interface UploadResponse {
   url: string;

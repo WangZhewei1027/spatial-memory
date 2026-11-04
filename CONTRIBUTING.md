@@ -15,7 +15,7 @@ npm run hooks:install
 
 依赖安装不自动更改 Git 配置，因此 CI 和 Docker 的 `npm ci` 不依赖 `.git` 或本地 hook。现有 `package-lock.json` 与 `.npmrc` 是依赖安装依据；新增依赖需说明实际用途。
 
-媒体上传使用 sharp 和系统 FFmpeg/ffprobe（含 libmp3lame、libx264 和 AAC）；本地先安装 FFmpeg。默认离线回归会实际转换合成音频/图片/视频并清理临时文件，不访问 OSS 或网络；CI 与生产镜像均安装 FFmpeg。
+媒体上传使用 sharp 和系统 FFmpeg/ffprobe（含 libmp3lame、libx264 和 AAC）；本地先安装 FFmpeg。模型缩略图使用锁定版本的 Playwright Chromium，安装依赖后执行 `npx playwright-core install --with-deps --only-shell chromium`（macOS 可省略 `--with-deps`）。默认离线回归实际转换合成媒体、渲染 GLB/Draco 模型并清理资源，不访问 OSS 或网络；CI 与生产镜像均安装这些运行依赖。缩略图协议和历史补全见 [素材缩略图](docs/asset-thumbnails.md)。
 
 ## 日常命令
 
@@ -24,7 +24,10 @@ npm run hooks:install
 | `npm test` / `npm run test:unit` | 不依赖真实数据库、外部服务和兄弟仓库的回归测试 |
 | `npm run check:fast` | Next 类型生成、TypeScript、ESLint、上述测试 |
 | `npm run check` | `check:fast` 加生产构建及客户端产物语法检查 |
-| `npm run test:integration` | 内容服务、真实路由和上传去重；显式提供已迁移的专用测试库 |
+| `npm run test:integration` | 内容服务、真实路由、上传去重和活动；显式提供已迁移的专用测试库 |
+| `npm run test:scene-authoring` | 共享编排包的纯操作、采样与校验回归；先在包目录安装依赖 |
+| `npm run test:scene-renderer` | 真实浏览器渲染集成测试；先在包目录安装依赖，并准备 Chrome/Chromium 和 FFmpeg |
+| `npm run test:cli-auth` | CLI 浏览器授权与交换接口的 HTTP 回归；先构建兄弟 CLI，使用真实 Better Auth 与内存数据库 |
 | `npm run test:cross-runtime` | Three.js 编辑器完整性与 Web/小程序实际播放一致性；需要兄弟仓库 |
 
 提交前 hook 先检查暂存内容的空白错误，再执行 `check:fast`。检查不格式化文件、不自动暂存，校验的是整个工作区；部分暂存时仍需核对 `git diff --cached`，工作区通过不保证暂存快照通过。PR 中的 CI 检查实际提交的快照。
@@ -42,11 +45,11 @@ npm run hooks:install
 | 业务回归及上述 lint 规则的正反例 | `test:unit` | 阻止提交 / CI |
 | 生产构建、浏览器 chunk 语法 | 现有 `build` | 阻止 CI |
 | 新库初始化、升级/回滚、内容保留、部署迁移门槛 | 现有 CI `database-migrations` job，专用 PostGIS 服务 | 阻止 CI |
-| 内容服务、路由契约与上传去重 | `test:integration`；CI 在同一临时 PostGIS 实例的独立库运行 | 阻止 CI |
+| 内容服务、路由契约、上传去重与活动 | `test:integration`；CI 在同一临时 PostGIS 实例的独立库运行 | 阻止 CI |
 
-本次整理沿用原有类型检查、构建和迁移 CI；新增统一离线测试入口与本地提交检查，将 Radix 边界升级为错误，并新增服务端标记及 Scene Core 检查。规则回归直接调用真实 ESLint 配置，避免配置失效时出现假通过。
+规则回归直接调用真实 ESLint 配置，验证 Radix 边界、服务端标记和 Scene Core 限制，避免配置失效时出现假通过。
 
-`npm run lint` 使用 `--max-warnings 0`：error 与 warning 都会阻止提交和 CI。2026-10-28 已清理原有 15 条警告。必要的局部例外需在代码旁解释用途及边界，不能全局关闭规则。格式化暂沿用文件现有风格，不引入整库重排。
+`npm run lint` 使用 `--max-warnings 0`：error 与 warning 都会阻止提交和 CI。必要的局部例外需在代码旁解释用途及边界，不能全局关闭规则。格式化暂沿用文件现有风格，不引入整库重排。
 
 ## 测试分类
 
@@ -62,7 +65,7 @@ npm run hooks:install
 
 CI 的数据库 job 定义在 [.github/workflows/ui-quality.yml](.github/workflows/ui-quality.yml)，使用临时 PostGIS 实例运行迁移回归，并在全新 `content_services` 库运行服务集成测试。默认 `npm test` 不操作数据库。
 
-内容服务、路由和上传改动还需要对应集成测试：`scripts/test-content-model-services.ts`、`scripts/test-team-workbench-routes.ts`、`scripts/test-upload-dedup.ts`。先阅读脚本及 `scripts/test-content-model-services-fixture.ts`，按其中允许的主机、端口和库名准备专用数据库，显式设置 `DATABASE_URL` 后运行：
+内容服务、路由和上传改动还需要对应集成测试：`scripts/test-content-model-services.ts`、`scripts/test-team-workbench-routes.ts`、`scripts/test-upload-dedup.ts`、`scripts/test-activities.ts`。先阅读脚本及 `scripts/test-content-model-services-fixture.ts`，按其中允许的主机、端口和库名准备专用数据库，显式设置 `DATABASE_URL` 后运行：
 
 ```bash
 npm run db:migrate
@@ -70,6 +73,8 @@ npm run test:integration
 ```
 
 这两个命令必须继承同一个显式设置的测试 `DATABASE_URL`；集成测试拒绝开发库、非本机地址和非测试端口。单独排查某套测试时可用 `node --import tsx --conditions react-server scripts/test-<对应名称>.ts`。完整 HTTP 验收另见 `scripts/test-content-model-http.ts` 的本地服务与 fixture 要求。数据库测试由 CI 单独运行，不属于本地 `npm run check`；PR 要报告相关集成验证，不能用构建成功替代。
+
+共享包的独立检查与依赖准备见 [Scene Authoring](packages/scene-authoring/README.md)、[Scene Renderer](packages/scene-renderer/README.md)。`test:cli-auth` 的测试入口是 `scripts/test-cli-auth-client.mjs`；先运行 `npm --prefix ../spatial-memory-web-cli run build`，测试会启动临时本地 HTTP 服务与实际 CLI，不访问真实数据库或 Google，也不替代真实账号授权。
 
 ### UI 与跨端
 

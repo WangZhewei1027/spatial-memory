@@ -36,7 +36,7 @@ const tests = [
 ];
 
 // React client imports must not inherit the react-server export condition.
-const serverTests = ["test-wechat-qr.ts", "test-google-relay.mjs", "test-cli-login.ts", "test-upload-request.ts", "test-upload-media.ts", "test-upload-progress.ts"];
+const serverTests = ["test-wechat-qr.ts", "test-google-relay.mjs", "test-cli-login.ts", "test-upload-request.ts", "test-upload-media.ts", "test-model-thumbnail.ts", "test-upload-progress.ts"];
 for (const [conditions, files] of [[[], tests], [["--conditions", "react-server"], serverTests]]) {
   const result = spawnSync(process.execPath, [
     "--import", "tsx", ...conditions, "--test", "--test-concurrency=1",

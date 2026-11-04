@@ -10,6 +10,7 @@
 
 - **Asset（素材）**：团队拥有的可编辑内容及其当前文件。
 - **Scene（场景）**：引用素材的空间组合与时间轴；保存后立即用于预览和投放。
+- **Activity（活动）**：团队管理的店铺打卡或弹幕留言，可关联多个地图；参与记录按投放分别保存。
 - **Collection（地图合集）**：数据库中的 `workspace`，用于组织地图投放与标签。
 - **Placement（投放）**：将素材或场景放置到地图的位置与展示配置。
 
@@ -68,6 +69,7 @@ npm run db:codegen  # 数据库结构变化后重新生成类型
 - [工程规范](CODING_STANDARDS.md) / [贡献指南](CONTRIBUTING.md)：代码审查标准、自动检查、提交和测试流程。
 - [团队工作台](docs/team-workbench.md) / [后端契约](docs/team-workbench-backend-contract.md)：内容模型、权限与 API。
 - [场景与播放](docs/scene-asset.md)：场景结构、编辑与播放约定。
+- [本地 Agent 编排](docs/scene-agent.md)：CLI 素材导入、草稿、编排、截图反馈与保存。
 - [设计系统](docs/design-system.md) / [UI 分层](docs/ui/architecture.md)：组件、排版和主题规则。
 - [存储生命周期](docs/asset-storage-lifecycle.md)：上传凭据、文件复用与回收。
 - [GitHub Issues 工作流](docs/agents/issue-tracker.md)：需求、规格与实现任务。

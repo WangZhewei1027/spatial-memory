@@ -17,7 +17,7 @@ Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排�
 
 素材库占满左列高度，时间轴只在右下方；桌面库宽 352px，低于 1200px 时为 320px，窄屏展开为不超过 352px 的覆盖面板。顶部按全部、模型、图片、视频、音频、文字分类；媒体只展示团队素材目录，支持网格/列表、跨分类保留的搜索词和时长，音频默认列表。文字分类提供独立的创建入口。分类与搜索固定，短屏仍由结果区内部滚动。舞台工具始终固定在左上角，桌面顶边和左边间距均为 12px，手机为 8px；具体布局见 [编辑器设计](../app/manage/scenes/DESIGN.md)。
 
-导入只创建团队 Asset 并刷新目录，不插入场景。加号或双击可用素材从当前播放头插入，拖入舞台确定空间落点，拖入时间轴确定出现时间；单击素材不选择场景内对象，加号、双击或拖放始终新增实例。场景文字直接保存在 Scene 中，已有文字通过舞台或时间轴选择。只读禁止写入；播放或达到实例上限时禁止插入，仍可导入团队素材。
+导入只创建团队 Asset 并刷新目录，不插入场景。加号或双击可用素材从当前播放头插入，拖入舞台确定空间落点，拖入时间轴确定出现时间；单击素材不选择场景内对象，加号、双击或拖放始终新增实例。场景文字直接保存在 Scene 中，已有文字通过舞台或时间轴选择。只读禁止写入；播放时禁止插入，仍可导入团队素材。
 
 素材库与场景对象选择分离，不合并当前场景引用、不展示使用次数或场景选择状态。目录按原始返回行分页，每次操作最多扫描五页跳过不能用于场景的类型，失败保留已加载结果并从当前页重试。导入阶段及错误单独展示。缩略图只使用已有 thumbnail 或图片资源，不解码完整音视频或模型生成卡片预览。
 
@@ -37,10 +37,10 @@ Scene 是团队拥有的独立场景。`scene.document` 保存 schema 6 编排�
 
 `compileSceneManifest` 将文档 schema 6 与当前资源编译为播放清单：没有新功能且没有分组的场景保持 schema 4，有分组的旧场景保持 schema 5。包含 `text`、`timing`、`media` 或非模型素材的演出使用 schema 7；resources 记录从服务器读取的 `kind`，不能把新能力伪装成旧协议。包含实例 `opacity`、透明度/音量轨道或 `media.spatial` 的场景使用 schema 8。显式保存 `viewerPosition` 的场景使用 schema 9。当前小程序播放器支持 4/5/7/8/9，并与 Web 共用 Scene Core 2.7.0 的采样、空间音频和相机放置计算。上线时需要配套发布小程序；旧播放器拒绝未知版本，避免忽略场景参数后错误播放。
 
-两端从各节点的 `parent` 搭建 Object3D 层级，变换值都相对父分组。每个实例的 GLB 包在 `pivot` 节点中，按加载时的包围盒把底部中心对齐到实例原点（与小程序单素材 AR 放置同一规则，`test-scene-playback-parity.ts` 校验两端一致）；2026-10-22 之前保存的场景若使用原点偏移的模型，模型会移到实例原点处，需要重新摆放。`manifest.assetId` 是播放实例标识：地图入口为 Placement ID，直接扫码入口为 Scene ID；资源里的 assetId 才是基础素材 ID。
+两端从各节点的 `parent` 搭建 Object3D 层级，变换值都相对父分组。每个实例的 GLB 包在 `pivot` 节点中，按加载时的包围盒把底部中心对齐到实例原点（Web 编辑器与小程序 Scene 播放器使用同一规则，`test-scene-playback-parity.ts` 校验两端一致）；2026-10-22 之前保存的场景若使用原点偏移的模型，模型会移到实例原点处，需要重新摆放。`manifest.assetId` 是播放实例标识：地图入口为 Placement ID，直接扫码入口为 Scene ID；资源里的 assetId 才是基础素材 ID。
 
 - 实例使用米制 `position`、Euler XYZ 弧度 `rotation` 和 `scale`。可选 `tracks` 的键为 `position.x/y/z`、`rotation.x/y/z`、`scale.x/y/z`；每个关键帧为 `{ time, value, handles: [inX, inY, outX, outY], connectedRight }`，time 单位为秒。相邻帧使用左帧出柄与右帧入柄做 Bezier 插值；`connectedRight: false` 保持到下一帧，精确关键帧时间返回该帧值。没有轨道的通道使用静态姿态。实例另支持 `opacity` 与 `volume` 两个标量轨道（值为 0–1），使用相同的曲线、保持、改时和撤销规则；分组仅支持九个变换通道。静态透明度为实例 `opacity`（默认 1），静态音量为 `media.volume`（默认 1）。删去通道最后一帧会将当前采样值保留为静态值。
-- `asset` 和 `text` 必须且只能提供一个。`text` 包含 `content`（1–4000 字符）、`color`、`fontSize`（0.02–5 米）、`width`（0.1–20 米）、`align`（left/center/right）和可选 `backgroundColor`。颜色为 #RRGGBB，省略背景色表示透明。文字和媒体使用相同的实例变换、分组、时间轴和撤销模型。
+- `asset` 和 `text` 必须且只能提供一个。`text` 包含 `content`（非空字符串）、`color`、`fontSize`（有限正数，单位米）、`width`（有限正数，单位米）、`align`（left/center/right）和可选 `backgroundColor`。颜色为 #RRGGBB，省略背景色表示透明。文字长度、字号与宽度不设业务上限，实际纹理与内存限制由渲染端处理。文字和媒体使用相同的实例变换、分组、时间轴和撤销模型。
 - 可选 `timing` 为 `{ startSeconds, endSeconds, fadeInSeconds, fadeOutSeconds }`；结束点不包含在可见区间内，null 表示跟随场景时长。历史淡入淡出使用同一线性包络，重叠时取较小值。编辑器出入场只提供起止时间，新实例的 fade 字段为 0；视觉渐变使用 opacity 关键帧，声音渐变使用 volume 关键帧。历史 fade 字段继续兼容播放，不因 UI 调整自动改写。没有 timing 的历史模型保留全程可见、结束后定格的行为。时长缩短不删除其后的时间点。
 - 音频/视频的可选 `media` 为 `{ trimStartSeconds, trimEndSeconds, playbackRate, volume, loop, muted }`。trim 是素材内部的秒数，结束 null 代表源文件结束；`playbackRate` 固定为 1，音量 0–1。音视频统一按素材原速播放，编辑器没有倍速设置，播放器不调用原生倍率接口或重采样。共享 `mediaTime` 从场景时间映射至裁切后的素材时间，再由宿主管理播放、暂停和音量；淡入淡出同时作用于视觉透明度和音量。
 - 实例及分组可保存 `hidden?: boolean`；隐藏与不透明度曲线、媒体静音独立，分组隐藏会传递到后代。Web 舞台与相机预览都隐藏这些对象，选中也不显示幽灵对象。编译播放清单时移除 `hidden`，仅将有效隐藏实例的 `opacity` 设为 0 并移除该份清单中的不透明度曲线；保存文档中的曲线保留，音量和静音不变。因此现有 schema 8 小程序播放器可直接获得一致画面，隐藏视频仍能播放声音。恢复可见后，原有不透明度曲线重新生效。

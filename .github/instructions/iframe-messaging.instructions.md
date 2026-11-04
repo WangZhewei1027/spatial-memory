@@ -9,4 +9,4 @@ source: "manage", // 必须：来源标识——React 侧发 "manage"，viewer i
 version: 1 // 可选：协议版本
 }
 
-Message types in use: parent → viewer `SET_ORIGIN` / `SET_ASSETS` / `FOCUS_ASSET` / `SET_SELECTION` / `CLEAR_SELECTION`; viewer → parent `LOCATION_CLICKED` / `ASSET_CLICKED` / `ASSETS_MOVED` / `ASSETS_SELECTED` (see `app/manage/hooks/useViewerMessaging.ts` and `public/js/viewer/src/managers/messageHandler.js`).
+Message types in use: parent → viewer `SET_ORIGIN` / `SET_ASSETS` / `FOCUS_ASSET` / `SET_SELECTION` / `CLEAR_SELECTION`; viewer → parent `LOCATION_CLICKED` / `ASSET_CLICKED` / `ASSETS_MOVED` / `ASSETS_SELECTED` (see `app/manage/hooks/usePlacementViewer.ts` and `public/js/viewer/src/managers/messageHandler.js`).

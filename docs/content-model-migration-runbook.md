@@ -29,10 +29,10 @@
 
 `test-single-content-model-migration.ts` 使用 `scripts/test-support/pre-single-content-model.sql` 作为升级前快照，要求 127.0.0.1:55439 上全新的 `content_single_migration` 专用数据库。它验证失败回滚、跨团队拆分、合集独立投放、中间态场景固定引用、标签（含 Anchor）、高度、资源、逐条审核隔离、过期审核拒绝、失败时审核记录回滚和旧结构移除。后续 mutable-assets、mutable-scenes 与 transform 迁移继续转换为当前模型，分别由对应测试覆盖。
 
-`test-content-model-services.ts`、`test-team-workbench-routes.ts` 在同一验证容器的 `team_wb_services` 数据库验证最终服务和无版本请求头的 HTTP 契约。测试不连接生产存储。
+`test-content-model-services.ts`、`test-team-workbench-routes.ts`、`test-upload-dedup.ts` 和 `test-activities.ts` 通过 `npm run test:integration` 验证当前服务。CI 统一使用 127.0.0.1:55439 的 `content_services` 专用库；允许的测试库名见 `scripts/test-content-model-services-fixture.ts`。测试不连接生产存储。
 
 
-`test-mutable-assets-migration.ts` 使用迁移前快照，在全新的 `content_mutable_migration`（127.0.0.1:55439）验证当前内容选择、旧版本引用转换、合集与投放 ID 保留、历史文件保护、识别特征迁移、失败回滚和账本重入。最终服务测试使用同端口的 `content_mutable`。
+`test-mutable-assets-migration.ts` 使用迁移前快照，在全新的 `content_mutable_migration`（127.0.0.1:55439）验证当前内容选择、旧版本引用转换、合集与投放 ID 保留、历史文件保护、识别特征迁移、失败回滚和账本重入。最终服务测试使用上文的 `content_services`；`content_mutable` 仍是 fixture 允许的历史测试库名，不是当前 CI 的默认库。
 
 ## Scene 保存即生效（20261018000000）
 

@@ -26,6 +26,7 @@ import { installRouteStubs } from "./test-support/install-route-stubs";
 import type * as AuthStub from "./test-support/stub-auth-server";
 import type * as OssStub from "./test-support/stub-oss";
 import { assertServicesDatabase, cleanupServicesFixture, fixtureIds, seedServicesFixture } from "./test-content-model-services-fixture";
+import { modelGlb } from "./test-support/model-thumbnail-fixtures";
 
 type Body = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -43,6 +44,8 @@ async function main(): Promise<void> {
   const { db } = await import("../lib/db");
   const upload = (await import("../app/api/upload/route")).POST;
   const createAsset = (await import("../app/api/organizations/[id]/assets/route")).POST;
+  const updateAsset = (await import("../app/api/assets/[id]/route")).PATCH;
+  const { isKeyProtected } = await import("../lib/storage/retention.server");
   const byHash = (await import("../app/api/assets/by-hash/route")).GET;
   const f = fixtureIds();
 
@@ -61,11 +64,11 @@ async function main(): Promise<void> {
     }
     return { status: response.status, body: (await response.json()) as Body, stages: [] as string[] };
   };
-  const bytes = Buffer.from(`glTF-dedup-${f.run}`);
+  const bytes = modelGlb();
   const hash = createHash("sha256").update(bytes).digest("hex");
-  const send = (user: string | null, fields: Record<string, string>) => {
+  const send = (user: string | null, fields: Record<string, string>, model = bytes) => {
     const form = new FormData();
-    form.set("file", new File([bytes], "box.glb", { type: "model/gltf-binary" }));
+    form.set("file", new File([Uint8Array.from(model)], "box.glb", { type: "model/gltf-binary" }));
     form.set("type", "model");
     for (const [name, value] of Object.entries(fields)) form.set(name, value);
     return call(user, upload, "/api/upload", { method: "POST", body: form });
@@ -77,6 +80,19 @@ async function main(): Promise<void> {
     if (type) form.set("type", type);
     return call(user, upload, "/api/upload", { method: "POST", body: form, ...(stream ? { headers: { Accept: "application/x-ndjson" } } : {}) });
   };
+  const resources = async (assetId: string) => (await client.query<{ role: string; storage_key: string; content_hash: string }>(
+    "select role,storage_key,content_hash from asset_resource where asset_id=$1 order by role,ordinal", [assetId])).rows;
+  const thumbnailReceipt = async (primaryId: string) => {
+    const result = await client.query<{ id: string; storage_key: string; mime_type: string; created_by: string; organization_id: string; consumed_at: Date | null; expires_at: Date }>(
+      "select t.* from upload_receipt p join upload_receipt t on t.id=p.thumbnail_receipt_id where p.id=$1", [primaryId]);
+    assert.equal(result.rowCount, 1, "media upload must link a distinct thumbnail receipt");
+    return result.rows[0];
+  };
+  const createFromReceipt = (user: string, kind: "video" | "model", receiptId: string, label: string) =>
+    call(user, createAsset, `/api/organizations/${f.organizations.team}/assets`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: label, fileType: kind, payload: { kind }, resources: [{ role: "primary", receiptId }], idempotencyKey: `${f.run}-${label}` }),
+    }, { id: f.organizations.team });
 
   try {
     await seedServicesFixture(client, f);
@@ -84,11 +100,22 @@ async function main(): Promise<void> {
     const first = await send(f.users.unassigned, { organization_id: team, workspace_id: f.workspaces.a });
     assert.equal(first.status, 200, JSON.stringify(first.body));
     assert.ok(first.body.storagePath && oss.stubObjects.has(first.body.storagePath));
+    const firstThumbnail = await thumbnailReceipt(first.body.data.id);
+    assert.equal(firstThumbnail.mime_type, "image/png");
+    assert.equal(firstThumbnail.created_by, f.users.unassigned); assert.equal(firstThumbnail.organization_id, team);
+    assert.equal(firstThumbnail.consumed_at, null);
+    assert.equal(oss.stubObjects.get(firstThumbnail.storage_key)?.contentType, "image/png");
+    assert.equal(await isKeyProtected(db, firstThumbnail.storage_key), true, "the thumbnail lease protects it before any asset exists");
     const committed = await call(f.users.unassigned, createAsset, `/api/organizations/${team}/assets`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "dedup box", fileType: "model", payload: { kind: "model" }, resources: [{ role: "primary", receiptId: first.body.data.id }], idempotencyKey: `${f.run}-dedup` }),
     }, { id: team });
     assert.equal(committed.status, 201, JSON.stringify(committed.body));
+    const modelAsset = committed.body.data.asset;
+    assert.deepEqual((await resources(modelAsset.id)).map(row => row.role), ["primary", "thumbnail"], "primary-only clients receive both asset resources");
+    assert.equal((await resources(modelAsset.id)).find(row => row.role === "thumbnail")?.storage_key, firstThumbnail.storage_key);
+    const consumed = await client.query("select consumed_at from upload_receipt where id=any($1::uuid[])", [[first.body.data.id, firstThumbnail.id]]);
+    assert.ok(consumed.rows.every(row => row.consumed_at), "both receipts are consumed in the content transaction");
     const written = oss.stubObjects.size;
 
     const sameTeam: Record<string, string>[] = [{ organization_id: team, workspace_id: f.workspaces.b }, { workspace_id: f.workspaces.secret }, { organization_id: team }];
@@ -99,6 +126,9 @@ async function main(): Promise<void> {
       assert.equal(again.body.url, first.body.url);
       assert.equal(again.body.data.reused, true);
       assert.equal(again.body.data.organization_id, team);
+      const cover = await thumbnailReceipt(again.body.data.id);
+      assert.equal(cover.storage_key, firstThumbnail.storage_key, "deterministic model thumbnails deduplicate within the team");
+      assert.equal(cover.created_by, f.users.editor, "reuse issues the caller's own cover receipt");
     }
     assert.equal(oss.stubObjects.size, written, "reuse never writes a new object");
 
@@ -106,6 +136,8 @@ async function main(): Promise<void> {
     assert.equal(other.status, 200, JSON.stringify(other.body));
     assert.ok(other.body.storagePath && other.body.storagePath !== first.body.storagePath, "dedup never crosses teams");
     assert.equal(other.body.data.reused, false);
+    const foreignThumbnail = await thumbnailReceipt(other.body.data.id);
+    assert.notEqual(foreignThumbnail.storage_key, firstThumbnail.storage_key, "thumbnail dedup also respects the team boundary");
     assert.equal((await send(f.users.foreign, { workspace_id: f.workspaces.b })).status, 404, "another team's collection looks missing");
     assert.equal((await send(f.users.foreign, { organization_id: team })).status, 403);
     assert.equal((await send(f.users.viewer, { organization_id: team })).status, 403, "viewers cannot upload");
@@ -116,6 +148,31 @@ async function main(): Promise<void> {
     const outsider = await probe(f.users.foreign, f.organizations.solo);
     assert.equal(outsider.status, 403, "a non-member cannot probe another team");
     console.log("PASS same-team reuse across collections and organization-only uploads, no cross-team reuse, denial for outsiders/viewers/anonymous");
+    const copied = await call(f.users.editor, createAsset, `/api/organizations/${team}/assets`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "copied model", fileType: "model", payload: { kind: "model" },
+        resources: [{ role: "primary", fromAssetId: modelAsset.id, fromRole: "primary" }], idempotencyKey: `${f.run}-copy-cover` }),
+    }, { id: team });
+    assert.equal(copied.status, 201, JSON.stringify(copied.body));
+    assert.deepEqual(await resources(copied.body.data.asset.id), await resources(modelAsset.id), "copying the primary inherits its thumbnail");
+    const changedModel = await send(f.users.editor, { organization_id: team }, modelGlb([0, 0, 1, 1]));
+    assert.equal(changedModel.status, 200, JSON.stringify(changedModel.body));
+    const changedModelThumbnail = await thumbnailReceipt(changedModel.body.data.id);
+    assert.notEqual(changedModelThumbnail.storage_key, firstThumbnail.storage_key, "changing the model changes the rendered cover");
+    const savedModel = await call(f.users.editor, updateAsset, `/api/assets/${modelAsset.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expectedLockVersion: modelAsset.lock_version, payload: { kind: "model" }, resources: [
+        { role: "primary", receiptId: changedModel.body.data.id },
+        { role: "thumbnail", fromAssetId: copied.body.data.asset.id, fromRole: "thumbnail" },
+      ] }),
+    }, { id: modelAsset.id });
+    assert.equal(savedModel.status, 200, JSON.stringify(savedModel.body));
+    const modelResources = await resources(modelAsset.id);
+    assert.equal(modelResources.find(row => row.role === "primary")?.storage_key, changedModel.body.data.storage_key);
+    assert.equal(modelResources.find(row => row.role === "thumbnail")?.storage_key, changedModelThumbnail.storage_key,
+      "a new primary's generated cover wins even when a client resubmits the old cover");
+    assert.equal((await resources(copied.body.data.asset.id)).find(row => row.role === "thumbnail")?.storage_key, firstThumbnail.storage_key,
+      "a copied asset retains its own previous primary and thumbnail");
 
     // > 10 MiB original exercises the new source limit independently of the
     // 5 MiB stored-file cap. The stream is valid PCM and shorter than 10 min.
@@ -150,6 +207,11 @@ async function main(): Promise<void> {
     assert.equal((await sendMedia(f.users.viewer, corrupt, "audio")).status, 403, "authorize before native processing");
     assert.equal((await sendMedia(f.users.editor, corrupt, "audio")).status, 400);
     assert.equal((await sendMedia(f.users.editor, audio, "document")).status, 400, "media cannot opt out via a generic type");
+    const receiptCount = Number((await client.query("select count(*) n from upload_receipt where organization_id=$1", [team])).rows[0].n);
+    const brokenModel = await sendMedia(f.users.editor, new File(["not a model"], "broken.glb", { type: "model/gltf-binary" }), "model");
+    assert.equal(brokenModel.status, 400, JSON.stringify(brokenModel.body));
+    assert.equal(Number((await client.query("select count(*) n from upload_receipt where organization_id=$1", [team])).rows[0].n), receiptCount,
+      "a failed model render cannot issue a usable main receipt");
     assert.equal(oss.stubObjects.size, beforeFailure, "failed processing never writes an original or issues a usable object");
     console.log("PASS >10 MiB originals, server MP3/JPEG receipts, processed-byte dedup and failed-upload isolation");
     // Real route, processor, object double and receipts through the stream contract.
@@ -161,9 +223,67 @@ async function main(): Promise<void> {
     assert.equal(streamed.body.data.mime_type, "video/mp4");
     assert.match(streamed.body.data.storage_key, /\.mp4$/);
     assert.equal(oss.stubObjects.get(streamed.body.data.storage_key)?.contentType, "video/mp4");
+    const videoThumbnail = await thumbnailReceipt(streamed.body.data.id);
+    assert.equal(videoThumbnail.mime_type, "image/jpeg");
+    assert.equal(oss.stubObjects.get(videoThumbnail.storage_key)?.contentType, "image/jpeg");
+    assert.equal(await isKeyProtected(db, videoThumbnail.storage_key), true);
     const againVideo = await sendMedia(f.users.editor, video, "video", true);
     assert.equal(againVideo.body.storagePath, null);
     assert.equal(againVideo.body.url, streamed.body.url);
+    const repeatedThumbnail = await thumbnailReceipt(againVideo.body.data.id);
+    assert.equal(repeatedThumbnail.storage_key, videoThumbnail.storage_key);
+    const assetCount = Number((await client.query("select count(*) n from asset where organization_id=$1", [team])).rows[0].n);
+    try {
+      for (const [label, coverId] of [["cross-actor", firstThumbnail.id], ["cross-team", foreignThumbnail.id]] as const) {
+        // Match the actor in the cross-team case so the organization check is
+        // independently exercised even for a corrupt server-side association.
+        if (label === "cross-team") await client.query("update upload_receipt set created_by=$1 where id=$2", [f.users.editor, coverId]);
+        await client.query("update upload_receipt set thumbnail_receipt_id=$1 where id=$2", [coverId, againVideo.body.data.id]);
+        const refused = await createFromReceipt(f.users.editor, "video", againVideo.body.data.id, label);
+        assert.equal(refused.status, 400, JSON.stringify(refused.body)); assert.equal(refused.body.code, "RECEIPT_INVALID");
+      }
+      await client.query("update upload_receipt set thumbnail_receipt_id=$1 where id=$2", [repeatedThumbnail.id, againVideo.body.data.id]);
+      await client.query("update upload_receipt set expires_at=now()-interval '1 second' where id=$1", [repeatedThumbnail.id]);
+      const expired = await createFromReceipt(f.users.editor, "video", againVideo.body.data.id, "expired-cover");
+      assert.equal(expired.status, 400, JSON.stringify(expired.body)); assert.equal(expired.body.code, "RECEIPT_INVALID");
+      assert.equal(Number((await client.query("select count(*) n from asset where organization_id=$1", [team])).rows[0].n), assetCount,
+        "invalid derived receipts roll back asset creation");
+      assert.equal((await client.query("select consumed_at from upload_receipt where id=$1", [againVideo.body.data.id])).rows[0].consumed_at, null);
+    } finally {
+      await client.query("update upload_receipt set thumbnail_receipt_id=$1 where id=$2", [repeatedThumbnail.id, againVideo.body.data.id]);
+      await client.query("update upload_receipt set expires_at=$1 where id=$2", [repeatedThumbnail.expires_at, repeatedThumbnail.id]);
+      await client.query("update upload_receipt set created_by=$1 where id=$2", [f.users.foreign, foreignThumbnail.id]);
+    }
+    const createdVideo = await createFromReceipt(f.users.editor, "video", streamed.body.data.id, "video-with-cover");
+    assert.equal(createdVideo.status, 201, JSON.stringify(createdVideo.body));
+    const videoAsset = createdVideo.body.data.asset;
+    const previousResources = await resources(videoAsset.id);
+    assert.deepEqual(previousResources.map(row => row.role), ["primary", "thumbnail"]);
+    const replacementBytes = execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=blue:size=128x72:rate=12:duration=0.5", "-c:v", "libvpx", "-f", "webm", "pipe:1"]);
+    const replacement = await sendMedia(f.users.editor, new File([Uint8Array.from(replacementBytes)], "blue.webm", { type: "video/webm" }), "video");
+    assert.equal(replacement.status, 200, JSON.stringify(replacement.body));
+    const replacementThumbnail = await thumbnailReceipt(replacement.body.data.id);
+    const replace = (expectedLockVersion: number) => call(f.users.editor, updateAsset, `/api/assets/${videoAsset.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expectedLockVersion, payload: { kind: "video" }, resources: [{ role: "primary", receiptId: replacement.body.data.id }] }),
+    }, { id: videoAsset.id });
+    const conflict = await replace(videoAsset.lock_version + 1);
+    assert.equal(conflict.status, 409); assert.equal(conflict.body.code, "LOCK_VERSION_CONFLICT");
+    assert.deepEqual(await resources(videoAsset.id), previousResources, "a stale save changes neither the primary nor its cover");
+    assert.equal((await thumbnailReceipt(replacement.body.data.id)).consumed_at, null);
+    const replaced = await replace(videoAsset.lock_version);
+    assert.equal(replaced.status, 200, JSON.stringify(replaced.body));
+    const currentResources = await resources(videoAsset.id);
+    assert.equal(currentResources.find(row => row.role === "primary")?.storage_key, replacement.body.data.storage_key);
+    assert.equal(currentResources.find(row => row.role === "thumbnail")?.storage_key, replacementThumbnail.storage_key);
+    assert.notEqual(replacementThumbnail.storage_key, videoThumbnail.storage_key);
+    assert.ok((await thumbnailReceipt(replacement.body.data.id)).consumed_at);
+    await client.query("update upload_receipt set expires_at=now()-interval '1 second' where storage_key=any($1::text[])",
+      [[videoThumbnail.storage_key, replacementThumbnail.storage_key, firstThumbnail.storage_key]]);
+    assert.equal(await isKeyProtected(db, videoThumbnail.storage_key), false, "retired cover becomes collectible after all upload leases expire");
+    assert.equal(await isKeyProtected(db, replacementThumbnail.storage_key), true, "the new asset resource retains its cover after lease expiry");
+    assert.equal(await isKeyProtected(db, firstThumbnail.storage_key), true, "committed/copied model covers also survive upload lease expiry");
+    console.log("PASS generated cover receipts, primary-only commits/copies, atomic replacement, conflict rollback, derived receipt authorization and retention");
     const brokenStream = await sendMedia(f.users.editor, corrupt, "audio", true);
     assert.equal(brokenStream.status, 400);
     assert.deepEqual(brokenStream.stages, ["compressingAudio"]);

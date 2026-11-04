@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import { Client } from "pg";
 import { assertServicesDatabase, cleanupServicesFixture, fixtureIds, seedServicesFixture, assetDocument } from "./test-content-model-services-fixture";
 import { installRouteStubs } from "./test-support/install-route-stubs";
+import { modelGlb } from "./test-support/model-thumbnail-fixtures";
 import type * as AuthStub from "./test-support/stub-auth-server";
 import type * as OssStub from "./test-support/stub-oss";
 
@@ -103,9 +104,9 @@ async function main(): Promise<void> {
   const modelBody = (key: string, resources: unknown[] = [{ role: "primary", externalUrl: `https://external-fixture.invalid/${key}.glb` }]) => ({
     name: `route ${key}`, fileType: "model", payload: { kind: "model" }, resources, idempotencyKey: `${f.run}-${key}`,
   });
-  const uploadForm = (bytes: string, fields: Record<string, string>) => {
+  const uploadForm = (bytes: Uint8Array, fields: Record<string, string>) => {
     const form = new FormData();
-    form.set("file", new File([Buffer.from(bytes)], "route-model.glb", { type: "model/gltf-binary" }));
+    form.set("file", new File([Uint8Array.from(bytes)], "route-model.glb", { type: "model/gltf-binary" }));
     form.set("type", "model");
     for (const [name, value] of Object.entries(fields)) form.set(name, value);
     return form;
@@ -218,7 +219,7 @@ async function main(): Promise<void> {
 
 
     await check("R07 POST /api/upload binds receipts to the team (collection optional), never trusting the form's organization", async () => {
-      const bytes = `route-upload-${f.run}`;
+      const bytes = modelGlb();
       const hash = createHash("sha256").update(bytes).digest("hex");
       const orgOnly = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(bytes, { organization_id: f.organizations.solo, purpose: "asset" }) }), 200);
       assert.equal(orgOnly.contentHash, hash);
@@ -231,15 +232,15 @@ async function main(): Promise<void> {
       assert.equal(again.data.reused, true);
       const otherTeam = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(bytes, { organization_id: f.organizations.team }) }), 200);
       assert.ok(otherTeam.storagePath, "dedup never crosses teams");
-      const withCollection = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-b`, { organization_id: f.organizations.team, workspace_id: f.workspaces.b }) }), 200);
+      const withCollection = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(modelGlb([0, 0, 1, 1]), { organization_id: f.organizations.team, workspace_id: f.workspaces.b }) }), 200);
       assert.equal(withCollection.data.workspace_id, f.workspaces.b);
-      const collectionOnly = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-c`, { workspace_id: f.workspaces.secret }) }), 200);
+      const collectionOnly = expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(modelGlb([0, 1, 0, 1]), { workspace_id: f.workspaces.secret }) }), 200);
       assert.equal(collectionOnly.data.organization_id, f.organizations.team, "old callers: the organization comes from the collection");
-      expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-d`, { organization_id: f.organizations.solo, workspace_id: f.workspaces.b }) }), 404, "NOT_FOUND");
-      expect(await call(routes.upload.POST, { user: u.viewer, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-e`, { organization_id: f.organizations.team }) }), 403, "FORBIDDEN");
-      expect(await call(routes.upload.POST, { user: u.foreign, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-f`, { organization_id: f.organizations.team }) }), 403, "FORBIDDEN");
-      expect(await call(routes.upload.POST, { user: u.foreign, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-g`, { workspace_id: f.workspaces.b }) }), 404, "NOT_FOUND");
-      expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(`${bytes}-h`, {}) }), 400);
+      expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(bytes, { organization_id: f.organizations.solo, workspace_id: f.workspaces.b }) }), 404, "NOT_FOUND");
+      expect(await call(routes.upload.POST, { user: u.viewer, method: "POST", url: "/api/upload", form: uploadForm(bytes, { organization_id: f.organizations.team }) }), 403, "FORBIDDEN");
+      expect(await call(routes.upload.POST, { user: u.foreign, method: "POST", url: "/api/upload", form: uploadForm(bytes, { organization_id: f.organizations.team }) }), 403, "FORBIDDEN");
+      expect(await call(routes.upload.POST, { user: u.foreign, method: "POST", url: "/api/upload", form: uploadForm(bytes, { workspace_id: f.workspaces.b }) }), 404, "NOT_FOUND");
+      expect(await call(routes.upload.POST, { user: u.unassigned, method: "POST", url: "/api/upload", form: uploadForm(bytes, {}) }), 400);
       const created = expect(await call(routes.orgAssets.POST, { user: u.unassigned, method: "POST", url: `/api/organizations/${f.organizations.solo}/assets`, params: { id: f.organizations.solo },
         body: modelBody("uploaded-solo", [{ role: "primary", receiptId: orgOnly.data.id }]) }), 201).data;
       assert.equal(created.asset.resources[0].storage_key, orgOnly.storagePath);

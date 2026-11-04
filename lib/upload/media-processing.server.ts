@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { ContentError } from "@/lib/content-model/errors";
 import { MAX_MATCH_IMAGE_BYTES } from "@/lib/anchor-matching";
 import { runMediaCommand } from "./media-command.server";
+import { generateModelThumbnail } from "./model-thumbnail.server";
 import { STORED_FILE_MAX_BYTES, VIDEO_MAX_DURATION_SECONDS } from "./policy";
 import type { UploadType } from "./types";
 import "server-only";
@@ -24,10 +25,14 @@ const AUDIO_INPUT_OPTIONS = ["-protocol_whitelist", "file", "-format_whitelist",
 const VIDEO_INPUT_OPTIONS = ["-protocol_whitelist", "file", "-format_whitelist", "mov,matroska,webm,avi"];
 let activeJobs = 0;
 
-export interface ProcessedUploadMedia {
+export interface ProcessedMediaFile {
   buffer: Buffer;
   fileName: string;
   mimeType: string;
+}
+
+export interface ProcessedUploadMedia extends ProcessedMediaFile {
+  thumbnail?: ProcessedMediaFile;
 }
 
 function outputName(name: string, extension: string): string {
@@ -116,25 +121,59 @@ async function videoInfo(path: string): Promise<VideoInfo> {
     frameRate: Number.isFinite(rate) && rate > 0 ? Math.min(24, rate) : 24 };
 }
 
+/** Stream large originals to disk without materializing a second full buffer. */
+async function writeVideoInput(file: File, path: string): Promise<void> {
+  const reader = file.stream().getReader();
+  try {
+    await pipeline((async function* () {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    })(), createWriteStream(path, { flags: "wx" }));
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
+async function videoThumbnail(input: string, source: VideoInfo, output: string): Promise<Buffer> {
+  // Sample after the opening frame when possible. Quantize to a frame boundary
+  // so a one-frame or low-frame-rate clip never seeks beyond its only frame.
+  const position = source.duration === null ? 0
+    : Math.floor(Math.min(1, source.duration / 4) * source.frameRate) / source.frameRate;
+  await runMediaCommand("ffmpeg", ["-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-xerror",
+    ...VIDEO_INPUT_OPTIONS, "-err_detect", "explode", "-threads", "1", "-ss", String(position), "-i", input,
+    "-map", "0:V:0", "-an", "-sn", "-dn", "-map_metadata", "-1", "-frames:v", "1",
+    "-vf", "scale=w='max(2,trunc(min(min(iw*sar,512),512*dar)/2)*2)':h='max(2,trunc(min(min(ih,512),512/dar)/2)*2)',setsar=1",
+    "-c:v", "mjpeg", "-q:v", "3", "-threads", "1", "-filter_threads", "1", "-update", "1", output], "video");
+  const size = await stat(output).then(value => value.size, () => 0);
+  if (!size || size > STORED_FILE_MAX_BYTES)
+    throw new ContentError("VALIDATION_FAILED", "无法生成视频缩略图，请检查视频后重试");
+  return readFile(output);
+}
+
+/** Generate a cover for an existing video without replacing or re-encoding it. */
+export async function generateVideoThumbnail(file: File): Promise<Buffer> {
+  return withMediaSlot(async () => {
+    const directory = await mkdtemp(join(tmpdir(), `spatial-memory-upload-${process.pid}-`));
+    try {
+      const input = join(directory, "input");
+      await writeVideoInput(file, input);
+      const source = await videoInfo(input);
+      // Historical media can predate today's upload duration policy. Extracting
+      // one frame near the start must not reject or re-encode the original.
+      return await videoThumbnail(input, source, join(directory, "thumbnail.jpg"));
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  });
+}
+
 async function transcodeVideo(file: File): Promise<ProcessedUploadMedia> {
   const directory = await mkdtemp(join(tmpdir(), `spatial-memory-upload-${process.pid}-`));
   try {
     const input = join(directory, "input"), output = join(directory, "output.mp4");
-    // Video originals can be 512 MiB. Preserve the parser's disk-backed source
-    // and use backpressure instead of materializing a second full-file Buffer.
-    const reader = file.stream().getReader();
-    try {
-      await pipeline((async function* () {
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) return;
-          yield value;
-        }
-      })(), createWriteStream(input, { flags: "wx" }));
-    } finally {
-      await reader.cancel().catch(() => {});
-      reader.releaseLock();
-    }
+    await writeVideoInput(file, input);
     const source = await videoInfo(input);
     if (source.duration !== null && source.duration > VIDEO_MAX_DURATION_SECONDS)
       throw new ContentError("VALIDATION_FAILED", "视频时长不能超过 5 分钟，请截取需要的片段后重试", undefined, 413);
@@ -158,7 +197,9 @@ async function transcodeVideo(file: File): Promise<ProcessedUploadMedia> {
     // One output frame plus AAC padding can move a container boundary slightly.
     if (source.duration !== null && result.duration + 0.15 < source.duration)
       throw new ContentError("VALIDATION_FAILED", "视频未能完整处理，请检查文件后重试");
-    return { buffer: await readFile(output), fileName: outputName(file.name, "mp4"), mimeType: "video/mp4" };
+    const thumbnail = await videoThumbnail(output, result, join(directory, "thumbnail.jpg"));
+    return { buffer: await readFile(output), fileName: outputName(file.name, "mp4"), mimeType: "video/mp4",
+      thumbnail: { buffer: thumbnail, fileName: outputName(file.name, "thumbnail.jpg"), mimeType: "image/jpeg" } };
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -196,18 +237,22 @@ async function compressImage(buffer: Buffer, name: string, anchor: boolean): Pro
   }
 }
 
-/** Receipts and hashes must describe these final bytes, never the source file. */
-export async function processUploadMedia(file: File, type: UploadType): Promise<ProcessedUploadMedia> {
-  if (!["audio", "image", "anchor", "video"].includes(type))
-    return { buffer: Buffer.from(await file.arrayBuffer()), fileName: file.name, mimeType: file.type || "application/octet-stream" };
+async function withMediaSlot<T>(operation: () => Promise<T>): Promise<T> {
   if (activeJobs >= 2) throw new ContentError("VALIDATION_FAILED", "文件处理繁忙，请稍后重试", undefined, 429);
   activeJobs++;
-  try {
+  try { return await operation(); } finally { activeJobs--; }
+}
+
+/** Receipts and hashes must describe these final bytes, never the source file. */
+export async function processUploadMedia(file: File, type: UploadType): Promise<ProcessedUploadMedia> {
+  if (!["audio", "image", "anchor", "video", "model"].includes(type))
+    return { buffer: Buffer.from(await file.arrayBuffer()), fileName: file.name, mimeType: file.type || "application/octet-stream" };
+  return withMediaSlot(async () => {
     if (type === "video") return await transcodeVideo(file);
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (type === "model") return { buffer, fileName: file.name, mimeType: file.type || "model/gltf-binary",
+      thumbnail: { buffer: await generateModelThumbnail(buffer), fileName: outputName(file.name, "thumbnail.png"), mimeType: "image/png" } };
     if (type === "audio") return await transcodeAudio(buffer, file.name);
     return await compressImage(buffer, file.name, type === "anchor");
-  } finally {
-    activeJobs--;
-  }
+  });
 }

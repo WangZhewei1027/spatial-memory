@@ -40,6 +40,8 @@ jobs:
       - name: Install audio processing runtime
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: npm ci
+      - name: Install server model renderer
+        run: npx playwright-core install --with-deps --only-shell chromium
       - name: Verify fresh database and deployment gate
         run: node --import tsx scripts/test-deployment-check.ts
       - name: Verify phone account identity cutover and rollback
@@ -91,5 +93,7 @@ jobs:
       - name: Install audio processing runtime
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: npm ci
+      - name: Install server model renderer
+        run: npx playwright-core install --with-deps --only-shell chromium
       - name: Types, lint, offline regressions and production build
         run: npm run check

@@ -1,53 +1,12 @@
 # 线上部署与服务说明
 
-基础设施快照：**2026-11-01（北京时间）**。生产数据库、Compose 持久卷、部署路径、媒体与备份桶、RAM 身份和 Google 中转函数已完成 Spatial Memory 迁移。恢复材料和逐项验证见[迁移记录](spatial-memory-migration.md)。下列旧发布记录保留当时事实。
+基础设施快照：**2026-11-01（北京时间）**。生产数据库、Compose 持久卷、部署路径、媒体与备份桶、RAM 身份和 Google 中转函数已完成 Spatial Memory 迁移。恢复材料和逐项验证见[迁移记录](spatial-memory-migration.md)。历史发布记录保留当时事实。
 
 正式入口：**<https://www.spatialmemory.online/>**。整体由上海 Web 主机、OSS 文件存储、按需启动的 GPU 推理服务、中国香港 Google 登录中转函数，以及 Google、微信和短信接口组成。地图合集、Scene、基础素材属于同一个 Next.js 应用，共用同一个数据库。
 
-## Web 与资源迁移发布（2026-11-01）
+## 记录与当前配置
 
-应用代码已发布至 `6a63f7cad3c88a094de06ec604b9a61f4b4b6ce9`（[Deploy 运行](https://github.com/WangZhewei1027/spatial-memory/actions/runs/41312619125)），运行镜像为 `sha256:b9c93443ed80aca2cf032a865957427c32278048c3696c6a0aacd1187516024d`。后续部署记录与备份权限修正不改变应用镜像。
-
-- 45 个存量手机号账号迁移为 `phone.spatialmemory.local`，账号 ID、密码、会话、团队关系保留。另建的临时旧域账号已用原密码完成新域 Web/CLI 登录并清理；无短信发送。
-- `/opt/spatial-memory`、Compose 项目及四卷使用新身份，PostgreSQL 数据库与三角色原地改名。pgAdmin 保存连接、SAGE systemd/虚拟环境与配置路径、03:30 备份 cron 已同步；网段仍为 172.18.0.0/16。
-- 12,214 个 OSS 媒体对象和 33 个历史备份对象复制后逐项核对。8 条当前参考图 URL 更新，38 张业务/归档表的规范化内容指纹和计数一致。备份使用新私有桶；首份新备份全量恢复后 41 张表计数一致，临时恢复库已清理。
-- 工程检查和数据库集成 CI 通过。线上 HTTP 验收覆盖资产幂等创建/更新、场景保存/重读、409/428 乐观锁、匿名拒绝、编辑器认证页面、媒体 Range，以及小程序 schema 8 参数与 Web/CLI 读写一致性。临时账号、团队和内容已清理；未将此验收表述为手机实机或完整浏览器交互测试。
-- CLI `0.2.1` 直接使用当前 Scene/Asset/Collection API，私有仓库已推送到 `348b547`，10 项测试及离线安装验证通过。SAGE 仓库已推送到 `e5f4f85`。
-- 小程序已推送 `1f221f8`；用户选择微信上传稍后处理，尚未上传、审核或正式上线。IP API 入口继续保留，避免影响现有小程序。
-
-## Web 发布记录（2026-10-29 17:00）
-
-应用已部署至 `57ccb54cc7f4cf0dd9e92ec30ff1d5b1ffe4de19`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40844947452)于北京时间 17:00:58 成功完成。运行容器与该提交镜像一致（`sha256:0c403243582c…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
-
-- 发布包含此前提交的流式媒体与提前预加载、512 MiB / 5 分钟视频上传和服务端压缩、米制网格与原点、右上角相机预览，以及本轮精简编辑界面、透明度/音量关键帧和空间音频。Web 空间音频以虚拟相机为听者，计算距离衰减与左右声像。
-- GitHub 的 `quality / validate`、`quality / database-migrations` 与部署均通过；包括 104 项离线测试、生产构建和 207 个客户端包语法检查，以及隔离数据库的迁移、回滚、服务、路由和上传去重检查。本地跨端回归包括 8,782 次变换比较与 18,328 次演出参数比较，精确参数最大误差均为 0。
-- 本次没有新增数据库迁移，生产只读门禁通过。主、域名与备用 Caddy 文件均已同步：`/api/upload` 及其尾斜杠路径为 540 MB，普通请求仍为 35 MB；CI 已成功重新加载 Caddy。新容器启动时加载 `standalone-http.cjs`，实际核对请求接收期限为 900,000 ms、请求头期限为 60,000 ms。
-- 线上首页、登录页返回 HTTP 200，未登录访问 `/api/organizations` 返回 307 并跳转登录。本次核验未上传用户素材或写入 OSS 对象。
-
-配套小程序代码已在本机提交为 `7cc3a86`，尚未推送远端或发布微信版本。透明度、音量关键帧及空间音频使用播放 schema 8，需要配套播放器；原生流式音频支持距离衰减，左右声像仅在 Web 生效。旧场景继续按原有 schema 4/5/7 编译。本次 Web 发布不包含手机端实机播放验收。
-
-## 上一版 Web 发布（2026-10-29 03:33）
-
-应用已部署至 `2cf5961f938ee1403b6069358d0139d669b20afd`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40753808359)第二次运行于北京时间 03:33:55 成功完成。运行容器与该提交镜像一致（`sha256:40335dc076ce…`），状态为 `healthy`；服务器 `.env` 的校验值与切换前一致。
-
-- 发布包含独立活动模型、Island 演出编辑器、音视频与空间文字时间轴，以及服务端音频转码和图片压缩。本次 Web 的三个功能提交与配套小程序代码均已推送到各自远端。
-- GitHub 的 `quality / validate` 与 `quality / database-migrations` 均通过，覆盖类型、lint、75 项离线回归、生产构建、活动两阶段迁移、冲突回滚、服务、路由和上传去重。首次部署被尚未完成的生产迁移门禁阻止；数据库升级后重跑发布任务，门禁、镜像传输、重启与冒烟检查全部通过。
-- 生产已应用两项活动迁移。停写后的最终备份先完整恢复并验证，再执行生产迁移；副本与生产均通过 31 项检查。899 条历史文字及 12 组普通内容指纹保持不变，11 个店铺转为 1 场活动、11 个点和 1 条地图关联，19 项媒体引用完整保留。备份路径与恢复步骤见[活动迁移记录](activity-migration-runbook.md#2026-10-29生产数据库切换)。
-- 线上首页、登录页返回 HTTP 200；未登录访问 `/api/organizations` 返回 307 并跳转登录。实际地图的活动接口返回 1 场活动、11 个点、19 项媒体引用；缺少地图或团队参数仍返回 400。
-- 线上容器已实际完成合成音频的 MP3 32 kbps、24 kHz、单声道转码及 sharp JPEG 编码。Next 代理缓冲为 34 MiB，服务器主、域名与备用 Caddy 配置均为 35 MB；部署已重新加载 Caddy。该验证未写入用户素材或 OSS 对象。
-
-小程序仓库已推送至 `8405126`，微信体验版和正式版尚未发布。新活动接口与 schema 7 演出场景仍需配套新小程序；本次 Web 部署不包含微信发布或手机端播放验收。
-
-## 上一版 Web 发布（2026-10-28）
-
-应用已部署至 `eb349a902d17e4034b89d898a70c29ec33f9bc1d`，[Deploy 运行记录](https://github.com/WangZhewei1027/spatial-memory/actions/runs/40651717067)全部成功。运行容器与该提交的镜像摘要一致（`sha256:6d76fc03855f…`），健康状态为 `healthy`；首页与登录页返回 HTTP 200，未登录访问 `/api/organizations` 按现有认证代理规则返回 307 并跳转 `/auth/login`。
-
-- 发布包含共享 Scene Core 与原生场景编辑器、模型底部中心对齐、文档整理、工程规范、零警告 lint、提交 hook 和数据库集成 CI。
-- 本地工程检查、49 项离线回归和数据库服务/路由/迁移检查通过；跨端播放 8,782 次比较的最大误差为 0。GitHub 的 `quality / validate` 与 `quality / database-migrations` 均通过。
-- 生产库补齐 `20261019000000_native_theatre_scenes.sql` 与 `20261020000000_transform_scenes.sql`，标准迁移入口与只读部署门禁均通过。升级时没有场景记录，1,968 条投放保持不变；生产副本的 25 张业务与认证表在升级前后的记录数及内容校验值一致。
-- 迁移前完整备份保存在服务器 `/opt/sanlin/backups/pre-migrate-20261028-eb349a9.dump`，本机副本位于仓库忽略目录 `.local-db-backups/release-20261028/pre-migrate-eb349a9.dump`。备份不进入 Git。
-
-本记录只更新 Web 与上述数据库迁移的核对结果；下文的 GPU、短信、微信小程序和 Google 登录中转状态仍以各自标注日期为准。
+历史镜像、检查数量和小程序待发布状态集中保存在 [Web 发布历史](history/web-releases.md)，仅代表各次记录时点。仓库最新代码不等于线上已部署版本；需要确认运行版本时，核对 Deploy 工作流与服务器镜像。本文的服务状态仍以文首基础设施快照日期为准。
 
 ## 部署关系图
 
@@ -183,6 +142,12 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 部署配置索引：[`Dockerfile`](../Dockerfile)、[`docker-compose.yml`](../deploy/docker-compose.yml)、[`Caddyfile`](../deploy/Caddyfile)、[`env.example`](../deploy/env.example)。密钥、服务器 `.env`、SAGE 私有注册表和数据库 dump 均不提交 Git。
 
 pgAdmin 的首次 secret 和数据库角色需按 [部署说明](pgadmin.md) 初始化；后续 Web 部署同步其公开配置与镜像，保留账号配置卷和私有凭据。
+
+### 服务端素材缩略图（2026-11-04）
+
+视频上传在服务端用 FFmpeg 截帧，模型上传用无头 Chromium / Three.js 生成图片；替换主文件时同时更新图片。生产镜像安装与锁定的 `playwright-core` 匹配的 Chromium headless shell 及系统依赖，Next standalone 包含本地渲染器、Draco 与 Meshopt 解码器。部署后应实际运行一次模型渲染验证 Linux 软件 WebGL，不能只检查首页。
+
+生产已应用 `20261104000000_upload_thumbnails.sql`，素材、资源、场景、投放及既有回执的数据指纹保持一致。迁移前完整备份已恢复到隔离库验证；本机备份与核对记录位于 `.local-db-backups/release-20261104-thumbnails/`。历史已补齐 137 个模型、5 个视频，6 条源文件异常及运行方法见 [素材缩略图](asset-thumbnails.md)。
 
 ### OSS 媒体跨域与浏览器缓存（2026-10-29）
 

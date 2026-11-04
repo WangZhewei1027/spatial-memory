@@ -17,9 +17,10 @@ Asset visibility, maintainer and origin collection are metadata, not permission 
 | `GET/POST /api/organizations/[id]/assets` | List/create team assets, no collection required |
 | `GET /api/collections/[id]/assets` | Team catalog with usability capabilities for this collection |
 | `GET/PATCH/DELETE /api/assets/[id]` | Read, edit identity/content, archive; anchors use the same model |
-| `GET /api/assets/[id]/usage` | Team-visible scene and placement dependencies |
+| `GET /api/assets/[id]/usage` | Team-visible scene, placement and activity-point dependencies |
 | `POST /api/assets/[id]/duplicate` | Create a team-owned copy |
 | `GET/POST /api/organizations/[id]/scenes` | List/create independent team scenes |
+| `POST /api/organizations/[id]/scenes/validate` | Read-only preflight of write permission, resource ownership/type, animations and optional scene lock version |
 | `POST /api/scenes/[id]/copy` | Copy saved content into an independent team scene |
 | `GET/PATCH /api/scenes/[id]` | Read/save schema-6 scene with direct asset references |
 | `GET/POST /api/organizations/[id]/collections` | List/create collections |
@@ -39,7 +40,7 @@ Old `/api/workspaces/*`, workspace grants/members, asset move/copy adapters and 
 
 Asset/scene/placement writes require `expectedLockVersion` (428 if missing, 409 if stale). It is a concurrency counter, not an asset content version. Asset PATCH accepts `payload` and `resources` together, replacing both atomically. Creation supports idempotency keys. Scene saves take effect immediately.
 
-Placements target `{kind:"asset", assetId}` or `{kind:"scene", sceneId}`. Scene resource aliases use `{assetId}` in schema 6; playback compiles to schema 4 without groups or schema 5 with groups (see [scene-asset.md](scene-asset.md)). All asset references resolve current content, including every saved scene; asset edits require no placement upgrade or scene publication. Public discovery reads active placements in open teams and collections, with stable placement IDs.
+Placements target `{kind:"asset", assetId}` or `{kind:"scene", sceneId}`. Scene resource aliases use `{assetId}` in schema 6; playback compiles to schema 4/5 for model scenes, 7 for presentation/media, 8 for opacity/volume automation or spatial audio, and 9 for an explicit viewer position (see [scene-asset.md](scene-asset.md)). All asset references resolve current content, including every saved scene; asset edits require no placement upgrade or scene publication. Public discovery reads active placements in open teams and collections, with stable placement IDs.
 
 Managed resources come from receipts or authorized `fromAssetId` sources. Receipt purpose is `asset`. Retention checks current resources, live receipts, reference features, derived audio and migration holds. Anchor features use the asset ID; changing its reference image invalidates existing and in-flight descriptors.
 

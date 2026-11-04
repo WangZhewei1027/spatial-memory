@@ -25,12 +25,27 @@ export async function writeAssetContent(
     await ensureAssetUse(trx, actor, id, access);
   }
   const sources = sourceIds.length ? await trx.selectFrom("asset_resource").selectAll().where("asset_id", "in", sourceIds).execute() : [];
-  const receiptIds = inputs.flatMap((i) => "receiptId" in i ? [i.receiptId] : []);
+  // Upload-generated covers are server-owned associations. Existing clients
+  // submit only the main receipt and still commit both resources atomically.
+  let effectiveInputs = inputs;
+  if (payload.kind === "model" || payload.kind === "video") {
+    const primary = inputs.find((i) => i.role === "primary" && (i.ordinal ?? 0) === 0);
+    if (primary && "receiptId" in primary) {
+      const receipt = await trx.selectFrom("upload_receipt").select("thumbnail_receipt_id").where("id", "=", primary.receiptId).executeTakeFirst();
+      // A replacement cannot accidentally carry forward its previous cover,
+      // even when a client resubmits the full old resource list.
+      if (receipt?.thumbnail_receipt_id) effectiveInputs = [...inputs.filter((i) => i.role !== "thumbnail"), { role: "thumbnail", receiptId: receipt.thumbnail_receipt_id }];
+    } else if (!inputs.some((i) => i.role === "thumbnail") && primary && "fromAssetId" in primary && primary.fromRole === "primary" && (primary.fromOrdinal ?? 0) === 0) {
+      const thumbnail = sources.find((r) => r.asset_id === primary.fromAssetId && r.role === "thumbnail" && r.ordinal === 0);
+      if (thumbnail) effectiveInputs = [...inputs, { role: "thumbnail", fromAssetId: primary.fromAssetId, fromRole: "thumbnail", fromOrdinal: 0 }];
+    }
+  }
+  const receiptIds = effectiveInputs.flatMap((i) => "receiptId" in i ? [i.receiptId] : []);
   const preview = receiptIds.length ? await trx.selectFrom("upload_receipt").select("storage_key").where("id", "in", receiptIds).execute() : [];
   const previous = await trx.selectFrom("asset_resource").selectAll().where("asset_id", "=", asset.id).execute();
   await lockObjectKeys(trx, [...preview, ...sources, ...previous].flatMap((r) => r.storage_key ? [r.storage_key] : []));
   const receipts = await loadCommitReceipts(trx, actor.userId, asset.organization_id, receiptIds);
-  const rows: ResourceRow[] = inputs.map((input) => {
+  const rows: ResourceRow[] = effectiveInputs.map((input) => {
     const base = { role: input.role, ordinal: input.ordinal ?? 0 };
     if ("receiptId" in input) {
       const r = receipts.get(input.receiptId)!;

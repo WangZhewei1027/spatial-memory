@@ -7,7 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import sharp from "sharp";
 import { ContentError } from "../lib/content-model/errors";
-import { processUploadMedia } from "../lib/upload/media-processing.server";
+import { generateVideoThumbnail, processUploadMedia } from "../lib/upload/media-processing.server";
 import { STORED_FILE_MAX_BYTES, VIDEO_MAX_DURATION_SECONDS } from "../lib/upload/policy";
 
 const file = (buffer: Uint8Array, name: string, type: string) => new File([Uint8Array.from(buffer)], name, { type });
@@ -155,8 +155,9 @@ test("concurrent media uploads are bounded and the slot is released after a fail
   assert.equal(results.filter(result => result.status === "fulfilled").length, 2);
   const rejected = results.find(result => result.status === "rejected");
   assert.ok(rejected?.status === "rejected" && invalid(429)(rejected.reason));
-  const raw = Buffer.from("model data");
-  assert.deepEqual((await processUploadMedia(file(raw, "model.glb", "model/gltf-binary"), "model")).buffer, raw);
+  const raw = Buffer.from("document data");
+  const document = await processUploadMedia(file(raw, "notes.txt", "text/plain"), "document");
+  assert.deepEqual(document.buffer, raw); assert.equal(document.thumbnail, undefined);
   assert.equal((await processUploadMedia(input, "audio")).mimeType, "audio/mpeg");
 });
 
@@ -171,7 +172,17 @@ test("videos normalize to small H.264/AAC MP4 with the index before media for pr
     const normalized = await processUploadMedia(file(source, "source.mov", "video/quicktime"), "video");
     assert.equal(normalized.fileName, "source.mp4"); assert.equal(normalized.mimeType, "video/mp4");
     assert.ok(normalized.buffer.length < source.length / 4);
-    assert.deepEqual((await processUploadMedia(file(source, "source.mov", "video/quicktime"), "video")).buffer, normalized.buffer);
+    const repeated = await processUploadMedia(file(source, "source.mov", "video/quicktime"), "video");
+    assert.deepEqual(repeated.buffer, normalized.buffer);
+    assert.ok(normalized.thumbnail);
+    assert.equal(normalized.thumbnail.fileName, "source.thumbnail.jpg");
+    assert.equal(normalized.thumbnail.mimeType, "image/jpeg");
+    assert.deepEqual(repeated.thumbnail?.buffer, normalized.thumbnail.buffer, "thumbnail dedup is deterministic too");
+    const thumbnailInfo = await sharp(normalized.thumbnail.buffer).metadata();
+    assert.equal(thumbnailInfo.format, "jpeg"); assert.equal(thumbnailInfo.width, 512); assert.equal(thumbnailInfo.height, 288);
+    assert.equal(thumbnailInfo.exif, undefined);
+    const thumbnailStats = await sharp(normalized.thumbnail.buffer).stats();
+    assert.ok(thumbnailStats.channels.some(channel => channel.stdev > 20), "cover contains the video picture");
     const output = join(directory, "result.mp4"); await writeFile(output, normalized.buffer);
     const info = JSON.parse(execFileSync("ffprobe", ["-v", "error", "-show_streams", "-show_format", "-of", "json", output], { encoding: "utf8" }));
     const video = info.streams.find((stream: { codec_type: string }) => stream.codec_type === "video");
@@ -209,8 +220,47 @@ test("silent and portrait videos remain valid without enlarging small inputs or 
       assert.equal(video.width / video.height, sar === "1" ? width / height : 16 / 9);
       assert.equal(video.sample_aspect_ratio, "1:1");
       assert.equal(video.avg_frame_rate, `${Math.min(rate, 24)}/1`);
+      assert.ok(normalized.thumbnail);
+      const thumbnail = await sharp(normalized.thumbnail.buffer).metadata();
+      assert.ok(thumbnail.width! <= Math.min(width, 512) && thumbnail.height! <= Math.min(height, 512));
+      assert.ok(Math.abs(thumbnail.width! / thumbnail.height! - video.width / video.height) < 0.01);
     }
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("video covers sample beyond a black opening and backfill preserves the same final picture", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "upload-media-test-"));
+  try {
+    const input = join(directory, "opening.mp4");
+    execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=black:size=320x180:rate=24:duration=2",
+      "-vf", "drawbox=color=red:t=fill:enable='gte(t,0.1)'", "-c:v", "libx264", "-preset", "ultrafast", input]);
+    const normalized = await processUploadMedia(file(await readFile(input), "opening.mp4", "video/mp4"), "video");
+    assert.ok(normalized.thumbnail);
+    const { channels } = await sharp(normalized.thumbnail.buffer).stats();
+    assert.ok(channels[0].mean > 200 && channels[1].mean < 20 && channels[2].mean < 20, "cover skips the initial black frame");
+    const original = file(normalized.buffer, "existing.mp4", "video/mp4");
+    Object.defineProperty(original, "arrayBuffer", { value: () => { throw new Error("Backfill must stream the video"); } });
+    assert.deepEqual(await generateVideoThumbnail(original), normalized.thumbnail.buffer);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("single-frame low-rate videos still receive a non-empty thumbnail and backfill failures clean up", async () => {
+  const before = (await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort();
+  const directory = await mkdtemp(join(tmpdir(), "upload-media-test-"));
+  try {
+    const input = join(directory, "single-frame.mp4");
+    execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=blue:size=32x48:rate=2", "-frames:v", "1", "-c:v", "libx264", input]);
+    const normalized = await processUploadMedia(file(await readFile(input), "single-frame.mp4", "video/mp4"), "video");
+    assert.ok(normalized.thumbnail);
+    const thumbnail = await sharp(normalized.thumbnail.buffer).metadata();
+    assert.equal(thumbnail.width, 32); assert.equal(thumbnail.height, 48);
+    const stats = await sharp(normalized.thumbnail.buffer).stats();
+    assert.ok(stats.channels[2].mean > 200);
+    assert.deepEqual(await generateVideoThumbnail(file(normalized.buffer, "old.mp4", "video/mp4")), normalized.thumbnail.buffer);
+    await assert.rejects(generateVideoThumbnail(file(Buffer.from("broken"), "bad.mp4", "video/mp4")), invalid());
+    await assert.rejects(generateVideoThumbnail(file(Buffer.from("#EXTM3U\nhttp://127.0.0.1/private.mp4\n"), "playlist.mp4", "video/mp4")), invalid());
+  } finally { await rm(directory, { recursive: true, force: true }); }
+  assert.deepEqual((await readdir(tmpdir())).filter(name => name.startsWith(`spatial-memory-upload-${process.pid}-`)).sort(), before);
 });
 
 test("five-minute disk-backed videos retain their full soundtrack with a low bitrate even above 5 MiB", async () => {
@@ -250,6 +300,9 @@ test("video processing rejects invalid, playlist and overlong sources and cleans
     const input = join(directory, "long.mp4");
     execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=red:size=16x16:rate=2:duration=301", "-c:v", "libx264", input]);
     await assert.rejects(processUploadMedia(file(await readFile(input), "long.mp4", "video/mp4"), "video"), invalid(413));
+    const historicalCover = await generateVideoThumbnail(file(await readFile(input), "historical-long.mp4", "video/mp4"));
+    assert.equal((await sharp(historicalCover).metadata()).format, "jpeg", "cover backfill accepts existing videos beyond the current upload duration limit");
+    assert.ok((await sharp(historicalCover).stats()).channels[0].mean > 200);
     // Non-seekable WebM has no duration metadata. It must also be bounded and
     // rejected after decoding instead of being silently cut to an accepted clip.
     for (const seconds of [0.5, 301]) {

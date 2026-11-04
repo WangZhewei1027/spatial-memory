@@ -1,6 +1,6 @@
 # 本地 Agent 场景编排
 
-本阶段通过独立 `spatial-memory` CLI 接入本地 agent。Agent 负责素材选择、联网搜索、压缩工具选择、视觉判断和迭代；CLI 提供可校验的操作、真实预览和持久化，不绑定特定模型服务。
+通过独立 `spatial-memory` CLI 接入本地 agent。Agent 负责素材选择、联网搜索、压缩工具选择、视觉判断和迭代；CLI 提供可校验的操作、真实预览和持久化，不绑定特定模型服务。
 
 ## 共享边界
 
@@ -23,21 +23,21 @@
 | 视觉反馈 | `scenes render`：显式时间或关键边界/中点、多镜头、PNG、manifest |
 | 保存 | `scenes save`：新场景幂等创建，已有场景使用 lockVersion |
 
-共享操作可读写所有 schema 6 已支持字段，包括空间位置、旋转、缩放、分组、动画、媒体裁剪/倍率/音量、空间音频、文字、透明度、显隐、时序和曲线。具体操作参数见编排包 README；相机参数属于观察视角，不写入场景内容。
+共享操作可读写所有 schema 6 已支持字段，包括空间位置、旋转、缩放、分组、动画、媒体裁剪/音量、空间音频、文字、透明度、显隐、时序和曲线。具体操作参数见编排包 README。`content.viewerPosition` 保存观看位置并同步到小程序；CLI 的 audience/map/qr 镜头使用该位置。单次截图的相机覆盖和 Web 预览的俯仰角、视场角只改变观察视角。音视频 `playbackRate` 固定为 `1`，时间拉伸不改变媒体播放速度。
 
 ## 上传与限制
 
-复用现有 `/api/upload → receipt → team asset` 链路。仅模型原文件上限由 3 MiB 改为 **5 MiB（5 × 1024 × 1024 字节）**；其他上传限额、压缩/转码策略及 OSS 路径逻辑保持现有行为。CLI 不增加自动模型压缩，超限由 agent 自行处理后重试。
+复用现有 `/api/upload → receipt → team asset` 链路。模型原文件上限为 **5 MiB（5 × 1024 × 1024 字节）**；其他上传限额与压缩/转码策略见[素材流水线](asset-pipeline.md)。CLI 不增加自动模型压缩，超限由 agent 自行处理后重试。
 
 导入保存原文件 `sourceProbe` 和最终 OSS 文件 `finalProbe`，以最终文件事实编排；服务端缩图或转码后不能继续假定原文件尺寸和时长。上传回执、创建请求和幂等键保存在本地，失败重试复用已完成阶段。
 
-取消素材/实例/关键帧数量、演出时长、坐标/缩放、分组深度、文字长度等人为编排上限。保留有限数值、正尺寸/倍率、非负时间、0–1 音量/透明度、引用有效性和无环层级等语义校验。设备不能播放的倍率明确报错，不静默改写参数。
+取消素材/实例/关键帧数量、演出时长、坐标/缩放、分组深度、文字长度等人为编排上限。保留有限数值、正尺寸/缩放、非负时间、0–1 音量/透明度、引用有效性和无环层级等语义校验。音视频倍率不为 `1` 时校验失败。
 
 ## 闭环验收
 
 验收顺序：库内检索 → 联网选择素材 → 原上传接口写入 OSS → 检查最终素材 → 创建草稿 → 编排 → 数值采样/服务端预检 → 多视角截图 → agent 实际看图 → 修正 → 重拍 → 保存并回读。
 
-本次实测使用隔离本地数据库、测试团队和真实 OSS；导入 Khronos 的 [CesiumMan 样例](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan)，素材来源及授权记录随导入保留。初稿有两个人物重叠、标题越出镜头的问题，读取图像后通过操作文件调整世界位置、运动轨道和朝向，保持同一观众镜头复查。场景回读与最终草稿逐字段一致。
+2026-11-01 闭环实测使用隔离本地数据库、测试团队和真实 OSS；导入 Khronos 的 [CesiumMan 样例](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan)，素材来源及授权记录随导入保留。初稿有两个人物重叠、标题越出镜头的问题，读取图像后通过操作文件调整世界位置、运动轨道和朝向，保持同一观众镜头复查。场景回读与最终草稿逐字段一致。
 
 图片是抽样证据，不保证整个连续时间线无问题。世界包围盒交叠不等同于碰撞或遮挡；音频标记不是素材几何。带外部依赖的 GLTF/GLB 会明确返回 `MISSING_DEPENDENCIES`，由 agent 转为自包含文件后导入。AR 真机表现仍需独立验收。
 
@@ -47,4 +47,4 @@ Web：`npm run check`、`npm run test:integration`、`npm run test:cross-runtime
 
 共享包：`npm run test:scene-authoring`；渲染器先 `npm ci --prefix packages/scene-renderer`，再 `npm run test:scene-renderer`（浏览器测试需要 Chrome/Chromium，视频夹具需要 ffmpeg）。
 
-CLI 仓库：`npm run typecheck`、`npm test`、`npm run test:package`。小程序仓库：`npm test`，媒体倍率用现有 scene-media 测试覆盖。
+CLI 仓库：`npm run typecheck`、`npm test`、`npm run test:package`。小程序仓库：`npm test`，原速媒体同步由 `npm run test:scene-media` 覆盖。

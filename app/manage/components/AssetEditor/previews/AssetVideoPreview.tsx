@@ -3,11 +3,13 @@ import { useTranslation } from "react-i18next";
 interface AssetVideoPreviewProps {
   fileUrl: string;
   fileName: string;
+  posterUrl?: string | null;
 }
 
 export function AssetVideoPreview({
   fileUrl,
   fileName: _fileName,
+  posterUrl,
 }: AssetVideoPreviewProps) {
   const { t } = useTranslation();
 
@@ -21,6 +23,7 @@ export function AssetVideoPreview({
           controls
           className="w-full max-h-64 rounded"
           preload="metadata"
+          poster={posterUrl ?? undefined}
           playsInline
         >
           <source src={fileUrl} type="video/mp4" />

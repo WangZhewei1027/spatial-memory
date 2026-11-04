@@ -27,7 +27,7 @@ Asset 文件取当前 `asset_resource`，Scene 取当前 `scene.document` 并解
 
 活动留言长度由活动规则决定，最多 500 字；参与写入每 IP 每分钟 60 次、每投放每分钟 120 次。提交事务重新检查团队、地图、活动及投放状态，打卡还检查所属点、归档状态和距固定地点的距离。匹配接口每设备每分钟 90 次（无合法 X-Client-Id 时按 IP），每合集每分钟 3000 次。识别请求可传 X-Recognition-Request-Id，响应回显请求 ID 与诊断耗时。
 
-音频同名 `.webm`/`.m4a` 文件由保留层相互保护；上传不自动生成衍生文件，见 [素材流水线](asset-pipeline.md)。微信合法域名需包含后端 request/uploadFile 域名和媒体 downloadFile 域名。
+音频同名 `.webm`/`.m4a` 文件由保留层相互保护；上传不自动生成衍生文件，见 [素材流水线](asset-pipeline.md)。微信合法域名需包含后端 request/uploadFile 域名；媒体域名同时加入 request（视频 MP4 Range 索引请求）和 downloadFile（模型、图片及旧媒体兼容下载）。
 
 组织配置仅公开 `confetti_enabled`、`footer_enabled` 和 `text_asset_miniapp_style`。新增公开配置时同步更新 `app/api/miniapp/organizations/route.ts` 的 `PUBLIC_CONFIG_KEYS`；未在白名单中的键不返回小程序。
 

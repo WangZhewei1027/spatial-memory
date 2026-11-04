@@ -1,5 +1,7 @@
 # Repository Agent Guide
 
+Shared instructions for Codex and Claude Code live in this file. Keep `CLAUDE.md` as a one-line `@AGENTS.md` import.
+
 This repository contains the Spatial Memory web platform. The mini-program is a separate sibling repository; its public API contract is maintained here. Read [README.md](README.md) for local setup and [docs/README.md](docs/README.md) for the documentation index.
 
 Before implementing or reviewing code, read [CODING_STANDARDS.md](CODING_STANDARDS.md). For check commands, test selection, Git hooks or CI changes, read [CONTRIBUTING.md](CONTRIBUTING.md).

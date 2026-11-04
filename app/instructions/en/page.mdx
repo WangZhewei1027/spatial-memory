@@ -1,257 +1,123 @@
-# User Guide
+# User guide
 
-Welcome to **Spatial Memory** — a platform for placing digital content (photos, text, sound, 3D models and more) at real-world locations. Once content is placed, visitors on site can see and hear it right where it belongs, through their phones.
+**Spatial Memory** lets teams place photos, text, sound, 3D models and scenes on maps. Visitors scan a WeChat QR code to experience the content on their phones and join activities.
 
-This guide has two parts:
+## How content is organized
 
-- **Part 1: The web console** — where teams organize members and map content in the browser.
-- **Part 2: The WeChat Mini Program AR experience** — where visitors scan a QR code and experience the content on site through their phone camera.
+- A **team** owns assets, scenes and activities. Members share access to the team's content.
+- **Assets** are reusable images, text, audio, video, models and other content.
+- A **scene** combines assets and spatial text into a composition with positions, animation and a timeline.
+- A **map collection** organizes placements. The same asset or scene can appear on several maps, with a separate position and display settings for each placement.
+- An **activity** provides shop check-ins or visitor messages. It can be linked to several maps, with participation records kept separately for each placement.
 
----
+A new team can create assets, scenes and activities before creating a map. Collections do not have separate membership permissions.
 
-## Overview
+## Sign up and sign in
 
-The two sides share the same data. Teams upload and organize assets in the web console, then generate a QR code; visitors scan it with WeChat and experience the content on site.
+New users can register with **Google** or a **mainland China mobile number**. Phone registration requires SMS verification and a password. Google sign-in requires access to Google's authorization page in your browser.
 
-```mermaid
-flowchart LR
-	A[Web console] -->|Upload and organize assets| B[Shared data]
-	B -->|Generate QR code| C[WeChat Mini Program AR]
-	C -->|Scan on site| D[On-site visitors]
-```
+Existing email and phone accounts can sign in with their account identifier and password. New email registration and email password recovery are unavailable. Phone accounts can use “Forgot password” to verify an SMS code and set a new password; Google users continue through Google sign-in.
 
-Content is organized by **organizations** and **workspaces**: an organization represents a team or project, and each organization can contain several workspaces, each with its own set of assets. You may belong to one or more organizations, depending on how your administrator has set things up.
+A team administrator can add existing users or send an invitation link. Open the invitation and sign in to join the team. If an expected team is missing, ask its administrator to check your membership.
 
----
+## Team workbench
 
-# Part 1: The Web Console
+Enter the workbench and select a team. Navigation provides separate **Assets, Scenes, Activities and Map collections** sections. On narrow screens, open the navigation menu.
 
-## Signing Up and Logging In
+### Assets
 
-### Sign up
+The asset library supports search, type and archive filters, and grid or list views. Creating or uploading an asset does not require a map.
 
-The sign-up page supports two methods; **phone sign-up** is the default:
+Open an asset to preview or edit it, rename it, make a copy, and inspect its use in scenes, maps or activities. Replacing its file or content affects every reference on the next content fetch.
 
-- **Phone**: enter your 11-digit phone number and a password (at least 8 characters), tap **Send code**, enter the 6-digit SMS code, then tap **Verify and sign up**. You are logged in automatically on success.
-- **Email**: switch to the email tab, enter your email and password, then open the confirmation link sent to your inbox before logging in.
+Archiving prevents edits and new references while retaining existing uses. Restore the asset to use it again.
 
-### Log in
+### Scenes
 
-On the login page, enter your **email or phone number** in the same input field, plus your password — the platform recognizes the account type automatically.
+Create a scene in the scene library or import scene JSON, then open the editor:
 
-### Forgot password
+1. Add models, images, audio or video from the team library, or create spatial text that belongs only to this scene. Importing a file adds it to the library; add it to the stage separately.
+2. Adjust position, rotation and scale on the stage. Use the timeline for entry and exit times, keyframes and media trimming. Audio and video play at their original speed.
+3. Open the camera preview to check composition. The viewer position is saved with the scene and used for phone placement; preview pitch and field of view only change the current preview.
+4. Save, then open the scene QR code in a compatible mini-program. Unsaved edits do not appear on the phone.
 
-Click **Forgot password?** on the login page, then enter your account:
+Saving takes effect immediately. Scene positions and dimensions use meters; models are not automatically normalized to the same size. Copying a scene creates an independent composition while reusing its team assets.
 
-- **Email**: you will receive a reset email; follow its link to set a new password.
-- **Phone**: you will receive an SMS code; after verifying it you can set a new password directly.
+If another editor saves first, your save may report a conflict. Keep your input, reload and reconcile the changes before saving again.
 
-## Home Page and Navigation
+### Map collections and placements
 
-After logging in, the **Enter workspace** button on the home page takes you to the **Manage** page (the platform's main interface).
+Create or open a map from the collection list. Its editor provides a placement catalog, map and detail controls. Select team assets or scenes, then set their positions, presentation and active status.
 
-Other entries live in the **avatar menu at the top right**, shown according to your role:
+List selection and map markers stay in sync. Ordinary placements can be repositioned through map interaction. Moving one placement does not move other placements of the same asset.
 
-- **Manage** — visible to all logged-in users.
-- **On-site Upload** — visible to members and above.
-- **Admin Console** — visible to organization administrators.
+The map's Activities tab manages activity associations and their status. Edit activity locations in the activity content page; dragging an activity marker does not change its location.
 
-## Joining an Organization
+Archiving a collection stops public discovery and placement edits on that map. Team assets and scenes remain available.
 
-You need to belong to an organization before you can see its content. The most common way to join is an **invite link**: an administrator sends you a link; open it, log in (or sign up first), and you are added to the organization automatically and taken to the Manage page — nothing else required.
+## Uploading files
 
-If you cannot see an organization or workspace you should have access to, contact your administrator.
+These limits apply to the original file. Your team's settings also determine which types are available:
 
-## The Manage Page
-
-This is the platform's main interface, with three areas: **asset list (left)**, **3D map (center)**, and **detail panel (right)**.
-
-Across the top, from left to right: the **organization switcher**, the **workspace switcher**, and the **QR code button**. The workspace dropdown also offers an "All workspaces" option that shows assets from every workspace in the organization at once.
-
-### Asset list (left)
-
-- Filter the list with three dropdowns at the top: **tags**, **creator**, and **type**. You can also switch between compact and detailed views, or refresh the list.
-- Click any item to select it and view or edit its details on the right.
-- Click an item's **Locate** button and the map camera flies to that asset's position.
-- Click the **multi-select** icon to enter multi-select mode, where you can select all, clear the selection, or delete several assets at once.
-
-### 3D map (center)
-
-Every asset with a location appears as an icon on the map. The map and the list work together: click an icon on the map and the matching list item is highlighted; click an empty spot on the map to pick a location (its coordinates appear on the right), which is handy when uploading new content.
-
-The toolbar on the left of the map offers three modes:
-
-- **Pan** — normal browsing; drag to move the map.
-- **Move asset** — drag an asset directly on the map to change its position.
-- **Box select** — draw a rectangle to select every asset inside it; a bar then appears above the map where you can **copy** the selection (into the current workspace) or **delete** it.
-
-Other view controls: drag with the **middle mouse button**, or hold **Ctrl** and drag with the left button, to rotate the view. The **Reset view** button at the top right restores the initial view, and the basemap button next to it switches the base map — **OpenStreetMap** is a safe choice if you are unsure.
-
-### Detail panel (right)
-
-- **Clicked location**: shows the coordinates of the point you clicked on the map.
-- **Upload panel**: expand it to upload new assets directly (see *Asset Types* below). For photos, if the image file already carries the location where it was taken, you can use that; otherwise use the point you clicked on the map.
-- **Asset editor**: with an asset selected, you can view and edit —
-  - **Basic info**: name, description, and **tags** (search, create new tags, and change tag colors).
-  - **Preview**: view images, play audio/video, and preview 3D models (drag to rotate, zoom for detail); images can be replaced by clicking or dragging in a new file.
-  - **Location & anchor**: edit longitude/latitude/height, or **link the asset to an anchor** (linked assets are connected to their anchor with red lines on the map).
-  - **Appearance**: 3D models have a **scale** setting and a "large model" switch; text assets have **text color** and **text size** settings (these affect how they appear in the Mini Program).
-  - At the bottom are **Save**, **Cancel**, and **Delete** buttons; deletion asks for confirmation.
-
-## On-site Upload
-
-The **On-site Upload** page is designed for phones, for capturing content while you are physically at a location. It shows which workspace you are uploading to and your device's **GPS status** (allow the browser to access your location).
-
-Three capture modes:
-
-- **Photo** — take a photo with the camera or choose one from your album, with an optional title and description.
-- **Text** — type a piece of text directly.
-- **Audio** — start/stop a recording, listen back before uploading, and add an optional title and description.
-
-Uploaded content is placed on the map at your current GPS position, and you can pick or create **tags** for it as you go. The upload button stays disabled until a location fix and a workspace are available.
-
-## QR Codes: Connecting to the Mini Program
-
-Once an organization is selected on pages like Manage or On-site Upload, a **QR code button** appears at the top right. Click it to open the "Scan to open the Mini Program" panel. The QR code always matches your currently selected organization and workspace — switch workspaces and the code changes with you.
-
-Share or print this QR code, and visitors can scan it with **WeChat** to jump straight into the matching workspace's AR experience (see Part 2).
-
-## Asset Types
-
-Reusable content such as images and text is called an **asset** and can be placed on maps. At a glance:
-
-| Type | Description | Size limit |
+| Content | Original-file limit | Processing |
 | --- | --- | --- |
-| Anchor | A named point of interest used to group other assets | — |
-| Text | A piece of written content | — |
-| Image | A photo, automatically compressed for smooth loading | 10 MB |
-| Audio | A sound clip: narration, ambience, music, etc. | 3 MB |
-| Video | A short video clip | 3 MB |
-| Link | A URL | — |
-| Document | PDF, Word and similar files (must be enabled for the organization) | 20 MB |
-| 3D model | A 3D model file (.glb / .gltf, must be enabled for the organization) | 3 MB |
+| Images and matching reference images | 32 MiB | Server compression; transparent images retain transparency |
+| Audio | 32 MiB, up to 10 minutes | Converted to low-bitrate mono MP3 |
+| Video | 512 MiB, up to 5 minutes | Converted to H.264/AAC MP4, up to 640 pixels on the longest side |
+| 3D models | 5 MiB | No automatic model compression; phone compatibility requires separate verification |
+| Documents | 5 MiB | Upload types allowed by the team |
+| Text and links | Enter directly | Save text or a URL without a file upload |
 
-A few notes:
+Upload feedback shows validation, transfer, server processing and saving. A completed file transfer still needs a successful asset save. Follow error messages when retrying. Compression changes image dimensions, media quality and audio channels; keep original files for future editing.
 
-- An **anchor** is like a pin on the map with a title and a note. Other assets can be linked to it, grouping everything at one place or theme together; the map shows the relationships with red lines. Anchors require a name and a manually chosen map location.
-- **Documents** and **3D models** are off by default; the organization owner must enable them in the admin console settings.
+Matching anchors use reference images to recognize nearby places. Creating the reference asset, placing it on a map and generating recognition features are separate steps. Recognition does not provide precise camera positioning.
 
-## Managing and Placing Activities
+### On-site upload
 
-Create an activity from **Activities** in Manage, then associate it with one or more maps. Set shared locations and rules under **Activity content**. A placement only selects the map and status, and can be paused individually.
+Choose a team and map within the on-site upload page, then allow browser location access. Capture images, text or audio and place them at the confirmed location. Check the destination map and coordinates before submitting; resolve missing location or map selection using the page prompts.
 
-Under **Activity content**, select a check-in point and click the map on the same page to set its fixed location. Adjust several points, then save them together. Every associated map uses the updated locations. Message activities also define **Whole map** or **Limited area** here; a limited area needs a center and radius.
+## Managing activities
 
-- **Shop check-in**: one activity contains multiple check-in points. Add each point's name and description, select image assets for its photo and optional reward, then set its location on each map.
-- **Messages**: create a message activity, set its character limit and participation area, and associate it with a map. Visitors can send messages within the activity's area. The console lets you view, hide, and restore messages.
+Create a **shop check-in** or **visitor-message** activity, then associate it with target maps. New placements start as drafts and become discoverable after activation. Pausing one placement only stops that map's entry.
 
-Check-ins and messages are stored with the activity. Progress and messages are separate for each placement; ordinary text assets remain editable in the asset library.
+- **Shop check-in:** one activity contains several check-in points. Enter each point's details, select images and an optional reward image, and set its fixed location on the activity's map. Every associated map uses the same locations and rules.
+- **Visitor messages:** set the message length limit and participation area. A limited area uses a center and radius; visitors can submit within the permitted area.
 
-### About link assets (Luma AI)
+The participation data view filters messages and check-ins by placement. Members with write access can hide or restore records. Progress and messages remain separate across maps; ordinary text assets remain in the asset library.
 
-Link assets work well for web content that can be embedded, such as 3D captures made with Luma AI. The Luma AI capture management page is here: [https://lumalabs.ai/dashboard/captures](https://lumalabs.ai/dashboard/captures).
+## QR codes and the mini-program
 
-A common workflow is to create the capture in Luma AI and copy the embed code it provides. If you copied a full iframe snippet, you do not need the whole snippet — only the URL inside `src="..."`:
+A team QR code opens the team scope, a map code opens one collection, and a scene code opens an independent scene. Obtain codes from the corresponding collection or scene entry. Admin settings provide a WeChat QR environment selector for release, trial and development versions; the selection applies to the current browser.
 
-```html
-<iframe src="https://lumalabs.ai/embed/55b47e0e-3ed7-4d38-83ef-c34e8a08f7fe?..." width="500" height="500"></iframe>
-```
+Generating a QR code does not upload or publish the mini-program. The phone needs access to the matching backend and a mini-program version supporting the scene's features. Scene codes show the latest saved content; archived scenes cannot be previewed directly.
 
-So the actual value to upload is just:
+### Map AR experience
 
-```text
-https://lumalabs.ai/embed/55b47e0e-3ed7-4d38-83ef-c34e8a08f7fe?...
-```
+Visitors do not need a platform account. Scan with WeChat, confirm the team and map on the home page, and enter AR. Recent scan history lets visitors switch entries.
 
-## Roles
+Map AR needs location and camera permissions. Look around slowly as nearby text, images, models and media appear. Walking can reveal new content. Ordinary assets are arranged near the camera; distant models use geographic position and direction. This display is not a precision measurement tool.
 
-Each organization has four roles, from most to least powerful:
+Matching mode recognizes nearby reference images within a selected map and displays associated content after a match. When activities are enabled, visitors can select a messaging or check-in activity. The server verifies check-in distance.
 
-| Role | What they can do |
+### Independent scene preview
+
+A scene QR code opens a separate preview without GPS. Once resources and the camera are ready, tap **Place scene**. The saved viewer position aligns with the phone's current position and horizontal direction. By default, the scene origin is 2 meters ahead and 1.5 meters below the phone; this is not a measured ground height.
+
+After placement, pause, resume or restart playback. Leaving, backgrounding or retrying releases current playback resources; reopening requires loading and placing the scene again. The desktop camera preview helps with composition, while the actual phone determines field of view, surroundings and media support.
+
+### Participation and device identity
+
+Check-ins and messages are stored on the server separately for each activity placement. The mini-program uses a locally stored anonymous device identifier to associate progress. Changing phones or clearing mini-program storage does not automatically restore the same participant identity. A failed submission does not count as completed; follow the retry prompt.
+
+## Roles and administration
+
+| Role | Main permissions |
 | --- | --- |
-| Owner | Everything: organization settings, member management (including assigning owners), workspace management, uploading and editing assets |
-| Admin | Member management (except owners), workspace management, uploading and editing assets |
-| Member | Browse content, upload and edit assets, use On-site Upload |
-| Viewer | Read-only: browse content, with upload and edit controls hidden |
+| Owner | Manage team content, collections, members and invitations; change team settings and manage owners |
+| Admin | Manage content, collections, members and invitations; cannot change owners or team settings |
+| Member | Create, edit, archive and restore team content and map placements; view the member list |
+| Viewer | Read team content |
 
-If some buttons or pages are missing for you, it is usually a role restriction — contact your organization administrator.
+Member management supports finding existing users, changing non-owner roles and creating invitations. A map selected for an invitation only determines the destination after joining; it does not restrict team content access. Invitation links cannot grant ownership.
 
-## The Admin Console (for Administrators)
-
-Owners and admins manage their organization in the **Admin Console**, which has three sections:
-
-- **Members**:
-  - **Add member** — search existing platform users by email or name, pick a role, and add them.
-  - **Invite link** — generate a link to send out: choose the role granted on joining, optionally a workspace, and an expiry (1 day / 7 days / 30 days / never). The recipient opens the link, logs in, and joins automatically.
-  - In the member list you can change roles inline, **assign workspaces** (controlling which workspaces each person can access), or remove members.
-- **Workspaces**: create, edit, and delete workspaces (just a name and description).
-- **Settings** (owners only): edit the organization's name and description, set the map center, choose the **allowed file types** (e.g. enable document and 3D model uploads), and configure how content appears in the Mini Program (text style, confetti effect, watermark logo). The delete-organization action at the bottom is irreversible — use with care.
-
-## Personal Settings
-
-Open **Settings** from the avatar menu to change your display name. The email or phone number you log in with cannot be changed.
-
----
-
-# Part 2: The WeChat Mini Program AR Experience
-
-The Mini Program is for on-site visitors: **no account, no login** — just scan a QR code with WeChat.
-
-## Getting In
-
-Scan the QR code generated in the web console (or displayed on site) with **WeChat's scanner**. The Mini Program opens directly onto the matching organization and workspace; the home screen shows their names. Tap **Start the journey** to enter the AR experience.
-
-If you have scanned more than one QR code, a **switch organization / space** control appears on the home screen, letting you move between the places you have visited recently.
-
-## Permissions
-
-On first launch you will be asked for **location** and **camera** access — please allow both. They are used to find the content near you and to show the AR view; nothing works without them.
-
-If you declined earlier by accident, a red banner appears on the home screen with an **Enable** button that takes you to the settings to turn them back on.
-
-## The AR Experience
-
-Once inside, the whole screen becomes the camera view. **Hold your phone up and look around slowly for a few seconds** — nearby content gradually appears around you:
-
-- **Text** floats as chat bubbles in the air;
-- **Images** stand like photos in space, always facing you;
-- **Audio** appears as a headphone marker — the sound gets louder as you approach and fades as you move away; get close to one source and the others quiet down;
-- **Videos** play on a loop;
-- **3D models** stand where they were placed, and some large landmark models appear in the distance.
-
-Content follows real locations, so **walking around is how you discover more** — the experience works best outdoors on foot. You can see content within roughly twenty meters at a time, and new items keep appearing as you move.
-
-Two little extras:
-
-- **Plant a tree**: tap the ground in the camera view to plant a tree right there — as many times as you like.
-- **Send a message**: when an active message activity is available nearby, use the input bar at the bottom. If there are several activities, choose one first. Once sent, your message flies into the AR world and stays at your location for later participants in that placement to see.
-
-The small dot to the left of the input bar is the **GPS signal light**: green means positioning is working; red means no signal for the moment, in which case content cannot load and messages cannot be sent — move to an open area and wait a moment.
-
-## Shop Check-in (enabled for some events)
-
-When an active shop check-in activity is available nearby, a check-in entry appears at the bottom of the AR screen. Select an activity and:
-
-- Swipe through nearby shop cards, each showing the shop's photo, description, and distance from you, with your progress at the top (e.g. "2/5 checked in").
-- A compass arrow on screen points toward the selected shop — just follow it.
-- Once you are within the activity's check-in distance (default **50 meters**), the card's button becomes **Check in**; if you are too far, it shows "Too far".
-- If the point has a reward image, you can tap **Save to album** after checking in (saving asks for album permission the first time).
-- Progress is saved for your device and for each activity placement, so you can continue on the same device next time. Clearing Mini Program data or switching devices does not automatically transfer your progress.
-
-## Troubleshooting
-
-- **Nothing appears**: make sure location and camera permissions are on, the GPS light is green, and you are actually near an area with content; look around slowly for a few seconds before walking.
-- **No sound**: check your phone is not muted, and walk closer to the headphone marker.
-- **No account needed**: web console accounts are only for managing content — visiting requires no login.
-
----
-
-## Summary
-
-The full workflow:
-
-1. The team signs in to the **web console**, joins an organization, and places images, text, audio, video, links, anchors, or 3D models at real locations via **Manage** or **On-site Upload**.
-2. In the console, open the **QR code button** and share or display the code on site.
-3. Visitors scan it with **WeChat**, allow location and camera access, tap **Start the journey**, and explore the AR content as they walk — planting trees, sending messages, and joining the shop check-in game along the way.
-
-If you have questions or need help, contact your organization administrator.
+Owners manage team settings, including the name, map center, allowed file types and mini-program display styles. Collections are managed in the workbench. Account navigation provides personal settings, language and theme controls; available actions depend on your permissions.

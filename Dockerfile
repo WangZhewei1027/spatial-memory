@@ -24,9 +24,15 @@ RUN npm run build
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
-# Uploads normalize audio/video with FFmpeg; sharp supplies the image processing runtime.
+# The lockfile pins the browser installer and Chromium revision together. Only
+# the headless shell is needed; its OS libraries are installed in the final image.
+COPY --from=deps /app/node_modules/playwright-core /tmp/playwright-core
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# Uploads use FFmpeg, sharp and an isolated software-WebGL model renderer.
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    && node /tmp/playwright-core/cli.js install --with-deps --only-shell chromium \
+    && chmod -R a+rX /ms-playwright \
+    && rm -rf /tmp/playwright-core /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \

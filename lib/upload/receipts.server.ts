@@ -32,6 +32,7 @@ export interface ReceiptRow {
   created_at: Date;
   expires_at: Date;
   consumed_at: Date | null;
+  thumbnail_receipt_id: string | null;
 }
 
 /** The team (and optional collection) an upload is leased to. */

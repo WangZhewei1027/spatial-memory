@@ -25,7 +25,7 @@ export interface OrgConfig {
 
 #### 2. API 路由
 
-读取：`app/api/admin/organizations/route.ts` 的 Kysely 查询已选出 `organization.config`；写入：`app/super-admin/organizations/actions.ts`（`updateOrganization`）与 `app/api/organizations/[id]/route.ts`（PUT）都接受整个 `config` 对象并以 `JSON.stringify` 写入 jsonb 列。新增 key 通常无需改这些文件。
+读取：`app/api/admin/organizations/route.ts` 的 Kysely 查询已选出 `organization.config`；写入：`app/super-admin/organizations/actions.ts`（`updateOrganization`）与 `app/api/organizations/[id]/route.ts`（PUT）都接受整个 `config` 对象并以 `JSON.stringify` 写入 jsonb 列。新增字段时同步检查两条写路径的类型和值校验；例如 `text_asset_miniapp_style` 会过滤非法枚举值。客户端表单校验不能替代服务端校验。
 
 #### 3. Hook（`components/org-settings/useOrgSettingsForm.ts`，super-admin 与 `/admin/settings` 共用）
 
