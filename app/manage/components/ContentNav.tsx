@@ -32,7 +32,7 @@ export function ContentNav({ organizationId, showSettings = true, className, onN
   const pathname = usePathname() ?? "";
   const items = ITEMS.filter((item) => showSettings || item.key !== "settings");
   return (
-    <nav aria-label={tx("contentModel.integration.nav.label")} className={cn("flex flex-col gap-1", className)}>
+    <nav aria-label={tx("contentModel.integration.nav.label")} className={cn("flex flex-1 flex-col gap-1", className)}>
       {items.map(({ href, key, icon: Icon, active }) => {
         const current = active(pathname);
         return (
@@ -43,7 +43,7 @@ export function ContentNav({ organizationId, showSettings = true, className, onN
             aria-current={current ? "page" : undefined}
             className={cn(
               "console-nav-link",
-              key === "settings" && "mt-6",
+              key === "settings" && "mt-6 md:mt-auto",
               current ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
             )}
           >

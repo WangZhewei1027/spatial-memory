@@ -10,7 +10,6 @@ export const ASSET_TEXTS: IntegrationTexts = {
   // Library
   "contentModel.integration.assets.unknownOrganization": ["当前团队", "Current team"],
   "contentModel.integration.assets.endpointMissing": ["素材服务尚未就绪，请稍后再试。", "The asset service is not available yet. Try again later."],
-  "contentModel.integration.assets.loadMoreFailed": ["加载更多失败", "Could not load more"],
   "contentModel.integration.assets.created": ["已上传“{{name}}”", "Uploaded “{{name}}”"],
   "contentModel.integration.assets.open": ["打开", "Open"],
   // Create dialog

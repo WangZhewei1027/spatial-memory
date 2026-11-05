@@ -14,7 +14,6 @@ export { ContentWorkbench, type ContentWorkbenchProps } from "./ContentWorkbench
 export { WorkbenchToolbar, WORKBENCH_TYPE_FILTERS, hasActiveWorkbenchFilters } from "./WorkbenchToolbar";
 export { WorkbenchItems } from "./WorkbenchItems";
 export { WorkbenchCard } from "./WorkbenchCard";
-export { WorkbenchRow } from "./WorkbenchRow";
 export { WorkbenchEmpty } from "./WorkbenchEmpty";
 
 export { CollectionList, type CollectionListProps } from "./CollectionList";

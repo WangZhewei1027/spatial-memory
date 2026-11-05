@@ -31,6 +31,7 @@ import {
 import { archived, checkLockVersion, forbidden, invalid, notFound } from "@/lib/content-model/errors";
 import {
   isRecord,
+  nameContainsPattern,
   optionalEnum,
   optionalInt,
   rejectUnknown,
@@ -104,7 +105,7 @@ async function queryCatalog(actor: Actor, org: OrgAccess, query: AssetListQuery,
   if (query.origin) base = base.where("asset.origin", "=", query.origin);
   const state = query.state ?? "active";
   if (state !== "all") base = base.where("asset.state", "=", state);
-  if (query.q) base = base.where("asset.name", "ilike", `%${query.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+  if (query.q) base = base.where("asset.name", "ilike", nameContainsPattern(query.q));
 
   const [{ total }, rows] = await Promise.all([
     base.select(({ fn }) => fn.countAll<number>().as("total")).executeTakeFirstOrThrow(),

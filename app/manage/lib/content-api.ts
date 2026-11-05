@@ -1,3 +1,4 @@
+import type { ActivityDto } from "@/lib/activities/contracts";
 import { readUploadEvents, UPLOAD_STREAM_CONTENT_TYPE, type UploadStageListener } from "@/lib/upload/progress";
 import { notifyContentChange } from "./content-events";
 /**
@@ -18,6 +19,8 @@ import {
   type AssetListQuery,
   type AssetUsageDto,
   type CollectionDto,
+  type LibraryListQuery,
+  type LibraryPage,
   type CollectionState,
   type ContentErrorCode,
   type CopyPlacementRequest,
@@ -146,6 +149,14 @@ function list<T>(body: { data: T[]; page?: { total: number } }): ListResult<T> {
 // ───────────────────────── team / collections ─────────────────────────
 
 export type { CollectionState, CreateCollectionRequest, UpdateCollectionRequest };
+
+type LibraryResources = { activities: ActivityDto; collections: CollectionDto; scenes: SceneSummaryDto };
+
+export function getTeamLibraryPage<K extends keyof LibraryResources>(
+  organizationId: string, resource: K, query: LibraryListQuery & { limit: number; offset: number }, signal: AbortSignal,
+) {
+  return get<LibraryPage<LibraryResources[K]>>(`/api/organizations/${id(organizationId)}/${resource}`, query, signal);
+}
 
 /**
  * Team-scoped content. Assets and scenes belong to the team (organization);

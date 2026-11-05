@@ -7,7 +7,9 @@ import "server-only";
 import type {
   AssetCapabilities,
   CollectionCapabilities,
+  LibraryListQuery,
 } from "./contracts";
+import { nameContainsPattern } from "./input";
 import { archived, forbidden, notFound } from "./errors";
 import type { Executor, Trx } from "./tx.server";
 
@@ -207,8 +209,13 @@ export async function loadWorkspaceAccessMany(exec: Executor, actor: Actor, work
 }
 
 /** Every collection of an organization with the caller's access (newest first). */
-export async function loadOrgWorkspaceAccess(exec: Executor, actor: Actor, orgId: string): Promise<WorkspaceAccess[]> {
-  const rows = await workspaceQuery(exec, actor).where("w.organization_id", "=", orgId).orderBy("w.create_date", "desc").orderBy("w.id").execute();
+export async function loadOrgWorkspaceAccess(exec: Executor, actor: Actor, orgId: string, opts: LibraryListQuery = {}): Promise<WorkspaceAccess[]> {
+  let query = workspaceQuery(exec, actor).where("w.organization_id", "=", orgId).orderBy("w.create_date", "desc").orderBy("w.id");
+  if (opts.state === "active") query = query.where("w.archived_at", "is", null);
+  if (opts.state === "archived") query = query.where("w.archived_at", "is not", null);
+  if (opts.q) query = query.where("w.name", "ilike", nameContainsPattern(opts.q));
+  if (opts.limit !== undefined) query = query.limit(opts.limit).offset(opts.offset ?? 0);
+  const rows = await query.execute();
   return rows.map((row) => workspaceAccessFrom(actor, row));
 }
 

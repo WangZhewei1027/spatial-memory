@@ -1,5 +1,6 @@
+import { teamLibraryResponse } from "@/lib/content-model/team-library.server";
 import { handleActorRoute, readJsonBody } from "@/lib/content-model/http.server";
-import { optionalEnum, requireUuid } from "@/lib/content-model/input";
+import { requireUuid } from "@/lib/content-model/input";
 import { createOrganizationScene, listOrganizationScenes } from "@/lib/scene/service.server";
 
 type Context = { params: Promise<{ id: string }> };
@@ -9,11 +10,7 @@ type Context = { params: Promise<{ id: string }> };
 // Scenes belong to the team; no collection is involved.
 export async function GET(request: Request, { params }: Context) {
   const { id } = await params;
-  return handleActorRoute(request, `/api/organizations/${id}/scenes`, (actor) =>
-    listOrganizationScenes(actor, requireUuid(id, "organization id"), {
-      state: optionalEnum(new URL(request.url).searchParams.get("state") ?? undefined, "state", ["active", "archived", "all"] as const),
-    }),
-  );
+  return teamLibraryResponse(request, id, "scenes", "all", listOrganizationScenes);
 }
 
 export async function POST(request: Request, { params }: Context) {

@@ -1,11 +1,11 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Clapperboard, Eye, FileJson, MoreHorizontal, Upload } from "lucide-react";
+import { Clapperboard, FileJson, MoreHorizontal, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Text } from "@/components/ui/typography";
+import { LibraryLayout, type LibraryPagination } from "./LibraryLayout";
 import { ContentFailureNotice } from "./ContentFeedback";
 import { SceneArchiveDialog } from "./SceneArchiveDialog";
 import { SceneCopyDialog } from "./SceneCopyDialog";
@@ -20,28 +20,19 @@ import {
   type ContentAction,
   type ContentLoadStatus,
   type SceneRef,
-  type TeamSummary,
   type WorkbenchFilters,
   type WorkbenchItem,
-  type WorkbenchView,
 } from "./types";
 
 export interface ContentWorkbenchProps {
   kind: ContentLibraryKind;
-  team: TeamSummary;
   filters: WorkbenchFilters;
   onFiltersChange: (filters: WorkbenchFilters) => void;
-  view: WorkbenchView;
-  onViewChange: (view: WorkbenchView) => void;
   status: ContentLoadStatus;
   errorMessage?: string;
   onRetry?: () => void;
   items: WorkbenchItem[];
-  /** Total for the current filters, when known. */
-  totalCount?: number;
-  hasMore?: boolean;
-  loadingMore?: boolean;
-  onLoadMore?: () => void;
+  pagination: LibraryPagination;
   getItemHref: (item: WorkbenchItem) => string;
   /** Team-level write access. False shows the read-only explanation instead of create actions. */
   canWrite: boolean;
@@ -56,8 +47,6 @@ export interface ContentWorkbenchProps {
   onCopyScene: ContentAction<[sceneId: string, name: string]>;
   onArchiveScene: ContentAction<[sceneId: string]>;
   onRestoreScene: ContentAction<[sceneId: string]>;
-  /** Page-level banners (refresh failures) under the header. */
-  notice?: ReactNode;
 }
 
 const refOf = (item: WorkbenchItem): SceneRef => ({ id: item.id, name: item.name, placementCount: item.placementCount, activePlacementCount: item.activePlacementCount });
@@ -65,7 +54,6 @@ const refOf = (item: WorkbenchItem): SceneRef => ({ id: item.id, name: item.name
 /** Shared thumbnail library, scoped to either scenes or basic assets. */
 export function ContentWorkbench(props: ContentWorkbenchProps) {
   const { t } = useTranslation();
-  const headingId = useId();
   const { kind, filters, canWrite, status, items } = props;
   const [createOpen, setCreateOpen] = useState(false);
   const [copying, setCopying] = useState<SceneRef | null>(null);
@@ -95,13 +83,11 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
   );
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <Text as="h1" id={headingId} variant="headingLg">{t(`contentModel.library.${kind}.title`)}</Text>
-          <Text as="p" variant="bodySm" tone="subdued">{t(`contentModel.library.${kind}.subtitle`, { team: props.team.name })}</Text>
-        </div>
-        {canWrite ? (
+    <>
+      <LibraryLayout
+        title={t(`contentModel.library.${kind}.title`)}
+        readOnlyReason={canWrite ? undefined : props.readOnlyReason}
+        actions={canWrite && (
           <div className="flex flex-wrap items-center gap-2">
             {kind === "scene" ? sceneButton("default") : canUpload && uploadButton("default")}
             {kind === "scene" && props.onImportScene && (
@@ -115,42 +101,23 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
               </DropdownMenu>
             )}
           </div>
-        ) : props.readOnlyReason ? (
-          <p className="flex max-w-sm items-start gap-1.5 text-sm text-muted-foreground">
-            <Eye className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <span>{props.readOnlyReason}</span>
-          </p>
-        ) : null}
-      </header>
+        )}
+        toolbar={<WorkbenchToolbar kind={kind} filters={filters} onFiltersChange={props.onFiltersChange} />}
+        pagination={props.pagination}
+      >
+        {failure && <ContentFailureNotice failure={failure} />}
 
-      {props.notice}
-      <WorkbenchToolbar kind={kind} filters={filters} onFiltersChange={props.onFiltersChange} view={props.view} onViewChange={props.onViewChange} />
-      {failure && <ContentFailureNotice failure={failure} />}
-
-      <WorkbenchItems
-        view={props.view}
-        status={status}
-        errorMessage={props.errorMessage}
-        onRetry={props.onRetry}
-        items={items}
-        getItemHref={props.getItemHref}
-        busyId={restoring}
-        actions={canWrite ? { onCopy: (item) => setCopying(refOf(item)), onArchive: (item) => setArchiving(refOf(item)), onRestore: restore } : undefined}
-        empty={<WorkbenchEmpty kind={kind} filters={filters} canWrite={canWrite} canUpload={canUpload} onClear={() => props.onFiltersChange({ ...DEFAULT_WORKBENCH_FILTERS })} onUpload={props.onUpload} onCreateScene={() => setCreateOpen(true)} />}
-      />
-
-      {status === "ready" && items.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Text as="p" variant="bodyXs" tone="subdued" aria-live="polite">
-            {t("contentModel.workbench.shown", { shown: items.length, total: props.totalCount ?? items.length })}
-          </Text>
-          {props.hasMore && props.onLoadMore && (
-            <Button variant="outline" size="sm" onClick={props.onLoadMore} disabled={props.loadingMore}>
-              {props.loadingMore ? t("contentModel.state.loading") : t("contentModel.action.loadMore")}
-            </Button>
-          )}
-        </div>
-      )}
+        <WorkbenchItems
+          status={status}
+          errorMessage={props.errorMessage}
+          onRetry={props.onRetry}
+          items={items}
+          getItemHref={props.getItemHref}
+          busyId={restoring}
+          actions={canWrite ? { onCopy: (item) => setCopying(refOf(item)), onArchive: (item) => setArchiving(refOf(item)), onRestore: restore } : undefined}
+          empty={<WorkbenchEmpty kind={kind} filters={filters} canWrite={canWrite} canUpload={canUpload} onClear={() => props.onFiltersChange({ ...DEFAULT_WORKBENCH_FILTERS })} onUpload={props.onUpload} onCreateScene={() => setCreateOpen(true)} />}
+        />
+      </LibraryLayout>
 
       <SceneNameDialog
         open={createOpen}
@@ -162,6 +129,6 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
       />
       <SceneCopyDialog scene={copying} onOpenChange={(open) => { if (!open) setCopying(null); }} onCopy={props.onCopyScene} />
       <SceneArchiveDialog scene={archiving} onOpenChange={(open) => { if (!open) setArchiving(null); }} onArchive={props.onArchiveScene} />
-    </section>
+    </>
   );
 }

@@ -12,6 +12,7 @@ import {
   type OrgAccess
 } from "@/lib/content-model/access.server";
 import type {
+  LibraryListQuery,
   ModelAnimationInfo,
   SceneDetailDto,
   SceneDocumentJson,
@@ -20,6 +21,7 @@ import type {
 } from "@/lib/content-model/contracts";
 import { archived, checkLockVersion, invalid, notFound } from "@/lib/content-model/errors";
 import {
+  nameContainsPattern,
   isRecord,
   isUuid,
   optionalIdempotencyKey,
@@ -230,19 +232,14 @@ async function buildSceneDetail(exec: Executor, actor: Actor, scene: SceneRow): 
 
 // ───────────────────────── queries ─────────────────────────
 
-export type SceneListState = "active" | "archived" | "all";
-
-async function listTeamScenes(actor: Actor, organizationId: string, state: SceneListState): Promise<SceneSummaryDto[]> {
-  let query = db.selectFrom("scene").select(SCENE_COLUMNS).where("organization_id", "=", organizationId);
-  if (state !== "all") query = query.where("state", "=", state);
-  const scenes = await query.orderBy("updated_at", "desc").orderBy("id").execute();
-  return buildSceneSummaries(db, actor, scenes);
-}
-
-/** GET /api/organizations/[id]/scenes: every scene of the team. */
-export async function listOrganizationScenes(actor: Actor, organizationId: string, opts: { state?: SceneListState } = {}): Promise<SceneSummaryDto[]> {
+export async function listOrganizationScenes(actor: Actor, organizationId: string, opts: LibraryListQuery = {}): Promise<SceneSummaryDto[]> {
   await requireOrgRead(db, actor, organizationId);
-  return listTeamScenes(actor, organizationId, opts.state ?? "all");
+  let query = db.selectFrom("scene").select(SCENE_COLUMNS).where("organization_id", "=", organizationId)
+    .orderBy("updated_at", "desc").orderBy("id");
+  if (opts.state && opts.state !== "all") query = query.where("state", "=", opts.state);
+  if (opts.q) query = query.where("name", "ilike", nameContainsPattern(opts.q));
+  if (opts.limit !== undefined) query = query.limit(opts.limit).offset(opts.offset ?? 0);
+  return buildSceneSummaries(db, actor, await query.execute());
 }
 
 export async function getScene(actor: Actor, sceneId: string): Promise<SceneDetailDto> {

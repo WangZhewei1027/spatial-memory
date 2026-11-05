@@ -80,7 +80,8 @@
 }
 
 @layer components {
-  .navigation-island {
+  .navigation-island,
+  .team-workarea {
     border-radius: var(--navigation-radius);
     background: hsl(var(--background));
     box-shadow: var(--navigation-shadow);
@@ -120,12 +121,37 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
+  /* The team libraries scroll their results beneath a stationary header. */
+  .team-workspace:has(.team-library) {
+    height: calc(100dvh - var(--app-navbar-height));
+  }
+  .team-workarea:has(> .team-library) {
+    min-height: 0;
+    overflow: auto;
+    padding: 0;
+  }
   .console-nav-link {
     @apply flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
   @media (min-width: 768px) {
     .console-layout { flex-direction: row; }
+    .team-workspace {
+      height: calc(100dvh - var(--app-navbar-height));
+    }
+    .team-workspace .console-sidebar {
+      position: static;
+      align-self: stretch;
+      max-height: none;
+    }
+    .team-workspace .console-sidebar > .navigation-island {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .team-workarea {
+      overflow-y: auto;
+    }
   }
   @media (max-width: 639px) {
     .navigation-row { padding-inline: 8px; }

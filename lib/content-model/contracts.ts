@@ -66,6 +66,18 @@ export interface PageInfo {
   total: number;
 }
 
+export type LibraryListQuery = {
+  state?: CollectionState;
+  q?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export interface LibraryPage<T> {
+  data: T[];
+  page: { limit: number; offset: number; hasMore: boolean };
+}
+
 export interface ApiPage<T> {
   data: T[];
   page: PageInfo;

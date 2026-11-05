@@ -21,13 +21,11 @@ export function TeamFrame({ organizationId, teamName, showSettings, aside, child
   const teamLabel = teamName || t("contentModel.library.team");
 
   return (
-    <div className="console-layout">
+    <div className="console-layout team-workspace">
       <ConsoleNavigation title={teamLabel} icon={Building2}>{navigation}</ConsoleNavigation>
-      <main className="min-w-0 flex-1 px-2 py-4 sm:px-4 lg:px-7 lg:py-6">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5">
-          {aside && <div className="flex flex-wrap items-center justify-end gap-2">{aside}</div>}
-          {children}
-        </div>
+      <main className="team-workarea flex min-w-0 flex-1 flex-col gap-4 p-3 sm:p-4 lg:p-5">
+        {aside && <div className="flex flex-wrap items-center justify-end gap-2">{aside}</div>}
+        {children}
       </main>
     </div>
   );

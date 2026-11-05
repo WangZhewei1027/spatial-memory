@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { loadAssetContents, primaryResource } from "@/lib/assets/dto.server";
 import { assertOrgWritable, ensureAssetUse, loadOrgAccess, lockOrgForWrite, lockWorkspaceForWrite, requireOrgRead, requireOrgWrite, requireWorkspaceEdit, requireWorkspaceRead, type Actor, type OrgAccess } from "@/lib/content-model/access.server";
 import { archived, checkLockVersion, ContentError, invalid, notFound } from "@/lib/content-model/errors";
-import { optionalIdempotencyKey, optionalInt, optionalString, rejectUnknown, requireEnum, requireRecord, requireString, requireUuid } from "@/lib/content-model/input";
+import { nameContainsPattern, optionalIdempotencyKey, optionalInt, optionalString, rejectUnknown, requireEnum, requireRecord, requireString, requireUuid } from "@/lib/content-model/input";
 import { audit, claimIdempotency, contentTransaction, lockKeys, recordIdempotency, requestHash, toIsoRequired, type Executor, type Trx } from "@/lib/content-model/tx.server";
 import { db, sql } from "@/lib/db";
+import type { LibraryListQuery } from "@/lib/content-model/contracts";
 import type { ActivityDto, ActivityLocation, ActivityPlacementDto, ActivityRecordDto, ActivityType } from "./contracts";
 import { effectiveConfig, parseActivityArea, parseActivityConfig, parsePoints } from "./input";
 
@@ -48,9 +49,14 @@ export async function getActivity(actor: Actor, id: string): Promise<ActivityDto
   return activityDto(db, id, access);
 }
 
-export async function listActivities(actor: Actor, organizationId: string): Promise<ActivityDto[]> {
+export async function listActivities(actor: Actor, organizationId: string, opts: LibraryListQuery = {}): Promise<ActivityDto[]> {
   const access = await requireOrgRead(db, actor, organizationId);
-  const rows = await db.selectFrom("activity").select("id").where("organization_id", "=", organizationId).orderBy("created_at", "desc").execute();
+  let query = db.selectFrom("activity").select("id").where("organization_id", "=", organizationId)
+    .orderBy("created_at", "desc").orderBy("id");
+  if (opts.state && opts.state !== "all") query = query.where("state", "=", opts.state);
+  if (opts.q) query = query.where("name", "ilike", nameContainsPattern(opts.q));
+  if (opts.limit !== undefined) query = query.limit(opts.limit).offset(opts.offset ?? 0);
+  const rows = await query.execute();
   return Promise.all(rows.map((row) => activityDto(db, row.id, access)));
 }
 

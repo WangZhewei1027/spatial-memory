@@ -55,6 +55,7 @@ async function main(): Promise<void> {
   const { db } = await import("../lib/db");
   const routes = {
     orgAssets: await import("../app/api/organizations/[id]/assets/route"),
+    orgActivities: await import("../app/api/organizations/[id]/activities/route"),
     orgScenes: await import("../app/api/organizations/[id]/scenes/route"),
     sceneValidate: await import("../app/api/organizations/[id]/scenes/validate/route"),
     orgCollections: await import("../app/api/organizations/[id]/collections/route"),
@@ -374,6 +375,29 @@ async function main(): Promise<void> {
         assert.ok(report.orphanedRows.some((row: Body) => row.file_url === f.keys.current), "versions pinned through a placed scene revision are included");
         assert.deepEqual(report.errors, []);
       } finally { await client.query("update users set role='user' where user_id=$1", [u.owner]); }
+    });
+
+    await check("team libraries page after name and state filters while full-list callers retain their contract", async () => {
+      const params = { id: f.organizations.team };
+      for (const [name, route] of Object.entries({ collections: routes.orgCollections, activities: routes.orgActivities, scenes: routes.orgScenes })) {
+        const url = `/api/organizations/${params.id}/${name}`;
+        for (const label of ["Library%_ first", "Library%_ second", "LibraryXX other"]) {
+          const body = name === "activities" ? { name: label, type: "danmaku" } : { name: label };
+          expect(await call(route.POST, { user: u.editor, method: "POST", url, params, body }), 201);
+        }
+        const read = (query: string) => call(route.GET, { user: u.viewer, url: url + query, params });
+        const filter = "?q=library%25_&state=active";
+        const full = expect(await read(filter), 200);
+        assert.equal(full.data.length, 2);
+        assert.equal(full.page, undefined);
+        for (const offset of [0, 1, 2]) {
+          const batch = expect(await read(`${filter}&limit=1&offset=${offset}`), 200);
+          assert.deepEqual(batch.data, full.data.slice(offset, offset + 1));
+          assert.deepEqual(batch.page, { limit: 1, offset, hasMore: offset === 0 });
+        }
+        assert.deepEqual(expect(await read("?q=library%25_&state=archived&limit=1"), 200).data, []);
+        expect(await read("?limit=201"), 400);
+      }
     });
 
     await check("R11 super-admin creates teams with zero collections; deletion refuses retained team content", async () => {

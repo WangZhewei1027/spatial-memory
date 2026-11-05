@@ -1,6 +1,7 @@
+import { teamLibraryResponse } from "@/lib/content-model/team-library.server";
 import { handleActorRoute, readJsonBody } from "@/lib/content-model/http.server";
 import { requireUuid } from "@/lib/content-model/input";
-import { createCollection, listCollections, parseCollectionState } from "@/lib/content-model/projects.server";
+import { createCollection, listCollections } from "@/lib/content-model/projects.server";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -9,9 +10,7 @@ type Context = { params: Promise<{ id: string }> };
 // Map collections are stored as workspace rows; every team writer manages them.
 export async function GET(request: Request, { params }: Context) {
   const { id } = await params;
-  return handleActorRoute(request, `/api/organizations/${id}/collections`, (actor) =>
-    listCollections(actor, requireUuid(id, "organization id"), { state: parseCollectionState(new URL(request.url).searchParams.get("state")) }),
-  );
+  return teamLibraryResponse(request, id, "collections", "active", listCollections);
 }
 
 export async function POST(request: Request, { params }: Context) {

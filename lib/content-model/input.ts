@@ -100,3 +100,8 @@ export function queryInt(params: URLSearchParams, name: string, fallback: number
   if (!Number.isInteger(value) || value < min || value > max) throw invalid(`${name} 必须是 ${min}–${max} 之间的整数`);
   return value;
 }
+
+/** PostgreSQL ILIKE substring search, treating user-entered %, _ and backslashes literally. */
+export function nameContainsPattern(text: string): string {
+  return `%${text.replace(/[\\%_]/g, "\\$&")}%`;
+}

@@ -1,21 +1,22 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Eye, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
+import { LibraryLayout, type LibraryPagination } from "./LibraryLayout";
 import { CollectionArchiveDialog } from "./CollectionArchiveDialog";
 import { CollectionFormDialog } from "./CollectionFormDialog";
 import { CollectionCard } from "./CollectionCard";
 import { ContentEmptyState, ContentErrorState, ContentFailureNotice } from "./ContentFeedback";
 import { LIBRARY_GRID, LibraryGridSkeleton } from "./LibraryCard";
 import type { ContentActionFailure } from "./useContentAction";
-import type { CollectionInput, CollectionItem, ContentAction, ContentLifecycle, ContentLoadStatus, TeamSummary } from "./types";
+import type { CollectionInput, CollectionItem, ContentAction, ContentLifecycle, ContentLoadStatus } from "./types";
 
 export interface CollectionListProps {
-  team: TeamSummary;
+  pagination: LibraryPagination;
   state: ContentLifecycle;
   onStateChange: (state: ContentLifecycle) => void;
   status: ContentLoadStatus;
@@ -36,7 +37,6 @@ export interface CollectionListProps {
 /** Map collections of the team. The first release has one collection type: maps. */
 export function CollectionList(props: CollectionListProps) {
   const { t } = useTranslation();
-  const headingId = useId();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CollectionItem | null>(null);
   const [archiving, setArchiving] = useState<CollectionItem | null>(null);
@@ -59,70 +59,62 @@ export function CollectionList(props: CollectionListProps) {
   const openForm = (collection: CollectionItem | null) => { setEditing(collection); setFormOpen(true); };
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <Text as="h1" id={headingId} variant="headingLg">{t("contentModel.collections.title")}</Text>
-          <Text as="p" variant="bodySm" tone="subdued" className="max-w-2xl">{t("contentModel.collections.subtitle", { team: props.team.name })}</Text>
-        </div>
-        {props.canCreate ? (
-          <Button onClick={() => openForm(null)} className="self-start sm:self-auto"><Plus aria-hidden />{t("contentModel.collections.create")}</Button>
-        ) : props.readOnlyReason ? (
-          <p className="flex max-w-sm items-start gap-1.5 text-sm text-muted-foreground">
-            <Eye className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <span>{props.readOnlyReason}</span>
-          </p>
-        ) : null}
-      </header>
+    <>
+      <LibraryLayout
+        title={t("contentModel.collections.title")}
+        actions={props.canCreate && <Button onClick={() => openForm(null)}><Plus aria-hidden />{t("contentModel.collections.create")}</Button>}
+        readOnlyReason={props.canCreate ? undefined : props.readOnlyReason}
+        pagination={props.pagination}
+        toolbar={<div className="flex items-center justify-between gap-2">
+          <Text as="p" variant="bodySm" tone="subdued" aria-live="polite">
+            {status === "ready" ? t("contentModel.collections.count", { count: collections.length }) : " "}
+          </Text>
+          <Select value={state} onValueChange={(value) => props.onStateChange(value as ContentLifecycle)}>
+            <SelectTrigger aria-label={t("contentModel.workbench.stateLabel")} className="w-auto min-w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["active", "archived"] as const).map((value) => <SelectItem key={value} value={value}>{t(`contentModel.filter.states.${value}`)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>}
+      >
+        {props.notice}
+        {failure && <ContentFailureNotice failure={failure} />}
 
-      {props.notice}
-      <div className="flex items-center justify-between gap-2">
-        <Text as="p" variant="bodySm" tone="subdued" aria-live="polite">
-          {status === "ready" ? t("contentModel.collections.count", { count: collections.length }) : " "}
-        </Text>
-        <Select value={state} onValueChange={(value) => props.onStateChange(value as ContentLifecycle)}>
-          <SelectTrigger aria-label={t("contentModel.workbench.stateLabel")} className="w-auto min-w-24"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {(["active", "archived"] as const).map((value) => <SelectItem key={value} value={value}>{t(`contentModel.filter.states.${value}`)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-      {failure && <ContentFailureNotice failure={failure} />}
-
-      {status === "loading" ? (
-        <LibraryGridSkeleton count={6} label={t("contentModel.state.loading")} />
-      ) : status === "error" ? (
-        <div className="rounded-lg border bg-background">
-          <ContentErrorState headingAs="h2" message={props.errorMessage} onRetry={props.onRetry} />
-        </div>
-      ) : collections.length === 0 ? (
-        <div className="rounded-lg border border-dashed bg-background">
-          {state === "archived" ? (
-            <ContentEmptyState headingAs="h2" title={t("contentModel.collections.empty.archivedTitle")} description={t("contentModel.collections.empty.archivedBody")} />
-          ) : (
-            <ContentEmptyState
-              headingAs="h2"
-              title={t("contentModel.collections.empty.title")}
-              description={t(props.canCreate ? "contentModel.collections.empty.body" : "contentModel.collections.empty.viewerBody")}
-              actions={props.canCreate && <Button size="sm" onClick={() => openForm(null)}><Plus aria-hidden />{t("contentModel.collections.create")}</Button>}
-            />
-          )}
-        </div>
-      ) : (
-        <ul className={LIBRARY_GRID} aria-label={t("contentModel.collections.title")}>
-          {collections.map((collection) => (
-            <CollectionCard
-              key={collection.id}
-              collection={collection}
-              href={props.getHref(collection.id)}
-              onEdit={collection.canEdit && !collection.archived ? openForm : undefined}
-              onArchive={collection.canArchive && !collection.archived ? setArchiving : undefined}
-              onRestore={collection.canArchive && collection.archived ? restore : undefined}
-              busy={restoring === collection.id}
-            />
-          ))}
-        </ul>
-      )}
+        {status === "loading" ? (
+          <LibraryGridSkeleton count={6} label={t("contentModel.state.loading")} />
+        ) : status === "error" ? (
+          <div className="my-auto">
+            <ContentErrorState headingAs="h2" message={props.errorMessage} onRetry={props.onRetry} />
+          </div>
+        ) : collections.length === 0 ? (
+          <div className="my-auto">
+            {state === "archived" ? (
+              <ContentEmptyState headingAs="h2" title={t("contentModel.collections.empty.archivedTitle")} description={t("contentModel.collections.empty.archivedBody")} />
+            ) : (
+              <ContentEmptyState
+                headingAs="h2"
+                title={t("contentModel.collections.empty.title")}
+                description={t(props.canCreate ? "contentModel.collections.empty.body" : "contentModel.collections.empty.viewerBody")}
+                actions={props.canCreate && <Button size="sm" onClick={() => openForm(null)}><Plus aria-hidden />{t("contentModel.collections.create")}</Button>}
+              />
+            )}
+          </div>
+        ) : (
+          <ul className={LIBRARY_GRID} aria-label={t("contentModel.collections.title")}>
+            {collections.map((collection) => (
+              <CollectionCard
+                key={collection.id}
+                collection={collection}
+                href={props.getHref(collection.id)}
+                onEdit={collection.canEdit && !collection.archived ? openForm : undefined}
+                onArchive={collection.canArchive && !collection.archived ? setArchiving : undefined}
+                onRestore={collection.canArchive && collection.archived ? restore : undefined}
+                busy={restoring === collection.id}
+              />
+            ))}
+          </ul>
+        )}
+      </LibraryLayout>
 
       <CollectionFormDialog
         open={formOpen}
@@ -131,6 +123,6 @@ export function CollectionList(props: CollectionListProps) {
         onSubmit={(input) => (editing ? props.onEdit(editing.id, input) : props.onCreate(input))}
       />
       <CollectionArchiveDialog collection={archiving} onOpenChange={(open) => { if (!open) setArchiving(null); }} onArchive={props.onArchive} />
-    </section>
+    </>
   );
 }

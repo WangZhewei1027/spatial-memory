@@ -13,7 +13,7 @@ Organization 在界面上称为团队。团队拥有素材、Scene 和活动，�
 | 路由 | 内容 |
 | --- | --- |
 | `/manage` | 默认进入基础素材，保留团队上下文 |
-| `/manage/assets` | 素材网格/列表、搜索、类型和归档筛选、上传 |
+| `/manage/assets` | 素材缩略图网格、搜索、类型和归档筛选、上传 |
 | `/manage/assets/[id]` | 预览、编辑当前内容、使用记录、重命名、副本、归档/恢复 |
 | `/manage/activities` | 独立活动库，创建店铺打卡或弹幕留言活动 |
 | `/manage/activities/[id]` | 活动内容与多个打卡点、跨地图投放、参与记录和隐藏/恢复 |
@@ -28,7 +28,7 @@ Organization 在界面上称为团队。团队拥有素材、Scene 和活动，�
 
 ## 数据与权限
 
-路由容器通过 `app/manage/lib/content-api.ts` 调用内容接口，上传预处理通过 `content-upload.ts`。基础素材分页加载并由服务端筛选；场景独立加载，在客户端按名称筛选。
+路由容器通过 `app/manage/lib/content-api.ts` 调用内容接口，上传预处理通过 `content-upload.ts`。四个列表页共用固定表头与滚动结果区，每次请求 30 条。服务端先按团队、状态和适用的搜索条件筛选，再分页。滚动接近底部时自动继续；续页失败保留已有结果并允许重试。
 
 展示组件位于 `app/manage/content/`，接收数据与操作回调；数据请求、导航和操作编排由 `app/manage/workbench/`、合集和素材详情路由组件负责。
 
@@ -41,7 +41,7 @@ Organization 在界面上称为团队。团队拥有素材、Scene 和活动，�
 - 详情页通过 `useResourceTeam()` 对齐资源所属团队和 URL；对齐前显示加载状态。用户主动切换团队时返回新团队对应列表。
 - 合集由 URL 指定；现场上传在页面内选择。链接已指定但失效的合集不会被静默替换，用户需重新选择；未指定且团队只有一个合集时可自动选中。
 - 合集归档/恢复后重新加载地图与投放能力。
-- 网格/列表偏好存于 localStorage 的 `spatial-memory.workbench.view`；搜索和归档筛选保留在页面状态。
+- 素材和场景均使用缩略图网格；搜索和归档筛选保留在页面状态。
 
 原 workspace UUID 继续作为合集和二维码标识。地图读写的是 Placement，细节见 [地图交互](map-asset-interaction.md)；场景保存与播放见 [Scene](scene-asset.md)。
 

@@ -13,18 +13,10 @@ export type ContentAssetType =
 export type ContentLifecycle = "active" | "archived";
 export type AssetOrigin = "team_upload" | "public_submission" | "legacy";
 export type PlacementStatus = "draft" | "active" | "paused" | "archived";
-export type TeamRole = "owner" | "admin" | "member" | "viewer";
 
 export interface ContentPerson {
   id: string;
   name: string;
-}
-
-/** The team the workbench and collections belong to. */
-export interface TeamSummary {
-  name: string;
-  /** The viewer's team role, when known; shown only when it limits the page. */
-  role?: TeamRole | null;
 }
 
 // ───────────────────────── workbench ─────────────────────────
@@ -34,7 +26,6 @@ export type ContentLibraryKind = "asset" | "scene";
 /** Content tile shared by the separate asset and scene libraries. */
 export type WorkbenchType = "scene" | ContentAssetType;
 export type WorkbenchTypeFilter = "all" | ContentAssetType;
-export type WorkbenchView = "grid" | "list";
 
 export interface WorkbenchItem {
   id: string;

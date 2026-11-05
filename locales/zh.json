@@ -1208,17 +1208,6 @@
         "link": "链接",
         "document": "文档"
       },
-      "view": {
-        "label": "显示方式",
-        "grid": "网格",
-        "list": "列表"
-      },
-      "column": {
-        "name": "名称",
-        "type": "类型",
-        "status": "状态",
-        "updated": "更新"
-      },
       "readOnlyViewer": "你是团队查看者：可以浏览和预览，不能上传或编辑。",
       "readOnlyFrozen": "团队正在迁移，内容暂时只读。",
       "readOnlyOther": "你在这个团队中只能查看。",
@@ -1231,12 +1220,10 @@
         "archivedTitle": "没有已归档的内容",
         "filteredTitle": "没有符合条件的内容",
         "filteredBody": "换个名称试试，或清除筛选。"
-      },
-      "shown": "显示 {{shown}} 项，共 {{total}} 项"
+      }
     },
     "collections": {
       "title": "地图合集",
-      "subtitle": "将素材和场景放到地图上，按合集管理。",
       "kind": {
         "map": "地图合集"
       },
@@ -1263,7 +1250,7 @@
         "archivedTitle": "没有已归档的合集",
         "archivedBody": "归档的合集会显示在这里，可以随时恢复。"
       },
-      "count": "共 {{count}} 个合集"
+      "count": "已显示 {{count}} 个合集"
     },
     "edit": {
       "file": "新文件",
@@ -1283,14 +1270,12 @@
       "browse": "浏览内容",
       "asset": {
         "title": "基础素材",
-        "subtitle": "{{team}} 的图片、模型、视频等可复用素材。",
         "emptyTitle": "还没有基础素材",
         "viewerBody": "团队成员上传素材后，会显示在这里。",
         "archivedBody": "已归档的基础素材会显示在这里，可在详情页恢复。"
       },
       "scene": {
         "title": "场景",
-        "subtitle": "{{team}} 的场景作品，可编排、预览并放入地图合集。",
         "viewerBody": "团队成员创建场景后，会显示在这里。",
         "archivedBody": "已归档的场景会显示在这里，可以随时恢复。"
       }
@@ -1298,7 +1283,6 @@
   },
   "activities": {
     "title": "活动",
-    "subtitle": "独立管理互动内容，复用于多个地图。",
     "create": "创建活动",
     "name": "活动名称",
     "type": "活动类型",

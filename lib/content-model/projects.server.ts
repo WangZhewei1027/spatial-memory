@@ -13,10 +13,10 @@ import {
 } from "./access.server";
 import {
   type CollectionDto,
-  type CollectionState
+  type LibraryListQuery
 } from "./contracts";
 import { archived, notFound } from "./errors";
-import { optionalString, rejectUnknown, requireEnum, requireString, type JsonRecord } from "./input";
+import { optionalString, rejectUnknown, requireString, type JsonRecord } from "./input";
 import { audit, toIso, type Trx } from "./tx.server";
 
 // Map collections (workspace rows): create, rename, archive, and the
@@ -37,12 +37,6 @@ export function workspaceDto(access: WorkspaceAccess): CollectionDto {
 }
 
 // ───────────────────────── collections ─────────────────────────
-
-const COLLECTION_STATES: readonly CollectionState[] = ["active", "archived", "all"];
-
-export function parseCollectionState(value: string | null): CollectionState {
-  return value === null || value === "" ? "active" : requireEnum(value, "state", COLLECTION_STATES);
-}
 
 /** Serialize collection writes against team archival. */
 async function lockOrgForCollections(trx: Trx, organizationId: string): Promise<OrgInfo> {
@@ -65,13 +59,10 @@ function parseCollectionFields(body: JsonRecord, requireName: boolean): { name?:
 }
 
 /** GET /api/organizations/[id]/collections: every collection of the team (newest first). */
-export async function listCollections(actor: Actor, organizationId: string, opts: { state?: CollectionState } = {}): Promise<CollectionDto[]> {
+export async function listCollections(actor: Actor, organizationId: string, opts: LibraryListQuery = {}): Promise<CollectionDto[]> {
   await requireOrgRead(db, actor, organizationId);
-  const state = opts.state ?? "active";
-  const all = await loadOrgWorkspaceAccess(db, actor, organizationId);
-  return all
-    .filter((access) => state === "all" || (state === "archived") === !!access.workspace.archived_at)
-    .map(workspaceDto);
+  const rows = await loadOrgWorkspaceAccess(db, actor, organizationId, { ...opts, state: opts.state ?? "active" });
+  return rows.map(workspaceDto);
 }
 
 export async function getCollection(actor: Actor, workspaceId: string): Promise<CollectionDto> {

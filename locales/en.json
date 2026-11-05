@@ -1219,17 +1219,6 @@
         "link": "Links",
         "document": "Documents"
       },
-      "view": {
-        "label": "View",
-        "grid": "Grid",
-        "list": "List"
-      },
-      "column": {
-        "name": "Name",
-        "type": "Type",
-        "status": "Status",
-        "updated": "Updated"
-      },
       "readOnlyViewer": "You're a viewer on this team: browse and preview, but no uploads or edits.",
       "readOnlyFrozen": "The team is migrating; content is read-only for now.",
       "readOnlyOther": "You can only view this team's content.",
@@ -1242,12 +1231,10 @@
         "archivedTitle": "Nothing archived",
         "filteredTitle": "Nothing matches",
         "filteredBody": "Try another name, or clear the filters."
-      },
-      "shown": "Showing {{shown}} of {{total}}"
+      }
     },
     "collections": {
       "title": "Map collections",
-      "subtitle": "Organize assets and scenes on maps.",
       "kind": {
         "map": "Map collection"
       },
@@ -1274,8 +1261,8 @@
         "archivedTitle": "No archived collections",
         "archivedBody": "Archived collections show up here and can be restored at any time."
       },
-      "count_one": "{{count}} collection",
-      "count_other": "{{count}} collections"
+      "count_one": "Showing {{count}} collection",
+      "count_other": "Showing {{count}} collections"
     },
     "edit": {
       "file": "New file",
@@ -1295,14 +1282,12 @@
       "browse": "Browse content",
       "asset": {
         "title": "Assets",
-        "subtitle": "Reusable images, models, videos and more from {{team}}.",
         "emptyTitle": "No assets yet",
         "viewerBody": "Assets appear here once team members upload them.",
         "archivedBody": "Archived assets appear here. Open an asset to restore it."
       },
       "scene": {
         "title": "Scenes",
-        "subtitle": "Compose and save scenes from {{team}}, preview them and place them in map collections.",
         "viewerBody": "Scenes appear here once team members create them.",
         "archivedBody": "Archived scenes appear here and can be restored at any time."
       }
@@ -1310,7 +1295,6 @@
   },
   "activities": {
     "title": "Activities",
-    "subtitle": "Manage interactive experiences and reuse them across maps.",
     "create": "Create activity",
     "name": "Activity name",
     "type": "Activity type",

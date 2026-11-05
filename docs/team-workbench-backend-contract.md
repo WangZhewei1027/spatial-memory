@@ -36,6 +36,8 @@ Asset visibility, maintainer and origin collection are metadata, not permission 
 
 Old `/api/workspaces/*`, workspace grants/members, asset move/copy adapters and content-model activation endpoints do not exist. Responses are `{ data }` (paged lists add `page`); errors are `{ error, code, details? }`. `lib/content-model/contracts.ts` is the typed contract.
 
+The scene, activity and collection catalogs accept optional `limit` (1–200) and `offset` (0–1000000). Supplying either requests a page with `{ data, page: { limit, offset, hasMore } }`. Omitting both returns the complete filtered `{ data }` list for existing pickers. State and literal case-insensitive name search (`q`) apply before pagination. The asset catalog retains its existing total-count page contract.
+
 ## Consistency
 
 Asset/scene/placement writes require `expectedLockVersion` (428 if missing, 409 if stale). It is a concurrency counter, not an asset content version. Asset PATCH accepts `payload` and `resources` together, replacing both atomically. Creation supports idempotency keys. Scene saves take effect immediately.

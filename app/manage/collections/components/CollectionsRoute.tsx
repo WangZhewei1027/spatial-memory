@@ -3,13 +3,13 @@
 import { ContentFeatureState } from "@/app/manage/components/ContentFeatureState";
 import { TeamPageLoading, TeamShell } from "@/app/manage/components/TeamShell";
 import { CollectionList, type ContentLifecycle } from "@/app/manage/content";
-import { useCollections } from "@/app/manage/lib/collections";
-import { collectionApi, isEndpointMissing, organizationApi } from "@/app/manage/lib/content-api";
+import { useLibraryPages } from "@/app/manage/workbench/useLibraryPages";
+import { collectionApi, getTeamLibraryPage, isEndpointMissing, organizationApi } from "@/app/manage/lib/content-api";
 import { collectionHref, teamCanWrite, useTeamContext } from "@/app/manage/lib/content-context";
 import { ERROR_TEXTS, errorMessage, runContentAction } from "@/app/manage/lib/content-errors";
 import { toCollectionItem } from "@/app/manage/lib/content-mappers";
 import { useIntegrationText, type IntegrationTexts } from "@/app/manage/lib/integration-text";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -27,8 +27,10 @@ export function CollectionsRoute() {
   const team = useTeamContext();
   const organizationId = team.organizationId;
   const [state, setState] = useState<ContentLifecycle>("active");
-  const list = useCollections(organizationId, state);
-  const items = useMemo(() => list.collections.map(toCollectionItem), [list.collections]);
+  const loadPage = useCallback((offset: number, limit: number, signal: AbortSignal) =>
+    getTeamLibraryPage(organizationId!, "collections", { state, offset, limit }, signal), [organizationId, state]);
+  const list = useLibraryPages(organizationId ? loadPage : null);
+  const items = useMemo(() => list.items.map(toCollectionItem), [list.items]);
   const canCreate = teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole });
   const shell = (body: React.ReactNode) => <TeamShell organizationId={organizationId}>{body}</TeamShell>;
 
@@ -39,10 +41,10 @@ export function CollectionsRoute() {
 
   return shell(
     <CollectionList
-      team={{ name: team.organization?.name ?? "" }}
+      pagination={list}
       state={state}
       onStateChange={setState}
-      status={list.status === "idle" ? "loading" : list.status}
+      status={list.status}
       errorMessage={listError}
       onRetry={list.reload}
       collections={items}
