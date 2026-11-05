@@ -27,6 +27,35 @@ test("server renders self-contained glTF and GLB as visible, repeatable 512px PN
   await assertVisiblePng(await generateModelThumbnail(Buffer.from(JSON.stringify(modelGltf()))));
 });
 
+test("lighting preserves middle gray and the chroma of colored materials", async () => {
+  // The center of this flat triangle is entirely foreground. Compare diffuse
+  // materials against an unlit gray swatch to catch overexposure without
+  // baking any light or tone-mapper settings into the test.
+  async function swatch(red: number, green: number, blue: number, unlit = false) {
+    const gltf = modelGltf();
+    const material = gltf.materials[0];
+    const document = {
+      ...gltf,
+      ...(unlit ? { extensionsUsed: ["KHR_materials_unlit"] } : {}),
+      materials: [{
+        ...material,
+        pbrMetallicRoughness: { baseColorFactor: [red, green, blue, 1], metallicFactor: 0, roughnessFactor: 1 },
+        ...(unlit ? { extensions: { KHR_materials_unlit: {} } } : {}),
+      }],
+    };
+    const png = await generateModelThumbnail(Buffer.from(JSON.stringify(document)));
+    const crop = await sharp(png).extract({ left: 240, top: 240, width: 32, height: 32 }).removeAlpha().png().toBuffer();
+    return (await sharp(crop).stats()).channels.map((channel) => Math.round(channel.mean));
+  }
+
+  const [gray] = await swatch(0.18, 0.18, 0.18);
+  assert.ok(gray >= 90 && gray <= 155, `18% diffuse gray should read as a midtone, got ${gray}/255`);
+  const [red, , blue] = await swatch(1, 0.6, 0.02);
+  assert.ok(red >= 170 && red - blue >= 110, `yellow should be bright and saturated, got R=${red}, B=${blue}`);
+  const [neutral] = await swatch(0.18, 0.18, 0.18, true);
+  assert.ok(neutral >= 110 && neutral <= 145, `unlit gray should retain its own midtone, got ${neutral}/255`);
+});
+
 test("model upload keeps the original bytes and supplies a separately generated PNG", async () => {
   const source = modelGlb();
   const result = await processUploadMedia(new File([new Uint8Array(source)], "triangle.glb", { type: "model/gltf-binary" }), "model");

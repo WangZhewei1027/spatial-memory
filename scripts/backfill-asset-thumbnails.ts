@@ -6,6 +6,7 @@ import { isUuid } from "../lib/content-model/input";
 async function main(): Promise<void> {
   const { values } = parseArgs({ options: {
     apply: { type: "boolean", default: false },
+    "regenerate-models": { type: "boolean", default: false },
     "env-file": { type: "string" },
     "asset-id": { type: "string" },
     "organization-id": { type: "string" },
@@ -13,7 +14,7 @@ async function main(): Promise<void> {
     help: { type: "boolean", short: "h" },
   } });
   if (values.help) {
-    console.log("node --import tsx --conditions react-server scripts/backfill-asset-thumbnails.ts [--env-file PATH] [--asset-id UUID] [--organization-id UUID] [--limit N] [--apply]\nDefaults to read-only inventory. Without --env-file, use explicit environment variables.");
+    console.log("node --import tsx --conditions react-server scripts/backfill-asset-thumbnails.ts [--env-file PATH] [--asset-id UUID] [--organization-id UUID] [--limit N] [--regenerate-models] [--apply]\nDefaults to read-only inventory of missing covers. --regenerate-models selects existing system-generated model covers. Without --env-file, use explicit environment variables.");
     return;
   }
   if (values["env-file"]) {
@@ -28,11 +29,14 @@ async function main(): Promise<void> {
   const { db } = await import("../lib/db");
   const { ContentError } = await import("../lib/content-model/errors");
   try {
-    const { listMissingAssetThumbnails, backfillAssetThumbnail } = await import("../lib/assets/thumbnail-backfill.server");
-    const candidates = await listMissingAssetThumbnails({ assetId: values["asset-id"], organizationId: values["organization-id"], limit });
-    const stats = { mode: values.apply ? "apply" : "dry-run", candidates: candidates.length, updated: 0, skipped: 0, failed: 0 };
+    const { listAssetThumbnailCandidates, backfillAssetThumbnail } = await import("../lib/assets/thumbnail-backfill.server");
+    const candidates = await listAssetThumbnailCandidates({ assetId: values["asset-id"], organizationId: values["organization-id"],
+      regenerateModels: values["regenerate-models"], limit });
+    const stats = { mode: values.apply ? "apply" : "dry-run", operation: values["regenerate-models"] ? "regenerate-models" : "backfill",
+      candidates: candidates.length, updated: 0, unchanged: 0, skipped: 0, failed: 0 };
     for (const candidate of candidates) {
-      const identity = { assetId: candidate.id, type: candidate.type, organizationId: candidate.organizationId, state: candidate.state };
+      const identity = { assetId: candidate.id, type: candidate.type, organizationId: candidate.organizationId, state: candidate.state,
+        ...(candidate.previousThumbnail ? { primaryStorageKey: candidate.storageKey, previousThumbnail: candidate.previousThumbnail } : {}) };
       if (!values.apply) {
         console.log(JSON.stringify({ ...identity, status: "candidate", source: candidate.storageKey ? "managed" : candidate.externalUrl ? "external" : "missing",
           ...(candidate.organizationArchived ? { reason: "organization_archived" } : {}) }));
