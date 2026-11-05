@@ -175,6 +175,20 @@
 .scene-inspector-identity > label { font-size: .75rem; color: hsl(var(--muted-foreground)); font-weight: 400; }
 .scene-inspector-identity > input { height: 32px; font-size: .875rem; box-shadow: none; }
 .scene-inspector-identity h3 { font-size: .75rem; font-weight: 400; color: hsl(var(--muted-foreground)); }
+.scene-resource-slot { position: relative; display: flex; min-width: 0; align-items: center; gap: 10px; padding: 6px 4px 6px 6px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--muted) / .4); transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.scene-resource-slot[data-replaceable] { border: 1.5px dashed hsl(var(--muted-foreground) / .45); }
+.scene-resource-slot[data-replaceable]:hover { border-color: hsl(var(--primary) / .7); background: hsl(var(--primary) / .04); }
+.scene-resource-slot-artwork { flex: none; width: 48px; }
+.scene-resource-slot-artwork .scene-library-artwork { aspect-ratio: 1; border-radius: 6px; background: hsl(var(--background)); }
+.scene-resource-slot-artwork .scene-library-artwork > svg { width: 20px; height: 20px; }
+.scene-inspector-identity .scene-resource-slot h3 { font-size: .8125rem; font-weight: 500; color: hsl(var(--foreground)); }
+.scene-resource-slot-hint { display: flex; min-width: 0; align-items: center; gap: 4px; margin-top: 2px; }
+.scene-resource-slot-hint > svg { width: 12px; height: 12px; flex: none; }
+.scene-resource-slot[data-replace-drop=ready] { border: 1.5px dashed hsl(var(--primary)); background: hsl(var(--primary) / .06); }
+.scene-resource-slot[data-replace-drop=ready] .scene-resource-slot-hint { color: hsl(var(--primary)); font-weight: 500; }
+.scene-resource-slot[data-replace-drop=ready][data-over] { border-style: solid; background: hsl(var(--primary) / .12); box-shadow: 0 0 0 3px hsl(var(--ring) / .25); }
+.scene-resource-slot[data-replace-drop=invalid], .scene-resource-slot[data-replace-drop=disabled] { opacity: .75; }
+.scene-resource-slot[data-replace-drop=invalid][data-over], .scene-resource-slot[data-replace-drop=disabled][data-over] { opacity: 1; border: 1.5px dashed hsl(var(--destructive) / .7); background: hsl(var(--destructive) / .05); }
 .scene-inspector-section { border-top: 1px solid hsl(var(--border)); }
 .scene-inspector-section > summary { min-height: 40px; display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; border-radius: 4px; }
 .scene-inspector-section > summary::-webkit-details-marker { display: none; }

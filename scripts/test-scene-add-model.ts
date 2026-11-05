@@ -1,5 +1,5 @@
 import { normalizeDefinition, toDocument, type EditorDefinition } from "@/app/manage/lib/scene-document";
-import { addModelInstance, resourceKey } from "@/app/manage/scenes/components/scene-add-model";
+import { addModelInstance, replaceInstanceAsset, resourceKey } from "@/app/manage/scenes/components/scene-add-model";
 import type { SceneResource } from "@/app/manage/scenes/components/types";
 import { createBlankScene } from "@/lib/scene/protocol";
 import assert from "node:assert/strict";
@@ -63,4 +63,34 @@ for (const asset of assets.slice(0, -1)) many = expectOk(add(many, asset, {}, re
 assert.equal(Object.keys(expectOk(add(many, assets.at(-1)!, {}, resource(assets.at(-1)!, 1))).content.assets).length, 10);
 expectOk(add(many, assets[0], {}));
 
-console.log("PASS picked asset, missing resource, shared alias, asset coexistence, archived and large compositions");
+// Replacing a track's source keeps the track and swaps only the asset reference.
+const V3 = "55555555-5555-4555-8555-555555555555";
+const track = { ...first.content.instances[0], name: "主角", position: [1, 0, 2] as [number, number, number], timing: { startSeconds: 2, endSeconds: 6, fadeInSeconds: 0, fadeOutSeconds: 0 },
+  animation: { clipName: "Walk", startSeconds: 2, loop: true } };
+const withTrack = normalizeDefinition({ ...first, content: { ...first.content, instances: [track] } });
+const swapped = replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { kind: "model", animations: [{ index: 0, name: "Walk" }] }), from: resource(V1, 1), createAlias });
+assert.ok(swapped.ok);
+const swappedTrack = swapped.content.instances[0];
+assert.equal(swapped.content.assets[swappedTrack.asset!].assetId, V3);
+assert.deepEqual({ ...swappedTrack, asset: track.asset }, track, "name, transform, timing and a compatible clip are kept");
+assert.deepEqual(Object.values(swapped.content.assets), [{ assetId: V3 }], "the unused alias is removed");
+normalizeDefinition({ ...withTrack, content: swapped.content });
+const noClip = replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { animations: [] }), from: resource(V1, 1), createAlias });
+assert.ok(noClip.ok && noClip.content.instances[0].animation === null, "a clip the new model lacks is cleared");
+assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { kind: "image" }), from: resource(V1, 1), createAlias }), { ok: false, reason: "kind" });
+assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { assetState: "archived" }), from: resource(V1, 1), createAlias }), { ok: false, reason: "archived" });
+assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: undefined, from: resource(V1, 1), createAlias }), { ok: false, reason: "missing" });
+const same = replaceInstanceAsset(withTrack.content, { id: track.id, key: V1, resource: resource(V1, 1), from: resource(V1, 1), createAlias });
+assert.ok(same.ok && same.content === withTrack.content, "dropping the current asset is a no-op");
+// Shared aliases stay while another instance still uses them; trims past the new file's end are reset.
+const audio = (id: string, trimStartSeconds: number, trimEndSeconds: number | null) => ({ ...track, id, animation: null, media: { trimStartSeconds, trimEndSeconds, playbackRate: 1 as const, volume: .5, loop: false, muted: false } });
+const shared = { ...withTrack.content, instances: [audio("a", 1, 9), audio("b", 12, null)] };
+const shorter = (id: string) => replaceInstanceAsset(shared, { id, key: V3, resource: resource(V3, 3, { kind: "audio", durationSeconds: 8 }), from: resource(V1, 1, { kind: "audio" }), createAlias });
+const trimmed = shorter("a");
+assert.ok(trimmed.ok);
+assert.deepEqual(trimmed.content.instances[0].media, { ...shared.instances[0].media, trimEndSeconds: null }, "an end past the new duration is cleared");
+assert.equal(Object.keys(trimmed.content.assets).length, 2, "the old alias remains for the other instance");
+const restarted = shorter("b");
+assert.ok(restarted.ok && restarted.content.instances[1].media?.trimStartSeconds === 0, "a start past the new duration restarts the source");
+
+console.log("PASS picked asset, missing resource, shared alias, asset coexistence, archived, large compositions and same-kind replacement");

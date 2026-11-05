@@ -24,6 +24,7 @@ export interface SceneInstancePanelProps {
   onEdit: (edit: <N extends SceneNode>(node: N) => N) => void;
   onRename: (name: string) => void; onClose: () => void;
   onAnimation: (animation: CompositionInstance["animation"]) => void; onUngroup: () => void;
+  onReplaceAsset: (assetId: string) => void;
 }
 /** The selection inspector owns source, visibility, media/text and spatial parameters. */
 export function SceneInstancePanel(props: SceneInstancePanelProps) {
@@ -39,7 +40,7 @@ export function SceneInstancePanel(props: SceneInstancePanelProps) {
     <div className="scene-inspector-content">
     {!node ? <div className="flex items-start gap-2"><MousePointer2 className="mt-1 size-4 shrink-0 text-muted-foreground" /><Text as="p" variant="bodySm" tone="subdued">{text("在舞台或时间轴选择对象，调整空间、出入场和播放参数。", "Select an object on the stage or timeline to edit its position, timing and playback.")}</Text></div> : <>
       <div className="scene-inspector-identity"><Label htmlFor={`${id}-name`}>{text("轨道名称", "Track name")}</Label><Input key={`${node.id}-${name}`} id={`${id}-name`} defaultValue={name} disabled={disabled} onBlur={event => props.onRename(event.target.value)} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} />
-        {resource && <SceneResourceSource resource={resource} assetHref={assetHref} />}
+        {resource && <SceneResourceSource resource={resource} assetHref={assetHref} canReplace={!disabled} onReplace={props.onReplaceAsset} />}
         {props.hiddenByParent && <Text as="p" variant="bodyXs" tone="subdued">{text("所属分组已隐藏", "Hidden by a parent group")}</Text>}
       </div>
       <SceneInspectorSection title={audio ? text("空间位置", "Position") : isGroup(node) ? text("空间变换", "Transform") : text("空间与外观", "Transform & appearance")}>

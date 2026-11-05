@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/typography";
-import { MODEL_DRAG_TYPE } from "@/lib/scene/editor-interactions";
+import { MODEL_DRAG_TYPE, assetKindDragType } from "@/lib/scene/editor-interactions";
 import { Box, ImageIcon, Music2, Film, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,7 @@ import { SCENE_LIBRARY_TEXTS } from "./scene-library-texts";
 import { libraryDuration, type LibraryLayout } from "./scene-library";
 import type { SceneResource } from "./types";
 
-function LibraryArtwork({ resource }: { resource: SceneResource }) {
+export function LibraryArtwork({ resource }: { resource: SceneResource }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const kind = resource.kind ?? "model";
   const Icon = { model: Box, image: ImageIcon, video: Film, audio: Music2 }[kind];
@@ -47,7 +47,7 @@ export function SceneLibraryList(props: SceneLibraryListProps) {
       const nameLabel = <Text as="span" variant="bodyXs" fontWeight="medium" truncate className="scene-library-name" title={name}>{name}</Text>;
       return <div key={resource.assetId} className="scene-library-item" data-unavailable={!available || undefined} draggable={draggable} title={problem || tx("contentModel.integration.sceneLibrary.drag")} onDoubleClick={() => { if (draggable) props.onAdd(resource); }} onDragStart={event => {
         if (!draggable || (event.target as HTMLElement).closest("button")) { event.preventDefault(); return; }
-        props.onRegister(resource); event.dataTransfer.setData(MODEL_DRAG_TYPE, resource.assetId); event.dataTransfer.effectAllowed = "copy";
+        props.onRegister(resource); event.dataTransfer.setData(MODEL_DRAG_TYPE, resource.assetId); event.dataTransfer.setData(assetKindDragType(kind), kind); event.dataTransfer.effectAllowed = "copy";
       }}>
         <div className="scene-library-artwork-wrap">
           <LibraryArtwork resource={resource} />

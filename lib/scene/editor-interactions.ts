@@ -1,6 +1,12 @@
 import { Plane, Raycaster, Vector2, Vector3, type Camera } from "three";
 
 export const MODEL_DRAG_TYPE = "application/x-scene-model-asset";
+/** Drag data is unreadable before drop; the kind travels in the type list so targets can validate on hover. */
+const ASSET_KIND_DRAG_PREFIX = "application/x-scene-asset-kind.";
+export const assetKindDragType = (kind: string) => `${ASSET_KIND_DRAG_PREFIX}${kind}`;
+export function draggedAssetKind(types: readonly string[]) {
+  return types.find((type) => type.startsWith(ASSET_KIND_DRAG_PREFIX))?.slice(ASSET_KIND_DRAG_PREFIX.length) ?? null;
+}
 export type ScenePosition = [number, number, number];
 export type PlacementReader = (x: number, y: number) => ScenePosition | null;
 

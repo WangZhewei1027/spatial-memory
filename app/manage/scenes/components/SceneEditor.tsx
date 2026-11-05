@@ -15,7 +15,7 @@ import { X } from "lucide-react";
 import { Component, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { teamHref } from "../../lib/content-context";
-import { addModelInstance, type ModelAddFailure } from "./scene-add-model";
+import { addModelInstance, replaceInstanceAsset, type AssetReplaceFailure, type ModelAddFailure } from "./scene-add-model";
 import { insertionTiming } from "./scene-performance";
 import { SceneConflictBanner } from "./SceneConflictBanner";
 import { SceneInstancePanel } from "./SceneInstancePanel";
@@ -94,6 +94,20 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
     if (outcome.failure) editor.setError(text("素材不可用，请刷新素材库后重试。", "This asset is unavailable. Refresh the library and try again."));
     if (outcome.added) { if (picked) editor.registerResource(picked); select(id); }
   };
+  /** Swaps the selected track's file for another asset of the same kind; the track itself is unchanged. */
+  const replaceAsset = (id: string, key: string) => {
+    const source = instances.find(item => item.id === id);
+    if (!source || !canAdd) return;
+    let failure: AssetReplaceFailure | undefined;
+    commit(current => {
+      const result = replaceInstanceAsset(current.definition.content, { id, key, resource: resources[key], from: resourceOf(source) });
+      if (!result.ok) { failure = result.reason; return current; }
+      // Pin the visible name: unnamed tracks would otherwise take the new asset's name.
+      const content = { ...result.content, instances: result.content.instances.map(item => item.id === id && !item.name ? { ...item, name: nameOf(source) } : item) };
+      return { ...current, definition: { ...current.definition, content } };
+    });
+    if (failure) editor.setError(failure === "kind" ? text("只能替换为同类型素材。", "Replace only with an asset of the same type.") : text("素材不可用，请刷新素材库后重试。", "This asset is unavailable. Refresh the library and try again."));
+  };
   const addText = () => {
     if (!canAdd) return;
     const id = `text_${crypto.randomUUID().slice(0, 8)}`;
@@ -144,7 +158,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
         </SceneModelDropZone>
         <div className="scene-tools-anchor"><SceneSidebar nativeToolsRef={nativeToolsRef} shadingRef={shadingRef} grid={grid} labels={labels} onLabels={() => setLabels(value => !value)} onGrid={() => setGrid(!grid)} onFit={() => fitRef.current?.()} onOrigin={() => originRef.current?.()} cameraSettings={cameraSettings} onCameraChange={changeCamera} positionDisabled={readOnly || playing} onPreview={() => setPreview(true)} /></div>
         <SceneCameraPreview open={preview} frameRef={previewRef} settings={cameraSettings} onChange={changeCamera} positionDisabled={readOnly || playing} onClose={() => setPreview(false)} />
-        {selectedNode && !(compact && panelOpen) && <aside className="scene-inspector-island scene-island"><SceneInstancePanel key={selectedId} node={selectedNode} hiddenByParent={!!selectedNode.parent && hidden.has(selectedNode.parent)} name={nameOf(selectedNode)} resource={selectedResource} assetHref={teamHref(`/manage/assets/${selectedResource?.assetId}`, sceneOrganizationId)} clips={instance ? clips[instance.id] : undefined} readOnly={readOnly} playing={playing} time={time} duration={duration} onChange={updateInstance} onEdit={edit => selectedId && tracks.edit(selectedId, edit)} onRename={name => selectedId && tracks.rename(selectedId, name)} onClose={() => select(null)} onAnimation={animation => updateInstance({ animation })} onUngroup={() => selectedId && tracks.ungroup(selectedId)} /></aside>}
+        {selectedNode && !(compact && panelOpen) && <aside className="scene-inspector-island scene-island"><SceneInstancePanel key={selectedId} node={selectedNode} hiddenByParent={!!selectedNode.parent && hidden.has(selectedNode.parent)} name={nameOf(selectedNode)} resource={selectedResource} assetHref={teamHref(`/manage/assets/${selectedResource?.assetId}`, sceneOrganizationId)} clips={instance ? clips[instance.id] : undefined} readOnly={readOnly} playing={playing} time={time} duration={duration} onChange={updateInstance} onEdit={edit => selectedId && tracks.edit(selectedId, edit)} onRename={name => selectedId && tracks.rename(selectedId, name)} onClose={() => select(null)} onAnimation={animation => updateInstance({ animation })} onUngroup={() => selectedId && tracks.ungroup(selectedId)} onReplaceAsset={key => selectedId && replaceAsset(selectedId, key)} /></aside>}
         {!instances.length && <div className="scene-stage-empty"><Text as="p" variant="bodySm" tone="subdued">{text("拖入素材或添加文字", "Drop an asset or add text")}</Text></div>}
         {grid && labels && <div className="scene-stage-hint"><Text as="span" variant="bodyXs" tone="subdued">{text("每格 1 米", "1 m per cell")}</Text></div>}
       </div>
