@@ -81,7 +81,7 @@ export function SceneSpatialAudioFields({ instance, disabled, onChange }: {
   const spatial = media.spatial ?? { enabled: false, refDistance: 1, maxDistance: 30, rolloffFactor: 1 };
   const change = (patch: Partial<typeof spatial>) => onChange({ media: { ...media, spatial: { ...spatial, ...patch } } });
   return <SceneInspectorSection title={text("空间音频", "Spatial audio")} defaultOpen={spatial.enabled}>
-    <Label htmlFor={`${id}-enabled`} className="flex min-h-8 items-center justify-between gap-2" title={text("Web 从虚拟相机的位置试听距离和左右声像。", "Web previews distance and stereo position from the virtual camera.")}>{text("按距离衰减", "Distance attenuation")}
+    <Label htmlFor={`${id}-enabled`} className="flex min-h-7 items-center justify-between gap-2" title={text("Web 从虚拟相机的位置试听距离和左右声像。", "Web previews distance and stereo position from the virtual camera.")}>{text("按距离衰减", "Distance attenuation")}
       <Checkbox id={`${id}-enabled`} checked={spatial.enabled} disabled={disabled} onCheckedChange={checked => change({ enabled: checked === true })} />
     </Label>
     {spatial.enabled && <><div className="scene-field-grid">

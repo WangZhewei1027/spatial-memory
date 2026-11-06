@@ -13,7 +13,7 @@ export function SceneNumberField({ id, value, onCommit, label, min, max, exclusi
     if (draft?.trim() && Number.isFinite(number) && (exclusiveMin === undefined || number > exclusiveMin)) onCommit(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, number)));
     setDraft(null);
   };
-  return <Input id={id} aria-label={label} type="number" min={min} max={max} step={step} value={draft ?? display} disabled={disabled} className="h-8 min-w-0 px-2 tabular-nums shadow-none" onChange={(event) => setDraft(event.target.value)} onBlur={finish} onKeyDown={(event) => {
+  return <Input id={id} aria-label={label} type="number" min={min} max={max} step={step} value={draft ?? display} disabled={disabled} className="h-7 min-w-0 px-2 text-xs tabular-nums shadow-none md:text-xs" onChange={(event) => setDraft(event.target.value)} onBlur={finish} onKeyDown={(event) => {
     if (event.key === "Enter") event.currentTarget.blur();
     if (event.key === "Escape") { setDraft(null); event.preventDefault(); }
   }} />;
@@ -35,6 +35,6 @@ export function SceneOptionalNumberField({ value, onCommit, label, placeholder, 
     setDraft(null);
   };
   return <Input type="number" aria-label={label} placeholder={placeholder} value={draft ?? display} min={min} max={max} step={step} disabled={disabled}
-    className="h-8 min-w-0 px-2 tabular-nums shadow-none" onChange={event => setDraft(event.target.value)} onBlur={finish}
+    className="h-7 min-w-0 px-2 text-xs tabular-nums shadow-none md:text-xs" onChange={event => setDraft(event.target.value)} onBlur={finish}
     onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); if (event.key === 'Escape') { setDraft(null); event.preventDefault(); } }} />;
 }

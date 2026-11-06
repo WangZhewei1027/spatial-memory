@@ -10,8 +10,8 @@ import { SceneNumberField } from "./SceneFields";
 import { DEFAULT_SCENE_CAMERA, type SceneCameraSettings } from "./three-editor/spatial-reference";
 
 /** Position edits join scene history; lens and pitch only change the preview. */
-export function SceneCameraControls({ settings, onChange, onPreview, preview = false, positionDisabled = false }: {
-  settings: SceneCameraSettings; onChange: (value: SceneCameraSettings) => void; onPreview?: () => void; preview?: boolean; positionDisabled?: boolean;
+export function SceneCameraControls({ settings, onChange, onPreview, positionDisabled = false }: {
+  settings: SceneCameraSettings; onChange: (value: SceneCameraSettings) => void; onPreview?: () => void; positionDisabled?: boolean;
 }) {
   const { i18n } = useTranslation();
   const text = (zh: string, en: string) => i18n.language.startsWith("zh") ? zh : en;
@@ -28,7 +28,7 @@ export function SceneCameraControls({ settings, onChange, onPreview, preview = f
   ];
   return <div ref={anchorRef} className="scene-camera-controls">
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild><Button variant={open ? "secondary" : "ghost"} size="icon" className={preview ? "size-7" : "size-8"} title={text("虚拟相机", "Virtual camera")} aria-label={text("虚拟相机", "Virtual camera")}><Camera /></Button></PopoverTrigger>
+      <PopoverTrigger asChild><Button variant={open ? "secondary" : "ghost"} size="icon" className="size-7" title={text("虚拟相机", "Virtual camera")} aria-label={text("虚拟相机", "Virtual camera")}><Camera /></Button></PopoverTrigger>
       <PopoverContent portalContainer={container} side="bottom" align="end" className="scene-camera-popover" aria-label={text("虚拟相机设置", "Virtual camera settings")}>
         <Text as="h2" variant="bodySm" fontWeight="semibold">{text("虚拟相机", "Virtual camera")}</Text>
         <Button variant="secondary" className="w-full" disabled={positionDisabled} onClick={() => onChange({ ...settings, distance: DEFAULT_SCENE_CAMERA.distance, height: DEFAULT_SCENE_CAMERA.height, yaw: DEFAULT_SCENE_CAMERA.yaw })}>{text("恢复默认位置", "Reset position")}</Button>

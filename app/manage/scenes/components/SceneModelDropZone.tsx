@@ -36,6 +36,6 @@ export function SceneModelDropZone({ children, canDrop, enabled, placementRef, o
       if (position && canDrop(id)) onAdd(id, position);
     }}>
     {children}
-    {over && <><div className="scene-drop-message" role="status"><Text as="span" variant="bodySm">{t(!enabled ? "sceneEditor.dropUnavailable" : over.valid ? "sceneEditor.dropModel" : "sceneEditor.dropOnGround")}</Text></div>{over.valid && <div className="scene-drop-target" style={{ left: over.x, top: over.y }} aria-hidden="true" />}</>}
+    {over && <><div className="scene-drop-message" role="status"><Text as="span" variant="bodyXs">{t(!enabled ? "sceneEditor.dropUnavailable" : over.valid ? "sceneEditor.dropModel" : "sceneEditor.dropOnGround")}</Text></div>{over.valid && <div className="scene-drop-target" style={{ left: over.x, top: over.y }} aria-hidden="true" />}</>}
   </div>;
 }

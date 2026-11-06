@@ -21,8 +21,8 @@ export function SceneSidebar({ nativeToolsRef, shadingRef, grid, labels, onGrid,
       <div ref={shadingRef} className="scene-shading-control" />
       <SceneGizmosMenu grid={grid} labels={labels} onGrid={onGrid} onLabels={onLabels} />
       <div className="scene-view-actions" role="group" aria-label={text("视角与相机", "View and camera")}>
-        <Button size="icon" className="size-8" variant="ghost" title={`${t("sceneEditor.fit")} (F)`} aria-label={t("sceneEditor.fit")} onClick={onFit}><Maximize /></Button>
-        <Button size="icon" className="size-8" variant="ghost" title={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} aria-label={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} onClick={onOrigin}><LocateFixed /></Button>
+        <Button size="icon" className="size-7" variant="ghost" title={`${t("sceneEditor.fit")} (F)`} aria-label={t("sceneEditor.fit")} onClick={onFit}><Maximize /></Button>
+        <Button size="icon" className="size-7" variant="ghost" title={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} aria-label={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} onClick={onOrigin}><LocateFixed /></Button>
         <SceneCameraControls settings={cameraSettings} onChange={onCameraChange} positionDisabled={positionDisabled} onPreview={onPreview} />
       </div>
     </div>

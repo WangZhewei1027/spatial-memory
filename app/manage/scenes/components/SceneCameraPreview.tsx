@@ -17,7 +17,7 @@ export function SceneCameraPreview({ open, frameRef, settings, onChange, onClose
   return <section id="scene-camera-preview" className="scene-preview-island" hidden={!open} aria-label={text("相机预览", "Camera preview")}>
     <div className="scene-preview-heading">
       <Text as="h2" variant="bodyXs" fontWeight="semibold" truncate className="min-w-0 flex-1">{text("相机预览", "Camera preview")}</Text>
-      <SceneCameraControls preview settings={settings} onChange={onChange} positionDisabled={positionDisabled} />
+      <SceneCameraControls settings={settings} onChange={onChange} positionDisabled={positionDisabled} />
       <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={onClose} title={text("关闭相机预览", "Close camera preview")} aria-label={text("关闭相机预览", "Close camera preview")}><X /></Button>
     </div>
     <div className="scene-preview-view">

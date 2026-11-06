@@ -57,10 +57,10 @@ export function SceneResourceSource({ resource, assetHref, canReplace, onReplace
       }}>
       <div className="scene-resource-slot-artwork"><LibraryArtwork resource={resource} /></div>
       <div className="min-w-0 flex-1">
-        <Text as="h3" variant="bodySm" fontWeight="medium" truncate title={resource.name ?? undefined}>{resource.name || "—"}</Text>
+        <Text as="h3" variant="bodyXs" fontWeight="medium" truncate title={resource.name ?? undefined}>{resource.name || "—"}</Text>
         {(canReplace || dragging) && <Text as="p" variant="bodyXs" tone={dragging === "invalid" || dragging === "disabled" ? "critical" : "subdued"} className="scene-resource-slot-hint" role={dragging ? "status" : undefined}><ArrowLeftRight aria-hidden="true" />{hint}</Text>}
       </div>
-      <Button asChild size="icon" variant="ghost" className="size-8 shrink-0"><Link target="_blank" rel="noopener noreferrer" href={assetHref} title={t("contentModel.edit.openAsset")} aria-label={t("contentModel.edit.openAsset")}><ExternalLink /></Link></Button>
+      <Button asChild size="icon" variant="ghost" className="size-7 shrink-0"><Link target="_blank" rel="noopener noreferrer" href={assetHref} title={t("contentModel.edit.openAsset")} aria-label={t("contentModel.edit.openAsset")}><ExternalLink /></Link></Button>
     </div>
     {resource.assetState === "archived" && <Text as="p" variant="bodySm" tone="subdued">{t("contentModel.detail.archivedBody")}</Text>}
   </div>;

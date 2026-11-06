@@ -162,7 +162,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
           </div>
         </TimelineContext.Provider>
       </div>
-      {!rows.length && <div className="scene-timeline-empty"><Text as="p" variant="bodySm" tone="subdued" alignment="center">{text('拖入素材安排出场时间', 'Drop an asset to set its entrance')}</Text></div>}
+      {!rows.length && <div className="scene-timeline-empty"><Text as="p" variant="bodyXs" tone="subdued" alignment="center">{text('拖入素材安排出场时间', 'Drop an asset to set its entrance')}</Text></div>}
     </div>
   </section>;
 }

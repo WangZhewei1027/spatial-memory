@@ -1,7 +1,7 @@
 import { roundTime } from '@/lib/scene/transform-authoring';
 
 /** Width of the sticky track-header column; lanes start right after it. */
-export const TIMELINE_LABEL_WIDTH = 300;
+export const TIMELINE_LABEL_WIDTH = 260;
 /** Gutter before 0s so the playhead head is never clipped by the channel column. */
 export const TIMELINE_LEAD = 12;
 /** Pointer edits use millisecond resolution; numeric duration entry accepts any positive value. */

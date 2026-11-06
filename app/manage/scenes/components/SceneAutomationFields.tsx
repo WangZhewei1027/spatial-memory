@@ -21,7 +21,7 @@ function SceneKeyframeButton({ node, channels, label, time, disabled, onEdit }: 
   const keyed = count === channels.length;
   const animated = channels.some(channel => tracks[channel]?.length);
   const action = i18n.language.startsWith("zh") ? `${keyed ? "移除" : "添加"}${label}关键帧` : `${keyed ? "Remove" : "Add"} ${label} keyframe`;
-  return <Button variant="ghost" size="icon" className="scene-key-toggle size-8" disabled={disabled}
+  return <Button variant="ghost" size="icon" className="scene-key-toggle size-7" disabled={disabled}
     data-animated={animated || undefined} aria-pressed={keyed ? true : count ? "mixed" : false} aria-label={action} title={action}
     onClick={() => onEdit(current => keyed ? unkeyAll(current, channels, time) : keyAll(current, channels, time))}>
     <Diamond aria-hidden="true" />

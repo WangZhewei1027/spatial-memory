@@ -7,7 +7,7 @@ import { Text } from "@/components/ui/typography";
 export function SceneInspectorSection({ title, children, defaultOpen = true }: { title: string; children: ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return <details className="scene-inspector-section" open={open} onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary><ChevronRight aria-hidden="true" /><Text as="h3" variant="bodySm" fontWeight="semibold">{title}</Text></summary>
+    <summary><ChevronRight aria-hidden="true" /><Text as="h3" variant="bodyXs" fontWeight="semibold">{title}</Text></summary>
     <div className="scene-inspector-section-body">{children}</div>
   </details>;
 }
