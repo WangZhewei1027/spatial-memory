@@ -1,0 +1,2 @@
+# Unified diffs of tab-indented upstream source contain " \t" context lines by construction.
+vendor/three-editor/integration.patch -whitespace
