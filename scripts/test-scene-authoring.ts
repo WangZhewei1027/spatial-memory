@@ -7,7 +7,7 @@ import { compileSceneManifest } from '../lib/scene/compile';
 import { apply, inspect, sample, validate } from '../packages/scene-authoring/src/index';
 import { createBlankSceneDocument as sharedCreate } from '../packages/scene-authoring/src/protocol';
 import { parseSceneDocument as sharedParse, validateSceneDocument as sharedValidate } from '../packages/scene-authoring/src/validate';
-import { copyTracks, pasteTracks } from '../app/manage/scenes/components/scene-clipboard';
+import { copyTracks, pasteTracks, PASTE_OFFSET } from '../app/manage/scenes/components/scene-clipboard';
 
 const assetId = '11111111-1111-4111-8111-111111111111';
 const key = (time: number, value: number): TransformKeyframe => ({ time, value, handles: [1 / 3, 1 / 3, 2 / 3, 2 / 3], connectedRight: true });
@@ -59,7 +59,8 @@ test('the Web duplicate action preserves all schema fields and produces an indep
   const pasted = pasteTracks(document, snapshot, '副本');
   const parsed = parseSceneDocument(pasted.definition);
   assert.deepEqual(parsed.content.instances.map(item => item.id), ['video', pasted.selected[0]]);
-  assert.deepEqual(parsed.content.instances[1], { ...document.content.instances[0], id: pasted.selected[0], name: 'Video 副本' });
+  const position = document.content.instances[0].position.map((value, axis) => value + PASTE_OFFSET[axis]) as [number, number, number];
+  assert.deepEqual(parsed.content.instances[1], { ...document.content.instances[0], id: pasted.selected[0], name: 'Video 副本', position }, 'only id, name and the in-place offset differ');
   parsed.content.instances[1].media!.spatial!.maxDistance = 300;
   assert.equal(parsed.content.instances[0].media!.spatial!.maxDistance, 30);
   assert.equal(document.content.instances.length, 1, 'UI undo snapshot is not mutated');

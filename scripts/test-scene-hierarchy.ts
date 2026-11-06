@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { createSceneCore } from '@spatial-memory/scene-core';
 import { compileSceneManifest } from '../lib/scene/compile';
-import { groupNodes, moveNode, normalizeHierarchy, removeNodes, renameNode, trackRows, ungroup } from '../lib/scene/hierarchy-authoring';
+import { editNode, groupNodes, moveNode, normalizeHierarchy, removeNodes, renameNode, trackRows, ungroup } from '../lib/scene/hierarchy-authoring';
 import type { CompositionContent, CompositionInstance } from '../lib/scene/protocol';
 import { validateSceneDefinition, validateSceneDocument } from '../lib/scene/validate';
 import { fromDocument, toDocument } from '../app/manage/lib/scene-document';
+import { copyTracks, pasteTracks, PASTE_OFFSET } from '../app/manage/scenes/components/scene-clipboard';
 
 const assetId = '10150000-0000-4000-8000-000000000001';
 const model = (id: string, position: [number, number, number] = [0, 0, 0]): CompositionInstance => ({ id, asset: 'model', position, rotation: [0, 0, 0], scale: [1, 1, 1], animation: null });
@@ -79,10 +80,31 @@ const flat = compileSceneManifest('scene', { schemaVersion: 6, content: { ...sce
 assert.equal(flat.schemaVersion, 4, 'scenes without groups stay playable by released mini-programs');
 assert.equal('groups' in flat.content, false);
 
+// Editing a group-free scene must not add `groups: undefined`; paste validates the whole document.
+const ungrouped = editNode(scene([model('a')]), 'a', node => ({ ...node, position: [0, 1, 0] }));
+assert.equal('groups' in ungrouped, false, 'absent groups stay absent after an edit');
+const editedDefinition = fromDocument({ schemaVersion: 6, content: ungrouped });
+const clipboard = copyTracks(ungrouped, ['a'], node => node.id)!;
+const pasted = pasteTracks(editedDefinition, clipboard, 'copy');
+assert.equal(pasted.definition.content.instances.length, 2, 'copy/paste after a viewport edit');
+assert.deepEqual(pasted.definition.content.instances[1].position, [PASTE_OFFSET[0], 1, PASTE_OFFSET[2]], 'an in-place paste is offset');
+const repeated = pasteTracks(pasted.definition, clipboard, 'copy', 2);
+const third = repeated.definition.content.instances.find(item => item.id === repeated.selected[0])!;
+assert.deepEqual(third.position, [PASTE_OFFSET[0] * 2, 1, PASTE_OFFSET[2] * 2], 'repeated pastes step further instead of stacking');
+// Animated position follows the offset; group members keep their local transform under the copied group.
+const key = (time: number, value: number) => ({ time, value, handles: [1 / 3, 1 / 3, 2 / 3, 2 / 3] as [number, number, number, number], connectedRight: true });
+const rigged = ok(groupNodes(scene([{ ...model('m', [1, 0, 0]), tracks: { 'position.x': [key(0, 1), key(2, 3)] } }, model('n')]), ['m', 'n'], { id: 'rig', name: 'Rig' }));
+const animatedPaste = pasteTracks(fromDocument({ schemaVersion: 6, content: rigged }), copyTracks(rigged, ['m'], node => node.id)!, 'copy');
+assert.deepEqual(animatedPaste.definition.content.instances.find(item => item.id === animatedPaste.selected[0])!.tracks!['position.x']!.map(frame => frame.value), [1 + PASTE_OFFSET[0], 3 + PASTE_OFFSET[0]]);
+const groupPaste = pasteTracks(fromDocument({ schemaVersion: 6, content: rigged }), copyTracks(rigged, ['rig'], node => node.id)!, 'copy').definition.content;
+const rigCopy = groupPaste.groups!.find(group => group.id !== 'rig')!;
+assert.deepEqual(rigCopy.position, [PASTE_OFFSET[0], 0, PASTE_OFFSET[2]], 'the copied group root moves');
+assert.deepEqual(groupPaste.instances.filter(item => item.parent === rigCopy.id).map(item => item.position), rigged.instances.map(item => item.position), 'members stay local to the moved group');
+
 // Scene Core samples group tracks with the same clock as instances.
 const animated = { ...content, groups: content.groups!.map(group => group.id === 'g1' ? { ...group, tracks: { 'position.x': [{ time: 0, value: 0, handles: [0, 0, 1, 1] as [number, number, number, number], connectedRight: true }, { time: 2, value: 4, handles: [0, 0, 1, 1] as [number, number, number, number], connectedRight: true }] } } : group) };
 const core = createSceneCore({ content: animated });
 core.seek(1); near(core.sample('g1')!.position.x, 2, 'group track sampled');
 core.sync(scene([model('a')])); assert.equal(core.sample('g1'), undefined, 'sync drops removed groups');
 core.dispose();
-console.log(JSON.stringify({ result: 'PASS', coverage: 'track order, stack/nest/move/ungroup, world-preserving reparent, empty groups, delete, rename, unbounded depth, validation, save round trip, schema 4/5 compile, core group sampling' }));
+console.log(JSON.stringify({ result: 'PASS', coverage: 'track order, stack/nest/move/ungroup, world-preserving reparent, empty groups, delete, rename, edit without groups + offset paste, unbounded depth, validation, save round trip, schema 4/5 compile, core group sampling' }));

@@ -15,7 +15,7 @@ export function useSceneTracks(editor: SceneEditorState, selectedIds: string[], 
     if (editor.readOnly) return;
     editor.commit(current => ({ ...current, definition: { ...current.definition, content: edit(current.definition.content) } }));
   };
-  const failed = (reason: HierarchyFailure) => editor.setError({
+  const failed = (reason: HierarchyFailure) => editor.reportError({
     cycle: text('不能把分组移到它自己里面。', 'A group cannot be moved into itself.'),
   }[reason]);
   /** Apply a hierarchy edit that may refuse; the failure is reported instead of committing. */

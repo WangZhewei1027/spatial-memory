@@ -2,6 +2,7 @@ import { newAlias, type EditorDefinition } from "../../lib/scene-document";
 import { trackRows, isGroup, type SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { apply } from "@/packages/scene-authoring/src/operations";
 import type { Operation } from "@/packages/scene-authoring/src/types";
+import type { TransformKeyframe } from "@/lib/scene/protocol";
 
 type Content = EditorDefinition["content"];
 
@@ -23,8 +24,26 @@ export function copyTracks(content: Content, ids: string[], nameOf: (node: Scene
 }
 export type TrackClipboard = NonNullable<ReturnType<typeof copyTracks>>;
 
-/** Materialize the copy-time snapshot even after the original track or alias was deleted. */
-export function pasteTracks(document: EditorDefinition, snapshot: TrackClipboard, copySuffix: string) {
+/** Per-paste shift (metres, parent space) so an in-place copy is visibly separate from its source. */
+export const PASTE_OFFSET = [0.25, 0, 0.25] as const;
+
+/** Shift a pasted root and its position keys; group members keep their local transforms. */
+function offsetNode<N extends SceneNode>(node: N, steps: number): N {
+  if (!steps) return node;
+  const position = node.position.map((value, axis) => value + PASTE_OFFSET[axis] * steps) as N["position"];
+  const tracks: Record<string, TransformKeyframe[] | undefined> = { ...node.tracks };
+  (["x", "y", "z"] as const).forEach((axis, index) => {
+    const frames = tracks[`position.${axis}`], delta = PASTE_OFFSET[index] * steps;
+    if (frames && delta) tracks[`position.${axis}`] = frames.map(frame => ({ ...frame, value: frame.value + delta }));
+  });
+  return { ...node, position, ...(node.tracks ? { tracks } : {}) };
+}
+
+/**
+ * Materialize the copy-time snapshot even after the original track or alias was deleted.
+ * `steps` offsets the pasted roots by that many `PASTE_OFFSET`s; repeated pastes pass 1, 2, 3…
+ */
+export function pasteTracks(document: EditorDefinition, snapshot: TrackClipboard, copySuffix: string, steps = 1) {
   const content = document.content;
   const operations: Operation[] = [];
   const aliases = new Map<string, string>();
@@ -40,9 +59,10 @@ export function pasteTracks(document: EditorDefinition, snapshot: TrackClipboard
   const last = content.instances.reduce((at, item, index) => ids.has(item.id) ? index : at, -1);
   const beforeId = last >= 0 ? content.instances[last + 1]?.id : undefined;
   for (const original of snapshot.nodes) {
-    const node = structuredClone(original);
+    const root = snapshot.roots.has(original.id);
+    const node = root ? offsetNode(structuredClone(original), steps) : structuredClone(original);
     node.id = ids.get(original.id)!;
-    if (snapshot.roots.has(original.id)) node.name = `${snapshot.roots.get(original.id)} ${copySuffix}`;
+    if (root) node.name = `${snapshot.roots.get(original.id)} ${copySuffix}`;
     if (node.parent) {
       const parentCopy = ids.get(node.parent);
       if (parentCopy) node.parent = parentCopy;

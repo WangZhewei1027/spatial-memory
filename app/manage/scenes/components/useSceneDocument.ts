@@ -4,6 +4,7 @@ import { resourceFromAsset, resourceFromResolved } from "./scene-performance";
 import type { SceneDetailDto, SceneResolvedResourceDto } from "@/lib/content-model/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { assetApi, isLockConflict, sceneApi } from "../../lib/content-api";
 import { fromDocument, normalizeDefinition, toDocument, type EditorAssetRef, type EditorDefinition } from "../../lib/scene-document";
 import { resourceKey } from "./scene-add-model";
@@ -12,6 +13,13 @@ import type { ClipInfo, SceneResource } from "./types";
 
 export type SceneDocument = { title: string; definition: EditorDefinition };
 export interface SaveConflict { message: string }
+
+const messageOf = (cause: unknown) => cause instanceof Error ? cause.message : String(cause);
+/** Errors after the editor opens go to the app-wide toast host; identical messages share one toast. */
+export const reportSceneError = (cause: unknown) => {
+  const message = messageOf(cause);
+  if (message) toast.error(message, { id: `scene-editor:${message}` });
+};
 
 const indexResolved = (list: SceneResolvedResourceDto[]) => Object.fromEntries(list.map((item) => [item.asset_id, resourceFromResolved(item)]));
 
@@ -22,7 +30,8 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
   const [resources, setResources] = useState<Record<string, SceneResource>>({});
   const [detail, setDetail] = useState<SceneDetailDto | null>(null);
   const [clips, setClips] = useState<Record<string, ClipInfo[]>>({});
-  const [error, setError] = useState("");
+  // Only a failed initial load replaces the editor; every later error is a toast.
+  const [loadError, setLoadError] = useState("");
   const [conflict, setConflict] = useState<SaveConflict | null>(null);
   const [saving, setSaving] = useState(false);
   const [baseline, setBaseline] = useState("");
@@ -42,7 +51,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
     let active: SceneSession | undefined;
     const abort = new AbortController();
     const cleanup: (() => void)[] = [];
-    setError(""); setConflict(null);
+    setLoadError(""); setConflict(null);
     (async () => {
         // Both Strict Mode runs may use the route's prefetch; only an explicit reload refetches.
         const prefetched = retry === 0 ? initialRef.current : null;
@@ -56,7 +65,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
       const player = active;
       cleanup.push(player.subscribe(() => { setTime(player.time); setPlaying(player.playing); }));
       setSession(active);
-    })().catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : String(err)); });
+    })().catch((err) => { if (!cancelled) setLoadError(messageOf(err)); });
     return () => { cancelled = true; abort.abort(); cleanup.forEach((fn) => fn()); active?.dispose(); };
   }, [sceneId, retry]);
   useEffect(() => {
@@ -82,7 +91,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
         return resourceFromAsset(asset);
       })).then((items) => {
         if (!controller.signal.aborted) setResources((current) => ({ ...current, ...Object.fromEntries(items.filter((item): item is SceneResource => !!item).map((item) => [item.assetId, item])) }));
-      }).catch((cause) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause)); });
+      }).catch((cause) => { if (!controller.signal.aborted) reportSceneError(cause); });
     });
     return () => { stop(); abort?.abort(); };
   }, [sceneId]);
@@ -105,16 +114,16 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
       history.current.past.push(previous);
       if (history.current.past.length > 60) history.current.past.shift();
       history.current.future = [];
-      latest.current = next; setDocument(next); setError("");
+      latest.current = next; setDocument(next);
       return true;
-    } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+    } catch (err) { reportSceneError(err); }
   }, [session, readOnly]);
   const travel = (direction: "past" | "future") => {
     const previous = latest.current, next = history.current[direction].pop();
     if (!previous || !next || !session || readOnly) return;
     history.current[direction === "past" ? "future" : "past"].push(previous);
     session.pause(); session.sync(next.definition.content);
-    latest.current = next; setDocument(next); setError(""); renderHistory(n => n + 1);
+    latest.current = next; setDocument(next); renderHistory(n => n + 1);
   };
   useEffect(() => {
     if (!session) return;
@@ -159,7 +168,6 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
   const save = useCallback(async () => {
     const current = latest.current;
     if (!current || !session || savingRef.current || readOnly) return false;
-    setError("");
     try {
       const snapshot = structuredClone(current);
       snapshot.definition = normalizeDefinition(snapshot.definition);
@@ -187,7 +195,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
         }
       setBaseline(JSON.stringify(snapshot)); setConflict(null);
       return true;
-    } catch (err) { setError(err instanceof Error ? err.message : String(err)); return false; }
+    } catch (err) { reportSceneError(err); return false; }
     finally { savingRef.current = false; setSaving(false); }
   }, [session, resources, clips, sceneId, readOnly, t]);
   const seek = (position: number) => session?.seek(position);
@@ -198,7 +206,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
   };
   return {
     session, document, resources, resolve, registerResource, detail, setDetail, lockVersion: () => lock.current,
-    clips, onClips, awaitInitialClip, error, setError, conflict, dismissConflict: () => setConflict(null), saving, dirty, readOnly, time, playing, commit, save, seek, play,
+    clips, onClips, awaitInitialClip, loadError, reportError: reportSceneError, conflict, dismissConflict: () => setConflict(null), saving, dirty, readOnly, time, playing, commit, save, seek, play,
     undo: () => travel("past"), redo: () => travel("future"), canUndo: history.current.past.length > 0, canRedo: history.current.future.length > 0,
     retry: () => window.location.reload(),
   };

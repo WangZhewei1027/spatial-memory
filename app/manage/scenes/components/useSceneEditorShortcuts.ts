@@ -9,7 +9,8 @@ function editingField(target: EventTarget | null) {
 
 interface TrackShortcuts {
   copy(): TrackClipboard | null;
-  paste(snapshot: TrackClipboard): void;
+  /** `steps` counts pastes of this copy, so repeated pastes do not stack on one spot. */
+  paste(snapshot: TrackClipboard, steps: number): void;
   remove(): void;
   hasSelection: boolean;
 }
@@ -18,7 +19,7 @@ export function useSceneEditorShortcuts(editor: SceneEditorState, tracks: TrackS
   const actions = useRef({ editor, tracks });
   actions.current = { editor, tracks };
   useEffect(() => {
-    let clipboard: TrackClipboard | null = null;
+    let clipboard: TrackClipboard | null = null, pastes = 0;
     const copiedText = (event: ClipboardEvent) => {
       if (editingField(event.target)) clipboard = null;
     };
@@ -34,12 +35,12 @@ export function useSceneEditorShortcuts(editor: SceneEditorState, tracks: TrackS
       const command = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey;
       if (command && event.key.toLowerCase() === "c") {
         const snapshot = tracks.copy();
-        if (snapshot) { clipboard = snapshot; event.preventDefault(); }
+        if (snapshot) { clipboard = snapshot; pastes = 0; event.preventDefault(); }
         return;
       }
       if (command && event.key.toLowerCase() === "v" && clipboard && !editor.readOnly && !editor.playing) {
         event.preventDefault();
-        if (!event.repeat) tracks.paste(clipboard);
+        if (!event.repeat) tracks.paste(clipboard, ++pastes);
         return;
       }
       if (event.key === "Delete" || event.key === "Backspace") {

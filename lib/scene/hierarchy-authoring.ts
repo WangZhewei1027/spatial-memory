@@ -149,7 +149,9 @@ export function removeNodes<T extends Content>(content: T, ids: string[]): T {
 }
 
 export function editNode<T extends Content>(content: T, id: string, edit: <N extends SceneNode>(node: N) => N): T {
-  return { ...content, instances: content.instances.map(item => item.id === id ? edit(item) : item), groups: content.groups?.map(item => item.id === id ? edit(item) : item) };
+  // Omit absent groups: a `groups: undefined` key is not JSON and fails document validation (e.g. paste).
+  const instances = content.instances.map(item => item.id === id ? edit(item) : item);
+  return { ...content, instances, ...(content.groups ? { groups: content.groups.map(item => item.id === id ? edit(item) : item) } : {}) };
 }
 
 /** An empty instance name falls back to its asset name; groups always keep a name. */

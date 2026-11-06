@@ -77,7 +77,8 @@ export function mountThreeEditor(host: HTMLDivElement, initial: ThreeViewportPro
   viewport.transformControls.addEventListener('mouseUp', end);
   const resized = () => {
     spatial.resizeLabels(host.clientHeight, editor.camera.fov);
-    viewport.setViewHelperLocation(Math.max(0, Math.min(270, host.clientWidth / 2 - 64)), 46); editor.signals.windowResize.dispatch();
+    // Rarely used: bottom-left, its 128 px box ending just above the "1 m per cell" hint.
+    viewport.setViewHelperLocation(0, Math.max(0, host.clientHeight - 156)); editor.signals.windowResize.dispatch();
   };
   const resize = new ResizeObserver(resized); resize.observe(host); resized();
   props.fitRef.current = fit;
