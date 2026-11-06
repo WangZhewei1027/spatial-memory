@@ -3,6 +3,8 @@
   --muted-foreground: 0 0% 42%;
   --destructive: 0 62.8% 30.6%;
   --radius: 0.375rem;
+  -webkit-user-select: none;
+  user-select: none;
   color-scheme: light;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
@@ -12,3 +14,5 @@
 }
 .scene-workspace-theme ::selection { background: hsl(var(--foreground) / .24); color: hsl(var(--foreground)); }
 .scene-workspace-theme .scene-three-tools button img { opacity: .88; }
+
+.scene-workspace-theme :is(input, textarea, [contenteditable]:not([contenteditable="false"])) { -webkit-user-select: text; user-select: text; }

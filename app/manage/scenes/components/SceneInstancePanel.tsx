@@ -29,6 +29,7 @@ export interface SceneInstancePanelProps {
 /** The selection inspector owns source, visibility, media/text and spatial parameters. */
 export function SceneInstancePanel(props: SceneInstancePanelProps) {
   const { node, name, resource, assetHref, clips, readOnly, playing, onAnimation, onUngroup } = props;
+  const clipOptions = clips?.map((clip, index) => ({ index, name: clip.name })) ?? resource?.animations ?? [];
   const { t, i18n } = useTranslation();
   const text = (zh: string, en: string) => i18n.language.startsWith("zh") ? zh : en;
   const id = useId();
@@ -52,10 +53,10 @@ export function SceneInstancePanel(props: SceneInstancePanelProps) {
       {instance?.text && <SceneTextFields instance={instance} disabled={disabled} onChange={props.onChange} />}
       {instance && <SceneTimingFields instance={instance} duration={props.duration} disabled={disabled} onChange={props.onChange} />}
       {instance && (audio || resource?.kind === "video") && <><SceneMediaFields instance={instance} time={props.time} disabled={disabled} onChange={props.onChange} onEdit={props.onEdit} /><SceneSpatialAudioFields instance={instance} disabled={disabled} onChange={props.onChange} /></>}
-      {instance && !instance.text && (animation || !!clips?.length) && (!resource?.kind || resource.kind === "model") && <SceneInspectorSection title={text("模型动画", "Model animation")} defaultOpen={!!animation}>
+      {instance && !instance.text && (animation || clipOptions.length > 0) && (!resource?.kind || resource.kind === "model") && <SceneInspectorSection title={text("模型动画", "Model animation")} defaultOpen={!!animation}>
         <Label htmlFor={`${id}-clip`}>{t("sceneEditor.animationClip")}</Label>
-        <select id={`${id}-clip`} className="scene-select w-full" disabled={disabled} value={animation ? String(animation.clipIndex ?? clips?.findIndex(clip => clip.name === animation.clipName)) : "none"} onChange={event => onAnimation(event.target.value === "none" ? null : { clipIndex: Number(event.target.value), startSeconds: animation?.startSeconds ?? instance.timing?.startSeconds ?? 0, loop: animation?.loop ?? false })}>
-          <option value="none">{t("sceneEditor.noAnimation")}</option>{clips?.map((clip, index) => <option key={index} value={index}>{clip.name || `Clip ${index + 1}`}</option>)}
+        <select id={`${id}-clip`} className="scene-select w-full" disabled={disabled} value={animation ? String(animation.clipIndex ?? clipOptions.find(clip => clip.name === animation.clipName)?.index) : "none"} onChange={event => onAnimation(event.target.value === "none" ? null : { clipIndex: Number(event.target.value), startSeconds: animation?.startSeconds ?? instance.timing?.startSeconds ?? 0, loop: animation?.loop ?? true })}>
+          <option value="none">{t("sceneEditor.noAnimation")}</option>{clipOptions.map(clip => <option key={clip.index} value={clip.index}>{clip.name || `Clip ${clip.index + 1}`}</option>)}
         </select>
         {animation && <><label className="scene-field-label">{text("动画起点 · 秒", "Animation start · seconds")}<SceneNumberField label={t("sceneEditor.clipStart")} value={animation.startSeconds} min={0} disabled={disabled} onCommit={startSeconds => onAnimation({ ...animation, startSeconds })} /></label><Label htmlFor={`${id}-loop`} className="flex min-h-8 items-center gap-2"><Checkbox id={`${id}-loop`} disabled={disabled} checked={animation.loop} onCheckedChange={checked => onAnimation({ ...animation, loop: checked === true })} />{t("sceneEditor.clipLoop")}</Label></>}
       </SceneInspectorSection>}

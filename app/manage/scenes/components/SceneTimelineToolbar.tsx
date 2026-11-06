@@ -1,16 +1,17 @@
 "use client";
-import { FolderInput, FolderOutput, Maximize2, Pause, Play, Repeat, SkipBack, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { FolderInput, FolderOutput, Pause, Play, Repeat, SkipBack, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SceneNumberField } from './SceneFields';
 import type { Interpolation } from './timeline-keys';
 
 export interface SceneTimelineToolbarProps {
   text(zh: string, en: string): string;
+  collapsed: boolean;
   time: number; duration: number; end: number; loop: boolean; playing: boolean; disabled: boolean;
   onSeek(time: number): void; onPlay(): void; onLoop(loop: boolean): void; onDuration(time: number): void;
   interpolation: Interpolation | null; onInterpolation(mode: Exclude<Interpolation, 'custom'>): void; onDeleteKey(): void;
   canGroup: boolean; canUngroup: boolean; onGroup(): void; onUngroup(): void;
-  zoom: number; canZoomIn: boolean; onZoom(factor: number): void; onFit(): void;
+  zoom: number; canZoomIn: boolean; onZoom(factor: number): void;
 }
 const Divider = () => <span className="mx-1 h-5 border-l" aria-hidden="true" />;
 
@@ -25,6 +26,7 @@ export function SceneTimelineToolbar(p: SceneTimelineToolbarProps) {
     <span className="text-xs text-muted-foreground">/</span>
     <div className="w-20"><SceneNumberField label={text('场景时长（秒）', 'Duration (seconds)')} value={p.end} exclusiveMin={0} step={1} disabled={p.disabled} onCommit={p.onDuration} /></div>
     <span className="text-xs text-muted-foreground">s</span>
+    {!p.collapsed && <>
     {p.canGroup && <><Divider /><Button variant="ghost" size="sm" className="h-8" disabled={p.disabled} title="Ctrl / ⌘ G" onClick={p.onGroup}><FolderInput />{text('编组', 'Group')}</Button></>}
     {p.canUngroup && <Button variant="ghost" size="sm" className="h-8" disabled={p.disabled} title="Ctrl / ⌘ Shift G" onClick={p.onUngroup}><FolderOutput />{text('取消编组', 'Ungroup')}</Button>}
     <div className="ml-auto flex items-center gap-1">
@@ -39,7 +41,7 @@ export function SceneTimelineToolbar(p: SceneTimelineToolbarProps) {
       </>}
       <Button variant="ghost" size="icon" className="size-8" aria-label={text('缩小时间轴', 'Zoom out')} disabled={p.zoom <= 1} onClick={() => p.onZoom(1 / 1.5)}><ZoomOut /></Button>
       <Button variant="ghost" size="icon" className="size-8" aria-label={text('放大时间轴', 'Zoom in')} disabled={!p.canZoomIn} onClick={() => p.onZoom(1.5)}><ZoomIn /></Button>
-      <Button variant="ghost" size="icon" className="size-8" aria-label={text('适应全部内容', 'Fit to content')} onClick={p.onFit}><Maximize2 /></Button>
     </div>
+    </>}
   </div>;
 }

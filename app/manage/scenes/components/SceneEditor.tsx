@@ -10,7 +10,7 @@ import { type CompositionInstance } from "@/lib/scene/protocol";
 import { findNode, isGroup, type SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { hiddenNodeIds } from "@/lib/scene/visibility";
 import { editTransform } from "@/lib/scene/transform-authoring";
-import { apply as applySceneOperations } from "@/packages/scene-authoring/src/operations";
+import { copyTracks, pasteTracks, type TrackClipboard } from "./scene-clipboard";
 import { X } from "lucide-react";
 import { Component, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,8 @@ import { SceneTimeline } from "./SceneTimeline";
 import { SceneSidebar } from "./SceneSidebar";
 import { useSceneTracks } from "./useSceneTracks";
 import { useSceneEditorShortcuts } from "./useSceneEditorShortcuts";
+import { ScenePanelDivider } from "./ScenePanelDivider";
+import { useScenePanelSize } from "./useScenePanelSize";
 import { useSceneWorkspace } from "./useSceneWorkspace";
 import { SceneLibraryPanel } from "./SceneLibraryPanel";
 import { SceneModelDropZone } from "./SceneModelDropZone";
@@ -57,11 +59,31 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const fitRef = useRef<(() => void) | null>(null);
   const originRef = useRef<(() => void) | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
-  const { compact, panelOpen, togglePanel } = useSceneWorkspace();
+  const compact = useSceneWorkspace();
+  const library = useScenePanelSize("library", compact);
+  const panelOpen = !library.collapsed;
   const selectedNode = document && selectedId ? findNode(document.definition.content, selectedId) : undefined;
   const instance = selectedNode && !isGroup(selectedNode) ? selectedNode : undefined;
   const tracks = useSceneTracks(editor, selectedIds, setSelectedIds, text);
-  useSceneEditorShortcuts(editor);
+  const selectTracks = (ids: string[]) => {
+    setSelectedIds(ids);
+    if (ids.length && compact && panelOpen) library.close();
+  };
+  const nameOf = (node: SceneNode) => node.name ?? (isGroup(node) ? node.id : node.text ? node.text.content.slice(0, 40) : resolve(document?.definition.content.assets[node.asset ?? ""])?.name ?? node.asset ?? node.id);
+  const paste = (snapshot: TrackClipboard) => {
+    if (readOnly || playing) return;
+    let ids: string[] = [];
+    const applied = commit(current => {
+      const result = pasteTracks(current.definition, snapshot, text("副本", "copy"));
+      ids = result.selected;
+      return { ...current, definition: result.definition };
+    });
+    if (applied) selectTracks(ids);
+  };
+  useSceneEditorShortcuts(editor, {
+    copy: () => document && copyTracks(document.definition.content, selectedIds, nameOf),
+    paste, remove: () => tracks.remove(selectedIds), hasSelection: !!selectedNode || selectedIds.length > 1,
+  });
   if (!session || !document) return <main className="scene-workspace-theme scene-editor-status fixed inset-0 z-50 flex items-center justify-center bg-background"><div className="max-w-lg space-y-4 p-6"><Text as="h1" variant="headingMd">{t("sceneEditor.heading")}</Text><Text as="p" variant="bodyMd" tone={editor.error ? "critical" : "subdued"}>{editor.error || t("sceneEditor.loading")}</Text>{editor.error && <Button onClick={editor.retry}>{t("sceneEditor.retry")}</Button>}</div></main>;
   const { instances, groups, assets, loop } = document.definition.content;
   const cameraSettings = sceneCameraSettings(document.definition.content.viewerPosition, cameraLens);
@@ -75,16 +97,15 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const sceneOrganizationId = detail?.organization_id ?? organizationId;
   const canAdd = !readOnly && !playing;
   const resourceOf = (item: CompositionInstance) => item.asset ? resolve(assets[item.asset]) : undefined;
-  const select = (id: string | null) => { setSelectedIds(id ? [id] : []); if (id && compact && panelOpen) togglePanel(); };
-  const nameOf = (node: SceneNode) => node.name ?? (isGroup(node) ? node.id : node.text ? node.text.content.slice(0, 40) : resourceOf(node)?.name ?? node.asset ?? node.id);
+  const select = (id: string | null) => selectTracks(id ? [id] : []);
   const kindOf = (node: SceneNode) => isGroup(node) ? "group" as const : node.text ? "text" as const : resourceOf(node)?.kind ?? "model";
   const addAsset = (key: string, position: ScenePosition = [0, 0, 0], picked?: SceneResource, at = time) => {
     if (!canAdd) return;
     const resource = picked ?? resources[key];
     const id = `object_${crypto.randomUUID().slice(0, 8)}`;
     const outcome: { added?: boolean; failure?: ModelAddFailure } = {};
-    commit(current => {
-      const result = addModelInstance(current.definition.content, { key, resource, id, position });
+    const applied = commit(current => {
+      const result = addModelInstance(current.definition.content, { key, resource, id, position, startSeconds: at });
       if (!result.ok) { outcome.failure = result.reason; return current; }
       const timing = insertionTiming(at, current.definition.content.durationSeconds ?? 10, resource?.durationSeconds);
       result.content = { ...result.content, durationSeconds: Math.max(current.definition.content.durationSeconds ?? 10, timing.endSeconds), instances: result.content.instances.map(item => item.id === id ? { ...item, timing, ...(resource?.kind === "audio" || resource?.kind === "video" ? { media: { trimStartSeconds: 0, trimEndSeconds: null, playbackRate: 1, volume: 1, loop: false, muted: false } } : {}) } : item) };
@@ -92,7 +113,11 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
       return { ...current, definition: { ...current.definition, content: result.content } };
     });
     if (outcome.failure) editor.setError(text("素材不可用，请刷新素材库后重试。", "This asset is unavailable. Refresh the library and try again."));
-    if (outcome.added) { if (picked) editor.registerResource(picked); select(id); }
+    if (applied && outcome.added) {
+      if (picked) editor.registerResource(picked);
+      if (resource?.kind === "model" && resource.animations === undefined) editor.awaitInitialClip(id, resource.assetId);
+      select(id);
+    }
   };
   /** Swaps the selected track's file for another asset of the same kind; the track itself is unchanged. */
   const replaceAsset = (id: string, key: string) => {
@@ -121,34 +146,25 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
     tracks.edit(instance.id, node => ({ ...node, ...patch }));
   };
   const duplicate = (sourceId: string) => {
-    const source = instances.find(item => item.id === sourceId);
-    if (!source || !canAdd) return;
-    const id = `object_${crypto.randomUUID().slice(0, 8)}`;
-    let duplicated = false;
-    commit(current => {
-      const result = applySceneOperations(current.definition, [
-        { type: "node.duplicate", id: sourceId, idMap: { [sourceId]: id } },
-        { type: "node.update", id, patch: { name: `${nameOf(source)} ${text("副本", "copy")}` } },
-      ]);
-      if (!result.ok) throw new Error(result.errors.map(issue => `${issue.path}: ${issue.message}`).join("; "));
-      duplicated = !result.unchanged;
-      return { ...current, definition: result.document };
-    });
-    if (duplicated) select(id);
+    const snapshot = copyTracks(document.definition.content, [sourceId], nameOf);
+    if (snapshot) paste(snapshot);
   };
   const selectedResource = instance ? resourceOf(instance) : undefined;
   const hidden = hiddenNodeIds(document.definition.content);
   return <main className="scene-workspace-theme scene-native-stage fixed inset-0 z-50 bg-background" aria-label={t("sceneEditor.sceneView")}>
     <NavigationIsland ref={setHeaderElement} className="scene-project-island">
-      <SceneToolbar panelOpen={panelOpen} onTogglePanel={togglePanel} title={document.title} dirty={editor.dirty} saving={editor.saving} preview={preview} canUndo={editor.canUndo} canRedo={editor.canRedo} onUndo={editor.undo} onRedo={editor.redo} onTitle={title => commit(current => ({ ...current, title }))} onPreview={() => setPreview(!preview)} onSave={() => void editor.save()} onAddText={addText} canAddText={canAdd} backHref={teamHref("/manage/scenes", sceneOrganizationId)} readOnly={readOnly} qr={detail?.state === "active" ? <SceneQrButton sceneId={sceneId} dirty={editor.dirty} portalContainer={headerElement} /> : undefined} />
+      <SceneToolbar panelOpen={panelOpen} onTogglePanel={library.toggle} title={document.title} dirty={editor.dirty} saving={editor.saving} preview={preview} canUndo={editor.canUndo} canRedo={editor.canRedo} onUndo={editor.undo} onRedo={editor.redo} onTitle={title => commit(current => ({ ...current, title }))} onPreview={() => setPreview(!preview)} onSave={() => void editor.save()} onAddText={addText} canAddText={canAdd} backHref={teamHref("/manage/scenes", sceneOrganizationId)} readOnly={readOnly} qr={detail?.state === "active" ? <SceneQrButton sceneId={sceneId} dirty={editor.dirty} portalContainer={headerElement} /> : undefined} />
       {editor.conflict && <SceneConflictBanner draftJson={() => JSON.stringify({ name: document.title, document: document.definition }, null, 2)} fileName={`${document.title || "scene"}-draft.json`} onReload={editor.retry} onDismiss={editor.dismissConflict} />}
       {editor.error && <div role="alert" className="flex items-start gap-3 border-t bg-background p-3"><Text as="p" variant="bodySm" tone="critical" className="flex-1">{editor.error}</Text><Button variant="ghost" size="icon" className="size-6" aria-label={text("关闭提示", "Dismiss message")} onClick={() => editor.setError("")}><X /></Button></div>}
       {readOnly && <ContentNotice title={text("只读场景", "Read-only scene")} description={text("可以预览播放；当前权限或归档状态不允许编辑。", "Preview and playback are available. Editing is unavailable for this permission or archive status.")} />}
     </NavigationIsland>
     <div className="scene-workbench">
-        <aside id="scene-assets" className="scene-workspace-sidebar scene-island" hidden={!panelOpen} aria-label={text("素材库", "Asset library")}>
+      <div className="scene-library-pane" style={{ width: library.size }} hidden={library.collapsed}>
+        <aside id="scene-assets" className="scene-workspace-sidebar scene-island" aria-label={text("素材库", "Asset library")}>
           <SceneLibraryPanel organizationId={sceneOrganizationId} canAdd={canAdd} canUpload={!readOnly} onRegister={editor.registerResource} onAdd={resource => addAsset(resource.assetId, undefined, resource)} onAddText={addText} />
         </aside>
+        <ScenePanelDivider panel="library" sizing={library} controls="scene-assets" />
+      </div>
       <div className="scene-stage-content">
       <div className="scene-stage-area" data-preview-open={preview || undefined} data-inspector={!!selectedNode || undefined}>
         <SceneModelDropZone canDrop={key => !!resources[key]?.url && resources[key]?.assetState !== "archived"} enabled={canAdd} placementRef={placementRef} onAdd={addAsset}>
@@ -162,7 +178,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
         {!instances.length && <div className="scene-stage-empty"><Text as="p" variant="bodySm" tone="subdued">{text("拖入素材或添加文字", "Drop an asset or add text")}</Text></div>}
         {grid && labels && <div className="scene-stage-hint"><Text as="span" variant="bodyXs" tone="subdued">{text("每格 1 米", "1 m per cell")}</Text></div>}
       </div>
-      <SceneTimeline content={document.definition.content} clips={clips} nameOf={nameOf} kindOf={kindOf} onAddAsset={(id, at) => addAsset(id, undefined, undefined, at)} selectedIds={selectedIds} onSelect={ids => { setSelectedIds(ids); if (ids.length && compact && panelOpen) togglePanel(); }} tracks={tracks} onDuplicate={duplicate} time={time} duration={duration} loop={loop} playing={playing} readOnly={readOnly} onSeek={editor.seek} onPlay={editor.play} onDuration={durationSeconds => commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, durationSeconds } } }))} onLoop={loop => commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, loop } } }))} />
+      <SceneTimeline content={document.definition.content} clips={clips} nameOf={nameOf} kindOf={kindOf} onAddAsset={(id, at) => addAsset(id, undefined, undefined, at)} selectedIds={selectedIds} onSelect={selectTracks} tracks={tracks} onDuplicate={duplicate} time={time} duration={duration} loop={loop} playing={playing} readOnly={readOnly} onSeek={editor.seek} onPlay={editor.play} onDuration={durationSeconds => commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, durationSeconds } } }))} onLoop={loop => commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, loop } } }))} />
     </div></div>
   </main>;
 }

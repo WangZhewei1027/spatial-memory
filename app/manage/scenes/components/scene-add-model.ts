@@ -7,6 +7,11 @@ type Content = EditorDefinition["content"];
 export type ModelAddFailure = "archived" | "missing";
 export type AssetReplaceFailure = ModelAddFailure | "kind";
 
+function firstAnimation(resource: SceneResource | undefined, startSeconds: number) {
+  const first = resource?.animations?.[0];
+  return first && (resource.kind ?? "model") === "model" ? { clipIndex: first.index, startSeconds, loop: true } : null;
+}
+
 /** Resources are keyed by asset ID; repeated instances share the same current content. */
 export function resourceKey(ref: EditorAssetRef | undefined) {
   return ref?.assetId ?? "";
@@ -30,12 +35,12 @@ function assetAlias(content: Content, key: string, resource: SceneResource | und
  * `resource`, which the caller passes explicitly: a model picked in the
  * library may not be in the editor's registered resources yet.
  */
-export function addModelInstance(content: Content, { key, resource, id, position, createAlias = newAlias }: {
-  key: string; resource: SceneResource | undefined; id: string; position: ScenePosition; createAlias?: () => string;
+export function addModelInstance(content: Content, { key, resource, id, position, startSeconds = 0, createAlias = newAlias }: {
+  key: string; resource: SceneResource | undefined; id: string; position: ScenePosition; startSeconds?: number; createAlias?: () => string;
 }): { ok: true; content: Content } | { ok: false; reason: ModelAddFailure } {
   const target = assetAlias(content, key, resource, createAlias);
   if (!target.ok) return target;
-  const added: CompositionInstance = { id, asset: target.alias, position, rotation: [0, 0, 0], scale: [1, 1, 1], animation: null };
+  const added: CompositionInstance = { id, asset: target.alias, position, rotation: [0, 0, 0], scale: [1, 1, 1], animation: firstAnimation(resource, startSeconds) };
   return { ok: true, content: { ...content, instances: [...content.instances, added], assets: target.assets } };
 }
 
@@ -55,7 +60,9 @@ export function replaceInstanceAsset(content: Content, { id, key, resource, from
   const target = assetAlias(content, key, resource, createAlias);
   if (!target.ok) return target;
   const replaced: CompositionInstance = { ...instance, asset: target.alias };
-  if (replaced.animation && missingClip(replaced.animation, resource.animations)) replaced.animation = null;
+  if (!replaced.animation || missingClip(replaced.animation, resource.animations)) {
+    replaced.animation = firstAnimation(resource, instance.timing?.startSeconds ?? 0);
+  }
   const length = resource.durationSeconds;
   if (replaced.media && length) {
     const media = { ...replaced.media };

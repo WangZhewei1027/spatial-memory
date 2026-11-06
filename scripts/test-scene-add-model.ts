@@ -31,6 +31,14 @@ assert.equal(first.content.instances.length, 1);
 assert.equal(first.content.assets[first.content.instances[0].asset!].assetId, V1);
 assert.deepEqual(toDocument(first).content.assets, first.content.assets, "the new draft serializes as schema 4 with asset references");
 
+// New models select the first declared clip, loop it and align its start with the insertion point.
+const animated = addModelInstance(empty.content, { key: V1, resource: resource(V1, 1, { kind: "model", animations: [{ index: 2, name: "Idle" }, { index: 0, name: "Walk" }] }), id: "animated", position: [0, 0, 0], startSeconds: 3, createAlias });
+assert.ok(animated.ok);
+assert.deepEqual(animated.content.instances[0].animation, { clipIndex: 2, startSeconds: 3, loop: true });
+assert.equal(first.content.instances[0].animation, null, "unknown clips are resolved only after the actual model loads");
+const staticModel = expectOk(add(empty, V1, {}, resource(V1, 1, { kind: "model", animations: [] })));
+assert.equal(staticModel.content.instances[0].animation, null);
+
 // The old flow read only the stale snapshot; without a picked resource, failure is graceful, not a TypeError.
 assert.deepEqual(add(empty, V1, {}), { ok: false, reason: "missing" });
 assert.deepEqual(add(empty, V1, {}, resource(V2, 2)), { ok: false, reason: "missing" }, "a resource for another asset is never pinned under this key");
@@ -77,6 +85,9 @@ assert.deepEqual(Object.values(swapped.content.assets), [{ assetId: V3 }], "the 
 normalizeDefinition({ ...withTrack, content: swapped.content });
 const noClip = replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { animations: [] }), from: resource(V1, 1), createAlias });
 assert.ok(noClip.ok && noClip.content.instances[0].animation === null, "a clip the new model lacks is cleared");
+const newClip = replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { kind: "model", animations: [{ index: 0, name: "Idle" }] }), from: resource(V1, 1), createAlias });
+assert.ok(newClip.ok);
+assert.deepEqual(newClip.content.instances[0].animation, { clipIndex: 0, startSeconds: 2, loop: true }, "an incompatible clip falls back to the new model's first clip");
 assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { kind: "image" }), from: resource(V1, 1), createAlias }), { ok: false, reason: "kind" });
 assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: resource(V3, 3, { assetState: "archived" }), from: resource(V1, 1), createAlias }), { ok: false, reason: "archived" });
 assert.deepEqual(replaceInstanceAsset(withTrack.content, { id: track.id, key: V3, resource: undefined, from: resource(V1, 1), createAlias }), { ok: false, reason: "missing" });

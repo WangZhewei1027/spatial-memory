@@ -1,21 +1,66 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { SceneEditorState } from "./useSceneDocument";
-export function useSceneEditorShortcuts(editor: SceneEditorState) {
-  const actions = useRef(editor); actions.current = editor;
+import type { TrackClipboard } from "./scene-clipboard";
+
+function editingField(target: EventTarget | null) {
+  return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="menu"], [role="listbox"]');
+}
+
+interface TrackShortcuts {
+  copy(): TrackClipboard | null;
+  paste(snapshot: TrackClipboard): void;
+  remove(): void;
+  hasSelection: boolean;
+}
+
+export function useSceneEditorShortcuts(editor: SceneEditorState, tracks: TrackShortcuts) {
+  const actions = useRef({ editor, tracks });
+  actions.current = { editor, tracks };
   useEffect(() => {
+    let clipboard: TrackClipboard | null = null;
+    const copiedText = (event: ClipboardEvent) => {
+      if (editingField(event.target)) clipboard = null;
+    };
     const shortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") { event.preventDefault();
+      if (event.defaultPrevented || event.isComposing) return;
+      const { editor, tracks } = actions.current;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
         if (window.document.activeElement instanceof HTMLElement) window.document.activeElement.blur();
-        void actions.current.save(); return; }
-      if (event.target instanceof HTMLElement && (event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); if (!actions.current.readOnly) (event.shiftKey ? actions.current.redo : actions.current.undo)(); }
+        void editor.save(); return;
+      }
+      if (editingField(event.target)) return;
+      const command = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey;
+      if (command && event.key.toLowerCase() === "c") {
+        const snapshot = tracks.copy();
+        if (snapshot) { clipboard = snapshot; event.preventDefault(); }
+        return;
+      }
+      if (command && event.key.toLowerCase() === "v" && clipboard && !editor.readOnly && !editor.playing) {
+        event.preventDefault();
+        if (!event.repeat) tracks.paste(clipboard);
+        return;
+      }
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (!event.repeat && tracks.hasSelection && !editor.readOnly && !editor.playing) {
+          event.preventDefault(); tracks.remove();
+        }
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); if (!editor.readOnly) (event.shiftKey ? editor.redo : editor.undo)(); }
       if (event.code === "Space") {
-        if (event.target instanceof HTMLElement && event.target.closest('button, a, [role="button"], [role="tab"]')) return;
-        event.preventDefault(); actions.current.play();
+        if (event.target instanceof Element && event.target.closest('button, a, [role="button"], [role="tab"]')) return;
+        event.preventDefault(); editor.play();
       }
     };
+    window.addEventListener("copy", copiedText);
+    window.addEventListener("cut", copiedText);
     window.addEventListener("keydown", shortcut);
-    return () => window.removeEventListener("keydown", shortcut);
+    return () => {
+      window.removeEventListener("copy", copiedText);
+      window.removeEventListener("cut", copiedText);
+      window.removeEventListener("keydown", shortcut);
+    };
   }, []);
 }

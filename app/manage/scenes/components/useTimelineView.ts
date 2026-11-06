@@ -8,11 +8,11 @@ export function useTimelineView(contentEnd: number, time: number, playing: boole
   const scroller = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [viewSpan, setViewSpan] = useState(() => fitSpan(contentEnd));
+  const [viewSpan] = useState(() => fitSpan(contentEnd));
   const compact = viewport > 0 && viewport < 640;
   const labelWidth = compact ? 170 : TIMELINE_LABEL_WIDTH;
   const labelOffset = labelWidth + TIMELINE_LEAD;
-  // The view grows when the end marker or a key reaches its edge; it only shrinks on fit.
+  // Extend the visible span when a cue reaches the edge.
   const span = contentEnd > viewSpan * .95 ? fitSpan(contentEnd) : viewSpan;
   const laneWidth = Math.round(Math.max(compact ? 160 : 280, viewport - labelOffset - 20) * zoom);
   // Time to keep at the same screen offset after a zoom.
@@ -57,6 +57,5 @@ export function useTimelineView(contentEnd: number, time: number, playing: boole
     scroller, span, laneWidth, labelWidth, compact, zoom, canZoomIn: zoom < MAX_ZOOM,
     /** Zoom by a factor, keeping the playhead where it is on screen. */
     zoomBy: (factor: number) => zoomTo(zoom * factor, time, time / span * laneWidth - (scroller.current?.scrollLeft ?? 0)),
-    fit: () => { setViewSpan(fitSpan(contentEnd)); setZoom(1); scroller.current?.scrollTo({ left: 0 }); },
   };
 }

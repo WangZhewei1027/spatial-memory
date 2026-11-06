@@ -106,6 +106,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
       if (history.current.past.length > 60) history.current.past.shift();
       history.current.future = [];
       latest.current = next; setDocument(next); setError("");
+      return true;
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
   }, [session, readOnly]);
   const travel = (direction: "past" | "future") => {
@@ -131,7 +132,29 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
     window.document.addEventListener("visibilitychange", hide);
     return () => { stop(); cancelAnimationFrame(frame); window.document.removeEventListener("visibilitychange", hide); };
   }, [session]);
-  const onClips = useCallback((id: string, value: ClipInfo[]) => setClips((current) => ({ ...current, [id]: value })), []);
+  // Legacy uploads can lack a clip index. Resolve only newly inserted tracks, as part of their insertion history.
+  const pendingInitialClips = useRef(new Map<string, string>());
+  const awaitInitialClip = (id: string, assetId: string) => pendingInitialClips.current.set(id, assetId);
+  const onClips = useCallback((id: string, value: ClipInfo[], loadedAssetId?: string) => {
+    setClips(current => ({ ...current, [id]: value }));
+    if (!loadedAssetId || pendingInitialClips.current.get(id) !== loadedAssetId) return;
+    pendingInitialClips.current.delete(id);
+    if (!value.length || !latest.current || !session) return;
+    const initialize = (snapshot: SceneDocument) => {
+      const content = snapshot.definition.content;
+      const instance = content.instances.find(item => item.id === id);
+      if (!instance?.asset || instance.animation || content.assets[instance.asset]?.assetId !== loadedAssetId) return snapshot;
+      const animation = { clipIndex: 0, startSeconds: instance.timing?.startSeconds ?? 0, loop: true };
+      const instances = content.instances.map(item => item === instance ? { ...item, animation } : item);
+      return { ...snapshot, definition: { ...snapshot.definition, content: { ...content, instances } } };
+    };
+    history.current.past = history.current.past.map(initialize);
+    history.current.future = history.current.future.map(initialize);
+    const next = initialize(latest.current);
+    if (next !== latest.current) {
+      latest.current = next; setDocument(next); session.sync(next.definition.content);
+    }
+  }, [session]);
   /** Saves the current scene; all references read this saved content. Resolves true on success. */
   const save = useCallback(async () => {
     const current = latest.current;
@@ -175,7 +198,7 @@ export function useSceneDocument(sceneId: string, initial?: SceneDetailDto | nul
   };
   return {
     session, document, resources, resolve, registerResource, detail, setDetail, lockVersion: () => lock.current,
-    clips, onClips, error, setError, conflict, dismissConflict: () => setConflict(null), saving, dirty, readOnly, time, playing, commit, save, seek, play,
+    clips, onClips, awaitInitialClip, error, setError, conflict, dismissConflict: () => setConflict(null), saving, dirty, readOnly, time, playing, commit, save, seek, play,
     undo: () => travel("past"), redo: () => travel("future"), canUndo: history.current.past.length > 0, canRedo: history.current.future.length > 0,
     retry: () => window.location.reload(),
   };

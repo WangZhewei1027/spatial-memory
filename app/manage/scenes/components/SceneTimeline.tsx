@@ -14,7 +14,8 @@ import type { DropPlace } from './SceneTrackHeader';
 import { interpolationOf, setInterpolation, type KeySelection } from './timeline-keys';
 import { TimelineContext, type TimelineView } from './timeline-context';
 import { gridSteps, snapTime, TIMELINE_LEAD } from './timeline-scale';
-import { useTimelineHeight } from './useTimelineHeight';
+import { useScenePanelSize } from './useScenePanelSize';
+import { ScenePanelDivider } from './ScenePanelDivider';
 import { useTimelineView } from './useTimelineView';
 import type { SceneTrackActions } from './useSceneTracks';
 import type { ClipInfo } from './types';
@@ -45,14 +46,14 @@ export function SceneTimeline(p: SceneTimelineProps) {
   const [endDraft, setEndDraft] = useState<number | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTime, setDropTime] = useState<number | null>(null);
-  const height = useTimelineHeight();
+  const height = useScenePanelSize("timeline");
   const disabled = p.readOnly || p.playing, end = endDraft ?? p.duration;
   const rows = useMemo(() => trackRows(p.content), [p.content]);
   const hidden = useMemo(() => hiddenNodeIds(p.content), [p.content]);
   const visible = rows.filter(row => { const visited = new Set<string>(); for (let at = row.node.parent; at && !visited.has(at); at = findNode(p.content, at)?.parent) { if (collapsed.has(at)) return false; visited.add(at); } return true; });
   const lastKey = rows.reduce((end, row) => Object.values(row.node.tracks ?? {}).reduce((last, frames) => Math.max(last, frames?.at(-1)?.time ?? 0), end), 0);
   const lastRegion = p.content.instances.reduce((last, instance) => Math.max(last, instanceRegion(instance, end).end), 0);
-  const { scroller, span, laneWidth, labelWidth, compact, zoom, canZoomIn, zoomBy, fit } = useTimelineView(Math.max(end, lastKey, lastRegion), p.time, p.playing);
+  const { scroller, span, laneWidth, labelWidth, compact, zoom, canZoomIn, zoomBy } = useTimelineView(Math.max(end, lastKey, lastRegion), p.time, p.playing);
   const steps = gridSteps(laneWidth / span), x = (time: number) => time / span * laneWidth, left = (time: number) => labelWidth + TIMELINE_LEAD + x(time);
   const primary = p.selectedIds.at(-1), primaryNode = primary ? findNode(p.content, primary) : undefined;
   // Selection is shared with the viewport: a key never outlives its selected track.
@@ -118,16 +119,16 @@ export function SceneTimeline(p: SceneTimelineProps) {
     p.tracks.move(dragId, { parent: target.node.parent, before: siblings[siblings.indexOf(target) + 1]?.id });
   };
   const gridStyle = { gridTemplateColumns: `${labelWidth}px ${laneWidth + TIMELINE_LEAD}px`, '--lead': `${TIMELINE_LEAD}px`, '--major': `${x(steps.major)}px`, '--minor': `${x(steps.minor)}px` } as CSSProperties;
-  return <section className="scene-timeline" data-compact={compact || undefined} style={{ height: height.value }} aria-label={text('时间轴', 'Timeline')}>
-    <div className="scene-timeline-resizer" role="separator" aria-orientation="horizontal" aria-label={text('调整时间轴高度', 'Resize timeline')} tabIndex={0} {...height.handlers} />
-    <SceneTimelineToolbar text={text} time={p.time} duration={p.duration} end={end} loop={p.loop} playing={p.playing} disabled={disabled}
+  return <section className="scene-timeline" data-compact={compact || undefined} data-collapsed={height.collapsed || undefined} style={{ height: height.collapsed ? "auto" : height.size }} aria-label={text('时间轴', 'Timeline')}>
+    <ScenePanelDivider panel="timeline" sizing={height} controls="scene-timeline-content" />
+    <SceneTimelineToolbar collapsed={height.collapsed} text={text} time={p.time} duration={p.duration} end={end} loop={p.loop} playing={p.playing} disabled={disabled}
       onSeek={p.onSeek} onPlay={p.onPlay} onLoop={p.onLoop} onDuration={p.onDuration}
       interpolation={keyNode && selectedKey ? interpolationOf(keyNode, selectedKey) : null}
       onInterpolation={mode => !disabled && selectedKey && p.tracks.edit(selectedKey.nodeId, node => setInterpolation(node, selectedKey, mode))}
       onDeleteKey={() => { if (!disabled && selectedKey) p.tracks.edit(selectedKey.nodeId, node => unkeyAll(node, selectedKey.channels, selectedKey.time)); selectKey(null); }}
       canGroup={p.selectedIds.length > 0} canUngroup={!!primaryNode && isGroup(primaryNode)} onGroup={p.tracks.group} onUngroup={() => primary && p.tracks.ungroup(primary)}
-      zoom={zoom} canZoomIn={canZoomIn} onZoom={zoomBy} onFit={fit} />
-    <div className="scene-timeline-body" data-asset-drop={dropTime !== null || undefined}
+      zoom={zoom} canZoomIn={canZoomIn} onZoom={zoomBy} />
+    <div id="scene-timeline-content" className="scene-timeline-body" hidden={height.collapsed} data-asset-drop={dropTime !== null || undefined}
       onDragOver={event => {
         if (!event.dataTransfer.types.includes(MODEL_DRAG_TYPE)) return;
         event.preventDefault();

@@ -120,7 +120,7 @@ export class EditorModels {
         const independent = (source: Material) => { let result = materials.get(source); if (!result) { result = source.clone(); materials.set(source, result); } return result; };
         model.traverse(node => { if (node instanceof Mesh) node.material = Array.isArray(node.material) ? node.material.map(independent) : independent(node.material); });
         this.mounted(entry, groundPivot(model), [...materials.values()]);
-        this.props().onClips(instance.id, gltf.animations.map(clip => ({ name: clip.name, duration: clip.duration })));
+        this.props().onClips(instance.id, gltf.animations.map(clip => ({ name: clip.name, duration: clip.duration })), props.resolveResource?.(instance)?.assetId);
       }).catch(() => {
         if (this.entries.get(instance.id) !== entry) return;
         entry.release(); this.failed(entry);

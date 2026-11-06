@@ -118,8 +118,6 @@
 .scene-clip-repeat { position: absolute; top: 0; bottom: 0; border-left: 1px dashed hsl(var(--primary) / .4); pointer-events: none; }
 .scene-key-summary { position: absolute; z-index: 1; top: 50%; width: 8px; height: 8px; transform: translate(-50%, -50%); color: hsl(var(--muted-foreground) / .65); fill: currentColor; pointer-events: none; }
 .scene-key-summary[data-outside] { opacity: .45; }
-.scene-timeline-resizer { position: absolute; top: -3px; left: 0; right: 0; z-index: 10; height: 6px; cursor: row-resize; touch-action: none; }
-.scene-timeline-resizer:hover, .scene-timeline-resizer:focus-visible { outline: none; background: hsl(var(--ring) / .35); }
 
 /* Ruler: labels on top, ticks at the bottom, playhead head and scene end marker on the lane edge. */
 .scene-time-ruler { position: sticky; top: 0; z-index: 5; height: 32px; touch-action: none; user-select: none; border-bottom: 1px solid hsl(var(--border)); background-color: hsl(var(--card)); box-shadow: calc(-1 * var(--lead)) 0 0 hsl(var(--card));
@@ -164,7 +162,8 @@
 .scene-stage-area { position: relative; display: flex; flex: 1; min-height: var(--scene-stage-min); }
 .scene-canvas { border-radius: 10px; overflow: hidden; }
 .scene-island { background: hsl(var(--background)); border: 0; border-radius: 10px; box-shadow: 0 4px 20px hsl(var(--foreground) / .12); overflow: hidden; }
-.scene-workspace-sidebar { position: relative; z-index: 40; width: 352px; display: flex; flex-direction: column; align-self: stretch; overscroll-behavior: contain; }
+.scene-library-pane { position: relative; z-index: 40; flex: none; width: 352px; max-width: min(55%, 640px); }
+.scene-workspace-sidebar { height: 100%; display: flex; flex-direction: column; overscroll-behavior: contain; }
 .scene-tools-anchor { position: absolute; z-index: 15; top: 12px; left: 12px; }
 .scene-tools-anchor[hidden] { display: none; }
 .scene-inspector-island { position: absolute; z-index: 20; right: 12px; top: 12px; bottom: 12px; width: 284px; }
@@ -223,6 +222,13 @@
 .scene-stage-empty { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -30%); width: min(340px, 45%); text-align: center; display: grid; gap: 8px; pointer-events: none; }
 .scene-stage-hint { position: absolute; left: 12px; bottom: 10px; white-space: nowrap; padding: 4px 6px; background: hsl(var(--background)); border-radius: 4px; pointer-events: none; }
 .scene-timeline { flex: none; max-height: calc(100% - var(--scene-stage-min) - var(--scene-gutter)); border: 0; border-radius: 10px; box-shadow: 0 3px 16px hsl(var(--foreground) / .1); z-index: 25; }
+.scene-timeline[data-collapsed] { min-height: 0; }
+.scene-timeline[data-collapsed] .scene-timeline-toolbar { border: 0; border-radius: inherit; }
+.scene-panel-divider { position: absolute; z-index: 10; display: flex; align-items: center; justify-content: center; touch-action: none; color: hsl(var(--muted-foreground)); }
+.scene-panel-divider svg { pointer-events: none; flex: none; }
+.scene-panel-divider:hover, .scene-panel-divider:focus-visible { background: hsl(var(--accent)); color: hsl(var(--foreground)); outline-offset: -2px; }
+.scene-library-divider { inset: 0 auto 0 100%; width: var(--scene-gutter); cursor: col-resize; }
+.scene-timeline-divider { inset: auto 0 100%; height: var(--scene-gutter); cursor: row-resize; }
 .scene-timeline-toolbar { min-height: 48px; border-radius: 10px 10px 0 0; }
 .scene-timeline-body { overflow: hidden; border-radius: 0 0 10px 10px; }
 .scene-track-heading-cell, .scene-region-lane { height: 40px; }
@@ -240,9 +246,9 @@
 .scene-timeline-drop-hint span { display: block; padding: 4px 8px; border-radius: 0 5px 5px 0; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-size: .75rem; white-space: nowrap; }
 .scene-native-stage input { caret-color: hsl(var(--primary)); }
 .scene-native-stage ::selection { background: hsl(var(--primary) / .18); }
-@media (max-width: 1199px) { .scene-workspace-sidebar { width: 320px; } .scene-inspector-island { width: 260px; } }
+@media (max-width: 1199px) { .scene-library-pane { width: 320px; } .scene-inspector-island { width: 260px; } }
 @media (max-width: 1023px) {
-  .scene-workspace-sidebar { position: absolute; inset: var(--scene-gutter) auto var(--scene-gutter) var(--scene-gutter); width: min(352px, calc(100% - 2 * var(--scene-gutter))); }
+  .scene-library-pane { position: absolute; inset: var(--scene-gutter) auto var(--scene-gutter) var(--scene-gutter); width: 352px; max-width: min(640px, calc(100% - 32px)); }
   .scene-inspector-island { bottom: 12px; width: min(284px, calc(100% - 12px)); }
   .scene-stage-empty { width: min(320px, 80%); }
 }
