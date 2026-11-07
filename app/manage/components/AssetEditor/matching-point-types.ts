@@ -24,7 +24,6 @@ export interface MatchingPointPanelProps {
   attaching?: boolean;
   onImageSelect: (file: File) => void;
   onImageRemove: () => void;
-  onRebuild: () => void;
   onAttach: (id: string) => void;
   onDetach: (id: string) => void;
 }

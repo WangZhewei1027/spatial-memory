@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { Client } from "pg";
-import { assertServicesDatabase, cleanupServicesFixture, fixtureIds, seedServicesFixture, assetDocument } from "./test-content-model-services-fixture";
+import { assertServicesDatabase, cleanupServicesFixture, fixtureIds, seedServicesFixture, seedRuntimeProjectionFixture, assetDocument } from "./test-content-model-services-fixture";
 import { installRouteStubs } from "./test-support/install-route-stubs";
 import { modelGlb } from "./test-support/model-thumbnail-fixtures";
 import type * as AuthStub from "./test-support/stub-auth-server";
@@ -78,6 +78,10 @@ async function main(): Promise<void> {
     organizations: await import("../app/api/organizations/route"),
     organization: await import("../app/api/organizations/[id]/route"),
     tags: await import("../app/api/tags/route"),
+    osdCandidates: await import("../app/api/miniapp/anchors/candidates/route"),
+    osdContent: await import("../app/api/miniapp/anchors/content/route"),
+    retiredRecognition: await import("../app/api/miniapp/anchors/recognize/route"),
+    matchingStatus: await import("../app/api/assets/[id]/matching/route"),
     miniNearby: await import("../app/api/miniapp/assets/nearby/route"),
     miniScene: await import("../app/api/miniapp/assets/scene/route"),
   };
@@ -359,6 +363,54 @@ async function main(): Promise<void> {
         await client.query("update organization set archived_at=null where id=$1", [f.organizations.team]);
         await client.query("update scene set name=$2,state=$3 where id=$1", [id, original.name, original.state]);
       }
+    });
+
+    await check("R09d OSD reference discovery/content: GPS scope, versions, archives and no inference", async () => {
+      // assertServicesDatabase forbids all external fetches, including model inference.
+      const anchor = await seedRuntimeProjectionFixture(client, f, { kind: "anchor", payload: { kind: "anchor" },
+        resources: [{ role: "reference", url: "https://fixture.invalid/osd-reference.png" }] });
+      const attached = await seedRuntimeProjectionFixture(client, f, { kind: "text", payload: { kind: "text", text: "OSD content" }, anchorId: anchor.asset });
+      const input = () => ({ workspace_id: f.workspaces.a, latitude: 31.2, longitude: 121.5, accuracy: 10,
+        gps_timestamp: Date.now(), coordinate_system: "wgs84" });
+      const discover = (body: unknown = input()) => call(routes.osdCandidates.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/candidates", body });
+      const result = expect(await discover(), 200);
+      const candidate = result.candidates.find((row: Body) => row.id === anchor.asset);
+      assert.ok(candidate, "a reference without an embedding must be discoverable");
+      assert.equal(candidate.image_url, "https://fixture.invalid/osd-reference.png");
+      assert.match(candidate.reference_version, /^[a-f0-9]{64}$/);
+      assert.deepEqual(Object.keys(candidate).sort(), ["distance_meters", "id", "image_url", "name", "reference_version"]);
+      const content = (extra: Body = {}) => call(routes.osdContent.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/content",
+        body: { ...input(), anchor_id: anchor.asset, reference_version: candidate.reference_version, ...extra } });
+      assert.ok(expect(await content(), 200).assets.some((row: Body) => row.id === attached.placement));
+      assert.equal(expect(await call(routes.matchingStatus.GET, { user: null, url: `/api/assets/${anchor.asset}/matching`, params: { id: anchor.asset } }), 200).data.status, "ready");
+      assert.equal(expect(await call(routes.matchingStatus.POST, { user: null, method: "POST", url: `/api/assets/${anchor.asset}/matching`, params: { id: anchor.asset } }), 200).data.engine, "osd");
+      expect(await content({ workspace_id: f.workspaces.foreign }), 404);
+      expect(await content({ longitude: 120 }), 404);
+      expect(await content({ reference_version: "0".repeat(64) }), 409);
+      expect(await discover({ ...input(), workspace_id: "bad" }), 400);
+      expect(await discover({ ...input(), accuracy: 101 }), 400);
+      expect(await discover({ ...input(), gps_timestamp: Date.now() - 60000 }), 400);
+      expect(await discover({ ...input(), latitude: true }), 400);
+      await client.query("update placement set status='paused' where id=$1", [attached.placement]);
+      assert.equal(expect(await content(), 200).assets.some((row: Body) => row.id === attached.placement), false);
+      await client.query("update placement set status='paused' where id=$1", [anchor.placement]);
+      assert.equal(expect(await discover(), 200).candidates.some((row: Body) => row.id === anchor.asset), false);
+      expect(await content(), 404);
+      await client.query("update placement set status='active' where id=$1", [anchor.placement]);
+      try {
+        await client.query("update workspace set archived_at=now() where id=$1", [f.workspaces.a]);
+        assert.deepEqual(expect(await discover(), 200).candidates, []);
+        expect(await content(), 404);
+      } finally { await client.query("update workspace set archived_at=null where id=$1", [f.workspaces.a]); }
+      try {
+        await client.query("update organization set archived_at=now() where id=$1", [f.organizations.team]);
+        assert.deepEqual(expect(await discover(), 200).candidates, []);
+      } finally { await client.query("update organization set archived_at=null where id=$1", [f.organizations.team]); }
+      await client.query("update asset_resource set external_url='https://fixture.invalid/updated.jpg' where asset_id=$1", [anchor.asset]);
+      expect(await content(), 409);
+      const changed = expect(await discover(), 200).candidates.find((row: Body) => row.id === anchor.asset);
+      assert.notEqual(changed.reference_version, candidate.reference_version);
+      expect(await call(routes.retiredRecognition.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/recognize" }), 410, "recognition_retired");
     });
 
     await check("R10 super-admin clean-rows derives a collection's files from its placements, not from grants", async () => {

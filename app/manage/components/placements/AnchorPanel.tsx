@@ -111,7 +111,6 @@ export function AnchorPanel({ anchorId }: { anchorId: string }) {
           attaching={attaching}
           onImageSelect={noop}
           onImageRemove={noop}
-          onRebuild={matching.rebuild}
           onAttach={(id) => void attach(id, anchorId)}
           onDetach={(id) => void attach(id, null)}
         />
