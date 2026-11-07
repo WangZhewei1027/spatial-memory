@@ -252,7 +252,8 @@
       "organizations": "Teams",
       "errorLogs": "Error Logs",
       "settings": "System Settings",
-      "cleanup": "Cleanup"
+      "cleanup": "Cleanup",
+      "mapScanModel": "Map 3D model"
     },
     "orgs": {
       "title": "Team Management",
@@ -369,6 +370,21 @@
       "defaultFileTypes": "Default File Types for New Teams",
       "defaultFileTypesDesc": "File types newly created teams (including auto-created personal teams on signup) are allowed to upload by default; existing teams are unaffected.",
       "saved": "Settings saved"
+    },
+    "mapScanModel": {
+      "title": "Map 3D model",
+      "description": "Control the 3D scan overlay on map collections for each organization. It is off for all organizations by default. Enabling it increases loading time and GPU memory usage.",
+      "effect": "Changes save automatically and take effect when the collection map is reloaded. Mobile devices and archived organizations do not load the model.",
+      "search": "Search by organization name or ID",
+      "loadFailed": "Could not load organization settings. Please try again.",
+      "retry": "Retry",
+      "count": "Enabled for {{enabled}} of {{total}} organizations",
+      "empty": "No organizations found.",
+      "archived": "Archived",
+      "toggle": "Allow {{name}} to display the map 3D scan model",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "saved": "Model setting saved for {{name}}"
     }
   },
   "admin": {

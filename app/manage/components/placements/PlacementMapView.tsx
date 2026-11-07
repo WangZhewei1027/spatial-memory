@@ -135,7 +135,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
         viewer={
           <>
             <PlacementSelectionBar />
-            <ViewerFrame iframeRef={iframeRef} />
+            <ViewerFrame iframeRef={iframeRef} organizationId={organizationId} />
           </>
         }
         sidebar={activitiesTab ? null : <PlacementSidebar />}

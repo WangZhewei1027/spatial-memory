@@ -29,6 +29,7 @@ import {
   setMode,
 } from "./src/managers/interactionManager.js";
 import { load3DTiles, getTileset } from "./src/managers/tilesetLoader.js";
+import { isMapScanModelEnabled } from "./src/utils/mapScanModel.js";
 
 // 设置 Cesium Ion token
 Cesium.Ion.defaultAccessToken = CESIUM_ION_TOKEN;
@@ -59,14 +60,10 @@ async function init() {
     // Ask the parent to replay the latest origin, assets and queued focus.
     sendMessageToParent("VIEWER_READY", {});
 
-    // 4. 加载地形：移动端显存有限，不加载 b3dm，只用卫星底图
-    if (IS_MOBILE) {
-      console.log("移动端：跳过 b3dm 地形加载，仅显示卫星底图");
-      document.getElementById("loading")?.classList.add("hidden");
-      flyToOrigin();
-      console.log("应用初始化完成");
-      return;
-    }
+    // 4. 底图立即可用。扫描模型默认关闭，仅服务端明确放行的组织加载。
+    document.getElementById("loading")?.classList.add("hidden");
+    // 移动端仍保留显存保护；未开启的组织不会请求任何扫描模型瓦片。
+    if (IS_MOBILE || !(await isMapScanModelEnabled())) return;
 
     // 桌面端延迟加载 3D Tiles（确保 DOM 已准备好）
     setTimeout(async () => {

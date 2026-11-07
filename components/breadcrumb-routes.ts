@@ -22,6 +22,7 @@ const PATH_LABELS: Record<string, string> = {
   "/super-admin": "superAdmin.title",
   "/super-admin/users": "superAdmin.sidebar.users",
   "/super-admin/organizations": "superAdmin.sidebar.organizations",
+  "/super-admin/map-scan-model": "superAdmin.sidebar.mapScanModel",
   "/super-admin/error-logs": "superAdmin.sidebar.errorLogs",
   "/super-admin/clean": "superAdmin.sidebar.cleanup",
   "/super-admin/settings": "superAdmin.sidebar.settings",

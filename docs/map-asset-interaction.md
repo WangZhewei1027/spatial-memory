@@ -42,6 +42,12 @@
 
 匹配点素材 ID 通过适配器映射为该列表中的匹配点投放 ID，再写入 viewer 的 `anchor_id`。业务关联和识别规则见 [匹配点说明](anchor-matching.md)。
 
+## 地图 3D 扫描模型
+
+`/super-admin/map-scan-model` 按组织管理扫描模型叠加层，仅全局 `super_admin` 可读取组织开关列表或修改。设置保存在 `app_config.map_scan_model_organizations`（值为组织 UUID 到布尔值的映射），与组织拥有者可编辑的 `organization.config` 分离；缺失配置或新组织一律关闭，无需数据库结构迁移。更新只合并一个组织的开关，避免并发修改其他组织时相互覆盖。
+
+合集的 `ViewerFrame` 将所属组织 ID 传给 viewer。运行时通过需要团队读取权限的 `GET /api/organizations/[id]/map-scan-model` 获取当前开关；只有服务端明确返回 `enabled: true` 才加载扫描瓦片。配置错误、超时、无组织上下文、移动设备及归档组织都不加载扫描模型。底图和投放消息桥不等待配置请求；开关变更在刷新或重新打开合集地图后生效。该设置控制地图叠加层的性能开销，不改变素材和场景中的普通 3D 模型。
+
 ## 验证
 
 修改消息桥时检查定位、单选/多选、手动选点、拖动保存、锁冲突恢复和合集切换。viewer 的重复同步及资源释放由 `node scripts/test-viewer-resources.mjs` 覆盖；它不替代浏览器消息桥和数据库写入验证。

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import {
   Users,
   Building2,
+  Box,
   Shield,
   Loader2,
   ArrowLeft,
@@ -102,6 +103,11 @@ export default function SuperAdminLayout({
       label: t("superAdmin.sidebar.organizations", "Organizations"),
       href: "/super-admin/organizations",
       icon: Building2,
+    },
+    {
+      label: t("superAdmin.sidebar.mapScanModel"),
+      href: "/super-admin/map-scan-model",
+      icon: Box,
     },
     {
       label: t("superAdmin.sidebar.errorLogs", "Error Logs"),

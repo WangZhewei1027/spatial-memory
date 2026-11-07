@@ -252,7 +252,8 @@
       "organizations": "团队管理",
       "errorLogs": "错误日志",
       "settings": "系统设置",
-      "cleanup": "资源清理"
+      "cleanup": "资源清理",
+      "mapScanModel": "地图 3D 模型"
     },
     "orgs": {
       "title": "团队管理",
@@ -369,6 +370,21 @@
       "defaultFileTypes": "新团队默认文件类型",
       "defaultFileTypesDesc": "新建团队（含注册时自动创建的个人团队）默认允许上传的文件类型；不影响已有团队。",
       "saved": "设置已保存"
+    },
+    "mapScanModel": {
+      "title": "地图 3D 模型",
+      "description": "按组织控制地图合集上的 3D 扫描模型。所有组织默认关闭，开启后会增加地图加载时间和显存占用。",
+      "effect": "勾选后自动保存，刷新合集地图后生效。移动端和已归档组织不加载该模型。",
+      "search": "搜索组织名称或 ID",
+      "loadFailed": "无法加载组织配置，请重试。",
+      "retry": "重试",
+      "count": "已开启 {{enabled}} / {{total}} 个组织",
+      "empty": "没有找到组织。",
+      "archived": "已归档",
+      "toggle": "允许 {{name}} 显示地图 3D 扫描模型",
+      "enabled": "已开启",
+      "disabled": "已关闭",
+      "saved": "已保存 {{name}} 的模型设置"
     }
   },
   "admin": {

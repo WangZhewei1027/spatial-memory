@@ -75,6 +75,8 @@ async function main(): Promise<void> {
     upload: await import("../app/api/upload/route"),
     invitation: await import("../app/api/invitations/[token]/route"),
     adminClean: await import("../app/api/admin/clean/route"),
+    adminMapScanModel: await import("../app/api/admin/map-scan-model/route"),
+    mapScanModel: await import("../app/api/organizations/[id]/map-scan-model/route"),
     organizations: await import("../app/api/organizations/route"),
     organization: await import("../app/api/organizations/[id]/route"),
     tags: await import("../app/api/tags/route"),
@@ -449,6 +451,60 @@ async function main(): Promise<void> {
         }
         assert.deepEqual(expect(await read("?q=library%25_&state=archived&limit=1"), 200).data, []);
         expect(await read("?limit=201"), 400);
+      }
+    });
+
+    await check("map scan model defaults off, is super-admin controlled and stays isolated by organization", async () => {
+      const url = "/api/admin/map-scan-model";
+      const read = (user: string | null, id = f.organizations.team) => call(routes.mapScanModel.GET, {
+        user, url: `/api/organizations/${id}/map-scan-model`, params: { id },
+      });
+      const write = (user: string | null, organizationId: string, enabled: unknown) => call(routes.adminMapScanModel.PUT, {
+        user, method: "PUT", url, body: { organizationId, enabled },
+      });
+      expect(await read(null), 401);
+      expect(await call(routes.adminMapScanModel.GET, { user: null, url }), 401);
+      expect(await write(null, f.organizations.team, true), 401);
+      expect(await read(u.foreign), 403);
+      assert.equal(expect(await read(u.viewer), 200).data.enabled, false);
+      for (const user of [u.owner, u.manager, u.editor, u.viewer]) {
+        expect(await call(routes.adminMapScanModel.GET, { user, url }), 403);
+        expect(await write(user, f.organizations.team, true), 403);
+      }
+      // Even a team owner writing an identically named ordinary config cannot opt in.
+      const original = (await client.query("select config from organization where id=$1", [f.organizations.team])).rows[0].config;
+      expect(await call(routes.organization.PUT, { user: u.owner, method: "PUT", url: `/api/organizations/${f.organizations.team}`,
+        params: { id: f.organizations.team }, body: { config: { map_scan_model_enabled: true } } }), 200);
+      assert.equal(expect(await read(u.owner), 200).data.enabled, false);
+      await client.query("update organization set config=$2 where id=$1", [f.organizations.team, original]);
+      await client.query("update users set role='super_admin' where user_id=$1", [u.owner]);
+      try {
+        expect(await write(u.owner, "bad-id", true), 400);
+        expect(await write(u.owner, f.organizations.team, "true"), 400);
+        expect(await write(u.owner, f.run, true), 404);
+        expect(await call(routes.adminMapScanModel.PUT, { user: u.owner, method: "PUT", url, body: null }), 400);
+        const list = expect(await call(routes.adminMapScanModel.GET, { user: u.owner, url }), 200).data;
+        assert.equal(list.find((row: Body) => row.id === f.organizations.team).enabled, false);
+        assert.equal(list.find((row: Body) => row.id === f.organizations.solo).enabled, false);
+        // Concurrent updates to separate organizations must both survive the upsert.
+        const results = await Promise.all([
+          write(u.owner, f.organizations.team.toUpperCase(), true),
+          write(u.owner, f.organizations.foreign, true),
+        ]);
+        results.forEach((result) => expect(result, 200));
+        assert.equal(expect(await read(u.viewer), 200).data.enabled, true);
+        assert.equal(expect(await read(u.foreign, f.organizations.foreign), 200).data.enabled, true);
+        assert.equal(expect(await read(u.owner, f.organizations.solo), 200).data.enabled, false);
+        await client.query("update organization set archived_at=now() where id=$1", [f.organizations.team]);
+        assert.equal(expect(await read(u.viewer), 200).data.enabled, false);
+        await client.query("update organization set archived_at=null where id=$1", [f.organizations.team]);
+        expect(await write(u.owner, f.organizations.team, false), 200);
+        assert.equal(expect(await read(u.viewer), 200).data.enabled, false);
+        assert.equal(expect(await read(u.foreign, f.organizations.foreign), 200).data.enabled, true);
+      } finally {
+        await client.query("update users set role='user' where user_id=$1", [u.owner]);
+        await client.query("update organization set archived_at=null where id=$1", [f.organizations.team]);
+        await client.query("update app_config set value=value - $1::text[] where key='map_scan_model_organizations'", [Object.values(f.organizations)]);
       }
     });
 
