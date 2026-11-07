@@ -24,6 +24,7 @@ Do not import Radix directly outside `components/ui/`. Follow the typography and
 - `components/navbar.tsx` composes the global header, breadcrumbs and account controls. Collection and scene editors own their full-window headers and reuse the same surface.
 - `components/console-navigation.tsx` composes the desktop island and labeled mobile drawer for team, admin and super-admin routes. Callers supply links and permission filtering; the wrapper only handles drawer visibility.
 - Standard pages subtract `--app-navbar-height` when filling the remaining viewport. Editors use flex layout beneath their own headers so notices can grow without covering the workspace.
+- `app/manage/layout.tsx` owns the persistent `TeamShell` and right-side loading boundary. Library and asset/activity detail routes render only their content; they must not create another navigation frame. `TeamShell` and the global header share the full-window editor route predicate. Library sizing follows the active route, so cached, hidden pages cannot change the current work surface's padding.
 
 ## Protected boundaries
 

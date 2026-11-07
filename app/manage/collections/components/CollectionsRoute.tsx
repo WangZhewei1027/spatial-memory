@@ -1,7 +1,7 @@
 "use client";
 
 import { ContentFeatureState } from "@/app/manage/components/ContentFeatureState";
-import { TeamPageLoading, TeamShell } from "@/app/manage/components/TeamShell";
+import { TeamPageLoading } from "@/app/manage/components/TeamShell";
 import { CollectionList, type ContentLifecycle } from "@/app/manage/content";
 import { useLibraryPages } from "@/app/manage/workbench/useLibraryPages";
 import { collectionApi, getTeamLibraryPage, isEndpointMissing, organizationApi } from "@/app/manage/lib/content-api";
@@ -32,14 +32,12 @@ export function CollectionsRoute() {
   const list = useLibraryPages(organizationId ? loadPage : null);
   const items = useMemo(() => list.items.map(toCollectionItem), [list.items]);
   const canCreate = teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole });
-  const shell = (body: React.ReactNode) => <TeamShell organizationId={organizationId}>{body}</TeamShell>;
-
-  if (!organizationId) return shell(team.loading ? <TeamPageLoading label={t("contentModel.state.loading")} /> : <ContentFeatureState state="no-organization"  />);
+  if (!organizationId) return team.loading ? <TeamPageLoading label={t("contentModel.state.loading")} /> : <ContentFeatureState state="no-organization" />;
 
   const listError = list.error ? (isEndpointMissing(list.error) ? tx("contentModel.integration.collections.endpointMissing") : errorMessage(list.error, tx)) : undefined;
   const readOnlyReason = team.organization?.role === "viewer" ? t("contentModel.workbench.readOnlyViewer") : t("contentModel.workbench.readOnlyOther");
 
-  return shell(
+  return (
     <CollectionList
       pagination={list}
       state={state}
@@ -60,6 +58,6 @@ export function CollectionsRoute() {
       onEdit={(id, input) => runContentAction(() => collectionApi.update(id, { name: input.name, description: input.description || null }), tx, list.reload)}
       onArchive={(id) => runContentAction(() => collectionApi.archive(id), tx, list.reload)}
       onRestore={(id) => runContentAction(() => collectionApi.restore(id), tx, list.reload)}
-    />,
+    />
   );
 }

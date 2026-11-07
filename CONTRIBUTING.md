@@ -82,6 +82,8 @@ npm run test:integration
 
 UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消息、二维码或小程序 API 变更需验证对应消费者，并在发布说明中列出配套发布顺序。
 
+`/manage` 的共享布局改动运行 `node scripts/test-manage-navigation.mjs`：先启动本地 Next 服务（默认 `http://localhost:3000`，可用 `MANAGE_TEST_ORIGIN` 指定本机端口）。脚本用隔离的会话和 API fixture 验证列表切换、慢响应及前进/后退期间导航与工作面保持稳定，不读取或修改业务数据；不放入无需运行服务的默认测试组。
+
 ## CI 与发布
 
 保留现有工作流文件和 job ID；`ui-quality.yml` 的显示名称为 Engineering quality。PR 自动运行 `validate`（`npm run check`）与 `database-migrations`；主分支部署复用同一工作流，二者通过后才进入部署。

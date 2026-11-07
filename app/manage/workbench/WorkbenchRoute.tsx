@@ -3,7 +3,6 @@
 import { CREATABLE_TYPES } from "@/app/manage/assets/components/AssetContentField";
 import { AssetCreateDialog } from "@/app/manage/assets/components/AssetCreateDialog";
 import { ASSET_TEXTS } from "@/app/manage/assets/components/texts";
-import { TeamShell } from "@/app/manage/components/TeamShell";
 import {
   ContentWorkbench,
   DEFAULT_WORKBENCH_FILTERS,
@@ -80,7 +79,7 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const listError = data.error ? (isEndpointMissing(data.error) ? tx("contentModel.integration.assets.endpointMissing") : errorMessage(data.error, tx)) : undefined;
 
   return (
-    <TeamShell organizationId={organizationId}>
+    <>
       <ContentWorkbench
         kind={kind}
         filters={filters}
@@ -124,6 +123,6 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
           />
         </>
       )}
-    </TeamShell>
+    </>
   );
 }

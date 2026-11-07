@@ -1,6 +1,6 @@
 "use client";
 
-import { TeamPageLoading, TeamShell } from "@/app/manage/components/TeamShell";
+import { TeamPageLoading } from "@/app/manage/components/TeamShell";
 import { AssetDetail, ContentErrorState } from "@/app/manage/content";
 import { isContentApiError, isEndpointMissing } from "@/app/manage/lib/content-api";
 import { teamCanWrite, teamHref, useResourceTeam, useTeamContext } from "@/app/manage/lib/content-context";
@@ -57,21 +57,21 @@ function AssetDetailView({ id }: { id: string }) {
       <Link href={workbenchHref}><ArrowLeft aria-hidden />{tx("contentModel.integration.assetDetail.back")}</Link>
     </Button>
   );
-  const shell = (body: ReactNode, aside?: ReactNode) => (
-    <TeamShell organizationId={organizationId} aside={aside}>{body}</TeamShell>
+  const content = (body: ReactNode, actions?: ReactNode) => (
+    <>{actions && <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div>}{body}</>
   );
 
   if (!asset) {
-    if (detail.assetStatus === "loading") return shell(<TeamPageLoading label={t("contentModel.state.loading")} />);
+    if (detail.assetStatus === "loading") return content(<TeamPageLoading label={t("contentModel.state.loading")} />);
     const error = detail.assetError;
-    return shell(
+    return content(
       <div className="overflow-hidden rounded-lg border bg-background">
         <ContentErrorState message={loadErrorText(error, tx)} onRetry={detail.retryAsset} />
       </div>,
       backLink,
     );
   }
-  if (!settled) return shell(<TeamPageLoading label={t("contentModel.state.loading")} />);
+  if (!settled) return content(<TeamPageLoading label={t("contentModel.state.loading")} />);
 
   const archived = asset.state === "archived";
   // Capabilities are computed by the server from the team role; every editing member may maintain.
@@ -81,7 +81,7 @@ function AssetDetailView({ id }: { id: string }) {
   const data = toDetailData(asset);
   const type = asset.file_type as CreatableType;
 
-  return shell(
+  return content(
     <>
       <AssetDetailNotices
         refreshError={detail.assetError}

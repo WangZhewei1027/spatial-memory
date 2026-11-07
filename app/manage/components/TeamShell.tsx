@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { isSidebarItemVisible } from "@/lib/permissions";
+import { isFullWindowEditorPath } from "../constants";
 import { useManageStore } from "../store";
 import { ContentListSkeleton } from "../content/ContentFeedback";
 import { TeamFrame } from "./TeamFrame";
@@ -13,12 +15,17 @@ export function useCanSeeTeamSettings() {
   return isSidebarItemVisible("/admin/members", globalRole, orgRole) || isSidebarItemVisible("/admin/settings", globalRole, orgRole);
 }
 
-/** Console frame of the team pages: primary navigation, then the page. */
-export function TeamShell({ organizationId, aside, children }: { organizationId: string | null; aside?: ReactNode; children: ReactNode }) {
+/** Owned by /manage/layout, outside all page loading and data boundaries. */
+export function TeamShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const organizationId = useManageStore((state) => state.selectedOrganizationId);
   const showSettings = useCanSeeTeamSettings();
   const teamName = useManageStore((state) => state.organizations.find((team) => team.id === organizationId)?.name);
+  // Map and scene editors keep their existing full-window workspace.
+  if (isFullWindowEditorPath(pathname)) return children;
+  const library = /^\/manage(?:\/(assets|scenes|collections|activities))?\/?$/.test(pathname);
   return (
-    <TeamFrame organizationId={organizationId} teamName={teamName} showSettings={showSettings} aside={aside}>
+    <TeamFrame organizationId={organizationId} teamName={teamName} showSettings={showSettings} library={library}>
       {children}
     </TeamFrame>
   );

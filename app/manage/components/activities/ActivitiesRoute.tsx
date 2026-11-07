@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
 import { ContentEmptyState, ContentErrorState } from "../../content/ContentFeedback";
-import { TeamPageLoading, TeamShell } from "../TeamShell";
+import { TeamPageLoading } from "../TeamShell";
 import { ContentFeatureState } from "../ContentFeatureState";
 import { teamCanWrite, teamHref, useTeamContext } from "../../lib/content-context";
 import { activityApi } from "../../lib/activity-api";
@@ -26,7 +26,7 @@ import { ActivityFailure } from "./ActivityFeedback";
 
 export function ActivitiesRoute() {
   const team = useTeamContext();
-  return <TeamShell organizationId={team.organizationId}>{team.organizationId ? <ActivityLibrary key={team.organizationId} organizationId={team.organizationId} canCreate={teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole })} /> : team.loading ? <TeamPageLoading label="…" /> : <ContentFeatureState state="no-organization" />}</TeamShell>;
+  return team.organizationId ? <ActivityLibrary key={team.organizationId} organizationId={team.organizationId} canCreate={teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole })} /> : team.loading ? <TeamPageLoading label="…" /> : <ContentFeatureState state="no-organization" />;
 }
 
 function ActivityLibrary({ organizationId, canCreate }: { organizationId: string; canCreate: boolean }) {

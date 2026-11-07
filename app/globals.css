@@ -122,10 +122,10 @@
     scrollbar-color: hsl(var(--border)) transparent;
   }
   /* The team libraries scroll their results beneath a stationary header. */
-  .team-workspace:has(.team-library) {
+  .team-library-workspace {
     height: calc(100dvh - var(--app-navbar-height));
   }
-  .team-workarea:has(> .team-library) {
+  .team-library-workspace > .team-workarea {
     min-height: 0;
     overflow: auto;
     padding: 0;

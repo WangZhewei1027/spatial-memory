@@ -7,11 +7,12 @@ import { NavbarSidebar } from "@/components/navbar-sidebar";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { UserAvatarMenu } from "@/components/user-avatar-menu";
 import { NavigationIsland } from "@/components/ui/navigation-island";
+import { isFullWindowEditorPath } from "@/app/manage/constants";
 
 export function Navbar() {
   const pathname = usePathname();
   // Map and scene editors have their own full-window toolbars.
-  if (/^\/manage\/(collections|scenes)\/[^/]+\/?$/.test(pathname)) return null;
+  if (isFullWindowEditorPath(pathname)) return null;
 
   return (
     <header className="app-navbar">
