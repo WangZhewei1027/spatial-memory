@@ -17,6 +17,7 @@ import type {
 } from "./types";
 
 export interface AssetDetailProps {
+  inspector?: boolean;
   asset: AssetDetailData;
   preview?: ReactNode;
   /** Server capability: editing team members may edit content, rename and archive. */
@@ -51,7 +52,7 @@ export function AssetDetail(props: AssetDetailProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <AssetDetailHeader asset={asset} canMaintain={props.canMaintain} onEditContent={() => setUploadOpen(true)} preview={props.preview} />
+      <AssetDetailHeader asset={asset} inspector={props.inspector} canMaintain={props.canMaintain} onEditContent={() => setUploadOpen(true)} preview={props.preview} />
 
       {props.stale && (
         <ContentNotice
@@ -64,9 +65,10 @@ export function AssetDetail(props: AssetDetailProps) {
       {archived && <ContentNotice title={t("contentModel.detail.archivedTitle")} description={t("contentModel.detail.archivedBody")} />}
       {asset.fileMissing && <ContentNotice tone="critical" title={t("contentModel.detail.fileMissingTitle")} description={t("contentModel.detail.fileMissingBody")} />}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div className={props.inspector ? "flex flex-col gap-5" : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"}>
         <div className="flex min-w-0 flex-col gap-6">
           <AssetUsagePanel
+            compact={props.inspector}
             usage={props.usage}
             status={props.usageStatus}
             onRetry={props.onRetryUsage}
@@ -77,6 +79,7 @@ export function AssetDetail(props: AssetDetailProps) {
         </div>
         <div className="flex min-w-0 flex-col gap-6">
           <AssetMaintenancePanel
+            compact={props.inspector}
             assetName={asset.name}
             state={asset.state}
             canMaintain={props.canMaintain}

@@ -62,7 +62,7 @@ export function LibraryLayout({ title, actions, readOnlyReason, toolbar, paginat
         className="min-h-24 flex-1 overflow-y-auto focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring">
         <div className="flex min-h-full flex-col gap-4 px-3 pb-3 pt-px sm:px-4 sm:pb-4 lg:px-5 lg:pb-5">
           {children}
-          {hasMore && <div ref={end} className="min-h-px">
+          {(hasMore || !!moreError) && <div ref={end} className="min-h-px">
             {moreError ? <ContentNotice tone="critical" title={t("contentModel.state.loadFailed")}
               description={moreError instanceof Error ? moreError.message : typeof moreError === "string" ? moreError : undefined}
               action={<Button size="sm" variant="outline" onClick={loadMore}>{t("contentModel.action.retry")}</Button>} />

@@ -1,4 +1,7 @@
 {
+  "assetInspector": {
+    "title": "Asset details"
+  },
   "nav": {
     "home": "Home",
     "admin": "Admin",

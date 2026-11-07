@@ -24,13 +24,14 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useWorkbenchData } from "./useWorkbenchData";
+import { ASSET_INSPECTOR_PARAM, openAssetInspector } from "../lib/asset-inspector";
 
 
 function readType(value: string | null): WorkbenchTypeFilter {
   return (WORKBENCH_TYPE_FILTERS as readonly string[]).includes(value ?? "") ? (value as WorkbenchTypeFilter) : "all";
 }
 
-/** Separate asset and scene libraries; the URL carries only team and asset type. */
+/** Separate libraries; the URL carries the team, asset type and optional inspector selection. */
 export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: ContentLibraryKind }) {
   const { t } = useTranslation();
   const tx = useIntegrationText(ASSET_TEXTS);
@@ -71,7 +72,10 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const created = (asset: AssetDto) => {
     data.reload();
     toast.success(tx("contentModel.integration.assets.created", { name: asset.name ?? "" }), {
-      action: { label: tx("contentModel.integration.assets.open"), onClick: () => router.push(teamHref(`/manage/assets/${asset.id}`, organizationId)) },
+      action: { label: tx("contentModel.integration.assets.open"), onClick: () => {
+        if (window.location.pathname === "/manage/assets") openAssetInspector(asset.id);
+        else router.push(teamHref("/manage/assets", organizationId, { [ASSET_INSPECTOR_PARAM]: asset.id }));
+      } },
     });
   };
 
@@ -90,6 +94,8 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
         items={data.items}
         pagination={{ ...data, moreError: data.moreError ? errorMessage(data.moreError, tx) : null }}
         getItemHref={itemHref}
+        onOpenItem={kind === "asset" ? (item) => openAssetInspector(item.id) : undefined}
+        selectedItemId={kind === "asset" ? params.get(ASSET_INSPECTOR_PARAM) : null}
         canWrite={canWrite}
         readOnlyReason={readOnlyReason}
         canUpload={types.length > 0}

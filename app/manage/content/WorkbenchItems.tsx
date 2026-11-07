@@ -14,6 +14,8 @@ export interface WorkbenchItemsProps {
   onRetry?: () => void;
   items: WorkbenchItem[];
   getItemHref: (item: WorkbenchItem) => string;
+  onOpenItem?: (item: WorkbenchItem) => void;
+  selectedItemId?: string | null;
   actions?: SceneItemActions;
   busyId?: string | null;
   /** Rendered when the list is ready and empty. */
@@ -21,7 +23,7 @@ export interface WorkbenchItemsProps {
 }
 
 /** Thumbnail grid of team content with matching loading, error and empty regions. */
-export function WorkbenchItems({ status, errorMessage, onRetry, items, getItemHref, actions, busyId, empty }: WorkbenchItemsProps) {
+export function WorkbenchItems({ status, errorMessage, onRetry, items, getItemHref, onOpenItem, selectedItemId, actions, busyId, empty }: WorkbenchItemsProps) {
   const { t } = useTranslation();
   const label = t("contentModel.workbench.listLabel");
 
@@ -40,7 +42,7 @@ export function WorkbenchItems({ status, errorMessage, onRetry, items, getItemHr
   return (
     <ul aria-label={label} className={LIBRARY_GRID}>
       {items.map((item) => (
-        <WorkbenchCard key={`${item.kind}:${item.id}`} item={item} href={getItemHref(item)} actions={actions} busy={busyId === item.id} />
+        <WorkbenchCard key={`${item.kind}:${item.id}`} item={item} href={getItemHref(item)} onOpen={onOpenItem ? () => onOpenItem(item) : undefined} selected={selectedItemId === item.id} actions={actions} busy={busyId === item.id} />
       ))}
     </ul>
   );

@@ -22,6 +22,7 @@ import { AssetPreview, hasPreview } from "./AssetPreview";
 import { ASSET_TEXTS } from "./texts";
 import { useAssetDetail } from "./useAssetDetail";
 import { useAssetWrites } from "./useAssetWrites";
+import { openAssetInspector } from "../../lib/asset-inspector";
 
 function loadErrorText(error: unknown, tx: IntegrationT) {
   if (isEndpointMissing(error)) return tx("contentModel.integration.assets.endpointMissing");
@@ -37,7 +38,7 @@ export function AssetDetailRoute({ params }: { params: Promise<{ id: string }> }
   return <AssetDetailView key={id} id={id} />;
 }
 
-function AssetDetailView({ id }: { id: string }) {
+export function AssetDetailView({ id, inspector = false }: { id: string; inspector?: boolean }) {
   const { t } = useTranslation();
   const tx = useIntegrationText(ASSET_TEXTS);
   const router = useRouter();
@@ -58,7 +59,7 @@ function AssetDetailView({ id }: { id: string }) {
     </Button>
   );
   const content = (body: ReactNode, actions?: ReactNode) => (
-    <>{actions && <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div>}{body}</>
+    <>{actions && <div className={`flex flex-wrap items-center gap-2 ${inspector ? "justify-start" : "justify-end"}`}>{actions}</div>}{body}</>
   );
 
   if (!asset) {
@@ -68,7 +69,7 @@ function AssetDetailView({ id }: { id: string }) {
       <div className="overflow-hidden rounded-lg border bg-background">
         <ContentErrorState message={loadErrorText(error, tx)} onRetry={detail.retryAsset} />
       </div>,
-      backLink,
+      inspector ? undefined : backLink,
     );
   }
   if (!settled) return content(<TeamPageLoading label={t("contentModel.state.loading")} />);
@@ -91,8 +92,9 @@ function AssetDetailView({ id }: { id: string }) {
         tx={tx}
       />
       <AssetDetail
+        inspector={inspector}
         asset={data}
-        preview={hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} /> : undefined}
+        preview={hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} fullWidth={inspector} /> : undefined}
         canMaintain={canMaintain}
         stale={writes.stale}
         onReload={writes.reload}
@@ -123,12 +125,12 @@ function AssetDetailView({ id }: { id: string }) {
         onOpenChange={setCopyOpen}
         assetId={asset.id}
         assetName={data.name}
-        onDuplicated={(result) => router.push(teamHref(`/manage/assets/${result.asset.id}`, asset.organization_id))}
+        onDuplicated={(result) => inspector ? openAssetInspector(result.asset.id) : router.push(teamHref(`/manage/assets/${result.asset.id}`, asset.organization_id))}
         tx={tx}
       />
     </>,
     <>
-      {backLink}
+      {!inspector && backLink}
       {!archived && canMaintain && (
         <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}><PencilLine aria-hidden />{tx("contentModel.integration.assetDetail.rename")}</Button>
       )}

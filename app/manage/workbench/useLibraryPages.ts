@@ -32,6 +32,7 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
   const session = useMemo(() => ({ load, version }), [load, version]);
   const [result, setResult] = useState<(PageState<T> & { session: typeof session }) | null>(null);
   const next = useRef<(() => void) | null>(null);
+  const refreshLoaded = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!load) return;
@@ -39,6 +40,41 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
     let offset = 0;
     let busy = false;
     let hasMore = true;
+    let refreshQueued = false;
+    let refreshFailed = false;
+    // Revalidate the loaded range without clearing cards or resetting the scroll container.
+    const refresh = async (): Promise<void> => {
+      if (controller.signal.aborted) return;
+      if (busy) { refreshQueued = true; return; }
+      busy = true;
+      refreshQueued = false;
+      try {
+        const items: T[] = [];
+        const ids = new Set<string>();
+        let nextOffset = 0;
+        let morePages = true;
+        do {
+          const { data, page } = await load(nextOffset, PAGE_SIZE, controller.signal);
+          if (controller.signal.aborted) return;
+          nextOffset += data.length;
+          morePages = data.length > 0 && ("total" in page ? nextOffset < page.total : page.hasMore);
+          for (const item of data) {
+            if (!ids.has(item.id)) { ids.add(item.id); items.push(item); }
+          }
+        } while (morePages && nextOffset < offset);
+        offset = nextOffset;
+        hasMore = morePages;
+        refreshFailed = false;
+        setResult({ session, items, status: "ready", error: null, nextOffset, hasMore, loadingMore: false, moreError: null });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        refreshFailed = true;
+        setResult(prev => prev?.session === session ? { ...prev, moreError: error } : prev);
+      } finally {
+        busy = false;
+        if (refreshQueued) void refresh();
+      }
+    };
     const read = async () => {
       if (busy || !hasMore || controller.signal.aborted) return;
       busy = true;
@@ -65,14 +101,17 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
         else setResult(prev => prev?.session === session ? { ...prev, loadingMore: false, moreError: error } : prev);
       } finally {
         busy = false;
+        if (refreshQueued) void refresh();
       }
     };
-    next.current = read;
+    next.current = () => refreshFailed ? void refresh() : void read();
+    refreshLoaded.current = refresh;
     void read();
-    return () => { controller.abort(); next.current = null; };
+    return () => { controller.abort(); next.current = null; refreshLoaded.current = null; };
   }, [load, session]);
 
   const reload = useCallback(() => setVersion(value => value + 1), []);
+  const refresh = useCallback(() => refreshLoaded.current?.(), []);
   const loadMore = useCallback(() => next.current?.(), []);
   const current = result?.session === session ? result : null;
   return {
@@ -83,6 +122,6 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
     hasMore: current?.hasMore ?? false,
     loadingMore: current?.loadingMore ?? false,
     moreError: current?.moreError,
-    loadMore, reload,
+    loadMore, reload, refresh,
   };
 }

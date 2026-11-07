@@ -34,6 +34,8 @@ export interface ContentWorkbenchProps {
   items: WorkbenchItem[];
   pagination: LibraryPagination;
   getItemHref: (item: WorkbenchItem) => string;
+  onOpenItem?: (item: WorkbenchItem) => void;
+  selectedItemId?: string | null;
   /** Team-level write access. False shows the read-only explanation instead of create actions. */
   canWrite: boolean;
   /** Why the page is read-only (viewer role or archived team). */
@@ -113,6 +115,8 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
           onRetry={props.onRetry}
           items={items}
           getItemHref={props.getItemHref}
+          onOpenItem={props.onOpenItem}
+          selectedItemId={props.selectedItemId}
           busyId={restoring}
           actions={canWrite ? { onCopy: (item) => setCopying(refOf(item)), onArchive: (item) => setArchiving(refOf(item)), onRestore: restore } : undefined}
           empty={<WorkbenchEmpty kind={kind} filters={filters} canWrite={canWrite} canUpload={canUpload} onClear={() => props.onFiltersChange({ ...DEFAULT_WORKBENCH_FILTERS })} onUpload={props.onUpload} onCreateScene={() => setCreateOpen(true)} />}

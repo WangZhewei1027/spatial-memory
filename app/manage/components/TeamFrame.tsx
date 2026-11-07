@@ -12,11 +12,12 @@ export interface TeamFrameProps {
   teamName?: string;
   showSettings: boolean;
   library?: boolean;
+  inspector?: ReactNode;
   children: ReactNode;
 }
 
 /** Shared library frame, independent of auth and data loading. */
-export function TeamFrame({ organizationId, teamName, showSettings, library, children }: TeamFrameProps) {
+export function TeamFrame({ organizationId, teamName, showSettings, library, inspector, children }: TeamFrameProps) {
   const { t } = useTranslation();
   const navigation = (onNavigate?: () => void) => <ContentNav organizationId={organizationId} showSettings={showSettings} onNavigate={onNavigate} />;
   const teamLabel = teamName || t("contentModel.library.team");
@@ -27,6 +28,7 @@ export function TeamFrame({ organizationId, teamName, showSettings, library, chi
       <main className="team-workarea flex min-w-0 flex-1 flex-col gap-4 p-3 sm:p-4 lg:p-5">
         {children}
       </main>
+      {inspector}
     </div>
   );
 }

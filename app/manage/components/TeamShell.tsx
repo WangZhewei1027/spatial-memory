@@ -1,12 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { isSidebarItemVisible } from "@/lib/permissions";
 import { isFullWindowEditorPath } from "../constants";
 import { useManageStore } from "../store";
 import { ContentListSkeleton } from "../content/ContentFeedback";
 import { TeamFrame } from "./TeamFrame";
+
+const AssetInspector = dynamic(() => import("../assets/components/AssetInspector").then((module) => module.AssetInspector));
 
 /** Whether the current user sees anything under 团队设置 (members or settings). */
 export function useCanSeeTeamSettings() {
@@ -25,7 +28,8 @@ export function TeamShell({ children }: { children: ReactNode }) {
   if (isFullWindowEditorPath(pathname)) return children;
   const library = /^\/manage(?:\/(assets|scenes|collections|activities))?\/?$/.test(pathname);
   return (
-    <TeamFrame organizationId={organizationId} teamName={teamName} showSettings={showSettings} library={library}>
+    <TeamFrame organizationId={organizationId} teamName={teamName} showSettings={showSettings} library={library}
+      inspector={/^\/manage\/assets\/?$/.test(pathname) ? <Suspense fallback={null}><AssetInspector /></Suspense> : undefined}>
       {children}
     </TeamFrame>
   );

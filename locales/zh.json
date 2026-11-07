@@ -1,4 +1,7 @@
 {
+  "assetInspector": {
+    "title": "素材详情"
+  },
   "nav": {
     "home": "首页",
     "admin": "管理后台",

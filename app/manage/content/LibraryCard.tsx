@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { HTMLAttributeAnchorTarget, ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 
 /** Shared density for collections, scenes and assets; sparse results keep the same tile width. */
 export const LIBRARY_GRID = "grid grid-cols-[repeat(auto-fill,minmax(min(11rem,calc((100%_-_0.75rem)/2)),1fr))] gap-3";
@@ -12,6 +13,9 @@ export interface LibraryCardProps {
   name: string;
   href: string;
   target?: HTMLAttributeAnchorTarget;
+  onOpen?: () => void;
+  selected?: boolean;
+  linkId?: string;
   thumbnail: ReactNode;
   metadata: ReactNode;
   description?: string | null;
@@ -20,13 +24,15 @@ export interface LibraryCardProps {
 }
 
 /** The content opens from the whole card; its menu stays a separate focusable control. */
-export function LibraryCard({ name, href, target, thumbnail, metadata, description, badges, actions }: LibraryCardProps) {
+export function LibraryCard({ name, href, target, onOpen, selected, linkId, thumbnail, metadata, description, badges, actions }: LibraryCardProps) {
   return (
-    <li className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring hover:border-foreground/25">
+    <li className={cn("group relative flex min-w-0 flex-col overflow-hidden rounded-lg border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring hover:border-foreground/25", selected && "border-primary ring-1 ring-primary")}>
       <div className="aspect-[4/3] overflow-hidden border-b bg-muted">{thumbnail}</div>
       <div className="min-w-0 flex-1 space-y-1 px-2.5 pb-2.5 pt-1.5">
         <div className="flex min-h-8 min-w-0 items-center gap-1">
-          <Link href={href} target={target} rel={target === "_blank" ? "noopener noreferrer" : undefined} title={name} className="min-w-0 flex-1 truncate rounded-sm text-sm font-medium text-foreground focus-visible:outline-none after:absolute after:inset-0 after:content-['']">{name}</Link>
+          <Link id={linkId} href={href} target={target} aria-current={selected ? "true" : undefined}
+            onNavigate={onOpen ? (event) => { event.preventDefault(); onOpen(); } : undefined}
+            rel={target === "_blank" ? "noopener noreferrer" : undefined} title={name} className="min-w-0 flex-1 truncate rounded-sm text-sm font-medium text-foreground focus-visible:outline-none after:absolute after:inset-0 after:content-['']">{name}</Link>
           {actions && <div className="relative z-10 -me-1 shrink-0">{actions}</div>}
         </div>
         {description && <Text as="p" variant="bodySm" tone="subdued" truncate title={description}>{description}</Text>}

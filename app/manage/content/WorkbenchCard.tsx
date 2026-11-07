@@ -9,6 +9,8 @@ import type { WorkbenchItem } from "./types";
 export interface WorkbenchCardProps {
   item: WorkbenchItem;
   href: string;
+  onOpen?: () => void;
+  selected?: boolean;
   /** Scene actions the viewer may perform; omitted entries are hidden. */
   actions?: SceneItemActions;
   busy?: boolean;
@@ -18,7 +20,7 @@ export interface WorkbenchCardProps {
  * Grid tile: the content's own picture leads, the name and type follow. The
  * whole tile is one link; the overflow menu sits above the link layer.
  */
-export function WorkbenchCard({ item, href, actions = {}, busy }: WorkbenchCardProps) {
+export function WorkbenchCard({ item, href, onOpen, selected, actions = {}, busy }: WorkbenchCardProps) {
   const { t } = useTranslation();
   const format = useContentFormat();
   const TypeIcon = WORKBENCH_TYPE_ICONS[item.type];
@@ -26,6 +28,9 @@ export function WorkbenchCard({ item, href, actions = {}, busy }: WorkbenchCardP
     <LibraryCard
       name={item.name}
       href={href}
+      onOpen={onOpen}
+      selected={selected}
+      linkId={`library-${item.kind}-${item.id}`}
       thumbnail={<WorkbenchThumbnail item={item} />}
       metadata={<>
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">

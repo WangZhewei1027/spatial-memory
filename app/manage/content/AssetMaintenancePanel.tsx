@@ -12,6 +12,7 @@ import { useContentAction } from "./useContentAction";
 import type { AssetUsageKind, ContentAction, ContentLifecycle } from "./types";
 
 export interface AssetMaintenancePanelProps {
+  compact?: boolean;
   assetName: string;
   state: ContentLifecycle;
   /** Server capability: any editing team member may archive or restore. */
@@ -29,8 +30,8 @@ export function AssetMaintenancePanel(props: AssetMaintenancePanelProps) {
   const archived = props.state === "archived";
 
   return (
-    <ContentSection title={t("contentModel.maintenance.title")}>
-      <div className="space-y-2 px-4 py-3">
+    <ContentSection plain={props.compact} title={t("contentModel.maintenance.title")}>
+      <div className={props.compact ? "space-y-3" : "space-y-2 px-4 py-3"}>
         <Text as="p" variant="bodySm" tone="subdued">
           {archived ? t("contentModel.maintenance.archivedBody") : t("contentModel.maintenance.archiveHint")}
         </Text>

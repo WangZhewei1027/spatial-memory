@@ -29,11 +29,11 @@ export function hasPreview(content: AssetContentDto | null): content is AssetCon
  * Larger preview of one content for the detail header, reusing the asset
  * editor previews. Check `hasPreview` first.
  */
-export function AssetPreview({ content, name, tx }: { content: AssetContentDto | null; name: string; tx: IntegrationT }) {
+export function AssetPreview({ content, name, tx, fullWidth = false }: { content: AssetContentDto | null; name: string; tx: IntegrationT; fullWidth?: boolean }) {
   if (!content) return null;
   const payload = content.payload;
   const url = primaryResource(content)?.url ?? null;
-  const frame = (child: ReactNode) => <div className="w-full md:w-72">{child}</div>;
+  const frame = (child: ReactNode) => <div className={fullWidth ? "w-full" : "w-full md:w-72"}>{child}</div>;
 
   if (payload.kind === "text") {
     return frame(

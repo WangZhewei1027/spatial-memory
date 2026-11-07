@@ -12,6 +12,7 @@ import type { AssetUsageEntry, AssetUsageKind, AssetUsageSummary, ContentLoadSta
 const KIND_ORDER: AssetUsageKind[] = ["scene", "placement", "activity"];
 
 export interface AssetUsagePanelProps {
+  compact?: boolean;
   usage: AssetUsageSummary;
   status?: ContentLoadStatus;
   onRetry?: () => void;
@@ -26,23 +27,24 @@ export interface AssetUsagePanelProps {
  * map placements (with their collection) and activity points. Anything the
  * server reports only as a count stays a count.
  */
-export function AssetUsagePanel({ usage, status = "ready", onRetry, hasMore, loadingMore, onLoadMore }: AssetUsagePanelProps) {
+export function AssetUsagePanel({ usage, status = "ready", onRetry, hasMore, loadingMore, onLoadMore, compact }: AssetUsagePanelProps) {
   const { t } = useTranslation();
   const groups = KIND_ORDER.map((kind) => ({ kind, entries: usage.entries.filter((entry) => entry.kind === kind) })).filter((group) => group.entries.length);
   const description = t("contentModel.usage.summary", { count: usage.totalCount });
 
   return (
-    <ContentSection title={t("contentModel.usage.title")} description={status === "ready" ? description : undefined}>
+    <ContentSection plain={compact} title={t("contentModel.usage.title")} description={status === "ready" ? description : undefined}>
       {status === "loading" && <ContentListSkeleton rows={3} label={t("contentModel.state.loading")} />}
       {status === "error" && <ContentErrorState onRetry={onRetry} />}
       {status === "ready" && usage.totalCount === 0 && (
-          <ContentEmptyState title={t("contentModel.usage.emptyTitle")} description={t("contentModel.usage.emptyBody")} />
+          compact ? <Text as="p" variant="bodySm" tone="subdued">{t("contentModel.usage.emptyBody")}</Text>
+            : <ContentEmptyState title={t("contentModel.usage.emptyTitle")} description={t("contentModel.usage.emptyBody")} />
       )}
       {status === "ready" && usage.totalCount > 0 && (
         <div className="divide-y">
           {groups.map((group) => (
-            <div key={group.kind} className="px-4 py-3">
-              <Text as="h3" variant="bodyXs" fontWeight="semibold" tone="subdued" className="mb-1.5">
+            <div key={group.kind} className={compact ? "py-3" : "px-4 py-3"}>
+              <Text as={compact ? "h4" : "h3"} variant="bodyXs" fontWeight="semibold" tone="subdued" className="mb-1.5">
                 {t(`contentModel.usage.kind.${group.kind}`)}
               </Text>
               <ul className="space-y-1">
@@ -51,13 +53,13 @@ export function AssetUsagePanel({ usage, status = "ready", onRetry, hasMore, loa
             </div>
           ))}
           {usage.restrictedCount > 0 && (
-            <div className="flex items-center gap-2 px-4 py-3">
+            <div className={`flex items-center gap-2 py-3 ${compact ? "" : "px-4"}`}>
               <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               <Text as="p" variant="bodySm" tone="subdued">{t("contentModel.usage.restricted", { count: usage.restrictedCount })}</Text>
             </div>
           )}
           {hasMore && onLoadMore && (
-            <div className="px-4 py-3">
+            <div className={compact ? "py-3" : "px-4 py-3"}>
               <Button variant="outline" size="sm" onClick={onLoadMore} disabled={loadingMore}>
                 {loadingMore ? t("contentModel.state.loading") : t("contentModel.usage.showMore", { count: usage.totalCount - usage.restrictedCount - usage.entries.length })}
               </Button>

@@ -25,6 +25,7 @@ Do not import Radix directly outside `components/ui/`. Follow the typography and
 - `components/console-navigation.tsx` composes the desktop island and labeled mobile drawer for team, admin and super-admin routes. Callers supply links and permission filtering; the wrapper only handles drawer visibility.
 - Standard pages subtract `--app-navbar-height` when filling the remaining viewport. Editors use flex layout beneath their own headers so notices can grow without covering the workspace.
 - `app/manage/layout.tsx` owns the persistent `TeamShell` and right-side loading boundary. Library and asset/activity detail routes render only their content; they must not create another navigation frame. `TeamShell` and the global header share the full-window editor route predicate. Library sizing follows the active route, so cached, hidden pages cannot change the current work surface's padding.
+- The asset library opens `AssetInspector` in `TeamFrame`'s optional right island. The `assetId` search parameter uses native history to preserve the mounted library and its local state; regular card navigation is intercepted while the existing detail href supports direct links and modified clicks. `AssetDetailView` owns the same detail reads, capabilities and writes in either presentation. Content-change events refresh the loaded library pages in place after writes.
 
 ## Protected boundaries
 
