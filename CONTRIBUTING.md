@@ -86,6 +86,8 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 基础素材详情浮岛运行 `node scripts/test-asset-inspector.mjs`，沿用同一本地服务与隔离 fixture。覆盖中英文、明暗主题、桌面/窄屏、列表筛选与滚动保留、历史导航和重命名后的列表同步；设置 `INSPECTOR_SCREENSHOTS` 可保存检查截图。
 
+地图首屏布局运行 `node scripts/test-map-layout.mjs`，需要本地服务，API 与 viewer 使用隔离 fixture。逐帧比较加载占位到正式内容的三栏位置、尺寸与顶栏，覆盖直接进入、刷新和从地图列表打开、中英文、明暗主题、桌面/平板/手机及矮视口；不只检查加载完成后的截图。设置 `MAP_LAYOUT_SCREENSHOTS` 可保存截图。
+
 地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
 
 ## CI 与发布

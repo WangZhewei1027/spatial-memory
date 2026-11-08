@@ -7,6 +7,7 @@
 | 模块 | 职责 |
 | --- | --- |
 | [PlacementMapView](../app/manage/components/placements/PlacementMapView.tsx) | 组合投放列表、Cesium iframe 和侧栏，接收合集能力 |
+| [ManageGridLayout](../app/manage/components/placements/ManageGridLayout.tsx) | 加载占位与正式内容共用的响应式 CSS Grid；直接按容器尺寸排布三栏 |
 | [usePlacementData](../app/manage/components/placements/usePlacementData.ts) | 按团队/合集加载投放及内容，处理读取取消与刷新 |
 | [placement-store](../app/manage/lib/placement-store.ts) | 当前范围、投放、内容缓存、选择与刷新状态 |
 | [placement-to-viewer](../app/manage/lib/placement-to-viewer.ts) | 将投放转换为 viewer 可读的字段 |
@@ -14,6 +15,8 @@
 | `public/js/viewer/` | 独立 Cesium 运行时，管理图标、选择和渲染资源 |
 
 `GET /api/placements/[id]/content` 解析源素材或场景的当前内容。内容缓存按团队/合集、投放及目标标识匹配；素材锁版本也参与素材目标的缓存键。活动与普通内容独立加载；活动地图标记从活动定义读取固定地点，无坐标点只显示在活动目录中。
+
+地图工作区不支持面板拖拽或缩放。布局由 CSS 容器查询和网格计算，首帧即按顶栏下方的实际空间排布，占位与正式面板保持相同尺寸；不使用挂载后的宽高测量、默认尺寸或位置过渡。宽度至少 996px 时三栏并排，768–995px 时地图在上、其余两栏在下，更窄时地图、列表、侧栏纵向排列并滚动。
 
 ## ID 与消息
 
@@ -51,5 +54,7 @@
 合集的 `ViewerFrame` 将所属组织 ID 传给 viewer。运行时通过需要团队读取权限的 `GET /api/organizations/[id]/map-scan-model` 获取当前开关；只有服务端明确返回 `enabled: true` 才加载扫描瓦片。配置错误、超时、无组织上下文、移动设备及归档组织都不加载扫描模型。底图和投放消息桥不等待配置请求；开关变更在刷新或重新打开合集地图后生效。该设置控制地图叠加层的性能开销，不改变素材和场景中的普通 3D 模型。
 
 ## 验证
+
+`node scripts/test-map-layout.mjs` 逐帧验证进入、刷新和从地图列表打开期间的布局稳定性，覆盖加载占位和真实面板。所有 API 与 viewer 使用隔离 fixture；具体环境与截图开关见[贡献指南](../CONTRIBUTING.md)。
 
 修改消息桥时检查定位、单选/多选、手动选点、拖动保存、锁冲突恢复和合集切换。viewer 的重复同步及资源释放由 `node scripts/test-viewer-resources.mjs` 覆盖；它不替代浏览器消息桥和数据库写入验证。
