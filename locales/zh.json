@@ -1302,6 +1302,7 @@
   },
   "activities": {
     "title": "活动",
+    "view": "查看",
     "create": "创建活动",
     "name": "活动名称",
     "type": "活动类型",
@@ -1368,6 +1369,12 @@
     "map": "地图合集",
     "chooseMap": "选择地图",
     "placementStatus": "投放状态",
+    "mapStates": {
+      "active": "开启",
+      "paused": "暂停"
+    },
+    "unlink": "取消关联",
+    "unlinking": "取消关联中…",
     "placementStates": {
       "draft": "草稿",
       "active": "已启用",

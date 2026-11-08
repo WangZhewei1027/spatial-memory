@@ -37,6 +37,7 @@ try {
     const mutations = [];
     let failPlacements = false;
     let conflict = false;
+    let failWrite = false;
     await context.addCookies([{ name: "better-auth.session_token", value: "map-activities-fixture", url: origin }, { name: "language", value: language, url: origin }]);
     await context.route("**/api/**", async (route) => {
       const request = route.request(), path = new URL(request.url()).pathname;
@@ -50,6 +51,7 @@ try {
           assert.deepEqual(Object.keys(input).sort(), ["expectedLockVersion", "status"]);
           assert.equal(input.expectedLockVersion, placements[0].lock_version);
           if (conflict) { status = 409; body = { code: "LOCK_VERSION_CONFLICT", error: "Fixture conflict" }; }
+          else if (failWrite) { status = 500; body = { error: "Fixture write failure" }; }
           else { placements[0].status = input.status; placements[0].lock_version++; body = { data: placements[0] }; }
         } else if (path === `/api/activities/${activities[1].id}/placements` && method === "POST") {
           assert.equal(input.workspaceId, mapId);
@@ -99,56 +101,114 @@ try {
     assert.ok(dialogBounds.x >= 0 && dialogBounds.x + dialogBounds.width <= width && dialogBounds.y >= 0 && dialogBounds.y + dialogBounds.height <= height);
     assert.ok(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth), "dialog must not overflow horizontally");
     if (captureDir && writable) await page.screenshot({ path: `${captureDir}/${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
-    if (!writable) assert.equal(await dialog.getByRole("button", { name: text.placeExisting, exact: true }).count(), 0);
-    if (writable && width < 640) {
-      const libraryBounds = await dialog.getByRole("link", { name: text.manage, exact: true }).boundingBox();
-      const addBounds = await dialog.getByRole("button", { name: text.placeExisting, exact: true }).boundingBox();
-      assert.ok(libraryBounds.y < addBounds.y, "mobile visual order must follow keyboard order");
+    if (!writable) {
+      assert.equal(await dialog.getByRole("button", { name: text.placeExisting, exact: true }).count(), 0);
+      assert.equal(await dialog.getByRole("button", { name: text.unlink, exact: true }).count(), 0);
+    } else {
+      await dialog.getByRole("combobox").first().click();
+      assert.deepEqual(await page.getByRole("option").allTextContents(), [text.mapStates.active, text.mapStates.paused]);
+      await page.keyboard.press("Escape");
     }
+    const libraryLink = dialog.getByRole("link", { name: text.manage, exact: true });
+    assert.equal(await libraryLink.getAttribute("target"), "_blank");
+    assert.equal(await dialog.getByText(text.mapHint, { exact: true }).count(), 0);
+    assert.equal(await dialog.getByText(text.placementRelationHint, { exact: true }).count(), 0);
+    assert.equal(await dialog.getByRole("button", { name: text.editPlacement, exact: true }).count(), 0);
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });
     assert.equal(await anchors.getAttribute("data-state"), "active", "close must preserve the list tab");
     assert.equal(await trigger.evaluate((node) => document.activeElement === node), true);
     assert.deepEqual(await iframe.boundingBox(), bounds);
 
-    // Marker clicks open the corresponding relation, without switching the content list.
+    // Marker clicks highlight the matching row; status changes save directly in that row.
     await frame.evaluate(() => parent.postMessage({ type: "ASSET_CLICKED", payload: { assetId: window.items[0].id }, source: "viewer", version: 1 }, location.origin));
-    await dialog.getByLabel(text.placementStatus, { exact: true }).waitFor();
-    const statusControl = dialog.getByLabel(text.placementStatus, { exact: true });
-    assert.equal(await dialog.getByLabel(text.map, { exact: true }).count(), 0, "the current map is context, not a disabled picker");
-    await dialog.evaluate((node) => Promise.all(node.getAnimations({ subtree: true }).map((animation) => animation.finished)));
-    const cancelBounds = await dialog.getByRole("button", { name: text.cancel, exact: true }).boundingBox();
-    assert.ok(cancelBounds.y >= 0 && cancelBounds.y + cancelBounds.height <= height, "form actions must remain visible");
-    if (captureDir && writable) await page.screenshot({ path: `${captureDir}/edit-${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
+    const highlighted = dialog.locator('li[aria-current="true"]');
+    await highlighted.getByRole("heading", { name: activities[0].name, exact: true }).waitFor();
+    const statusControl = highlighted.getByRole("combobox", { name: `${activities[0].name} · ${text.placementStatus}`, exact: true });
+    await statusControl.waitFor();
+    assert.equal(await dialog.getByLabel(text.map, { exact: true }).count(), 0);
+    assert.equal(await dialog.getByRole("button", { name: text.savePlacement, exact: true }).count(), 0, "inline status changes need no separate save step");
     if (!writable) {
       assert.equal(await statusControl.isDisabled(), true);
-      assert.equal(await dialog.getByRole("button", { name: text.savePlacement, exact: true }).count(), 0);
     } else if (width === 1440 && language === "zh") {
-      await statusControl.click();
-      await page.getByRole("option", { name: text.placementStates.paused, exact: true }).click();
+      const chooseStatus = async (status) => {
+        await statusControl.click();
+        assert.deepEqual(await page.getByRole("option").allTextContents(), [text.mapStates.active, text.mapStates.paused]);
+        await page.getByRole("option", { name: text.mapStates[status], exact: true }).click();
+      };
       conflict = true;
-      await dialog.getByRole("button", { name: text.savePlacement, exact: true }).click();
-      await dialog.getByText(text.conflict, { exact: true }).waitFor();
-      assert.equal(await statusControl.innerText(), text.placementStates.paused, "conflict keeps the user's input");
+      await chooseStatus("paused");
+      await highlighted.getByText(text.conflict, { exact: true }).waitFor();
+      assert.equal(await statusControl.innerText(), text.mapStates.paused, "conflict keeps the user's choice visible");
+      assert.equal(await statusControl.isDisabled(), true, "a conflict requires reloading before another write");
       conflict = false;
-      await dialog.getByRole("button", { name: text.savePlacement, exact: true }).click();
-      await dialog.getByRole("heading", { name: activities[0].name, exact: true }).waitFor();
+      placements[0].lock_version++;
+      await Promise.all([
+        page.waitForResponse((response) => response.url().includes(`/collections/${mapId}/activity-placements`)),
+        highlighted.getByRole("button", { name: text.reload, exact: true }).click(),
+      ]);
+      await statusControl.getByText(text.mapStates.active, { exact: true }).waitFor();
+      await chooseStatus("paused");
+      await page.waitForFunction(() => document.querySelector('li[aria-current="true"]')?.getAttribute('aria-busy') === 'false');
       assert.equal(placements[0].status, "paused");
+      assert.equal(mutations[1].input.expectedLockVersion, 2, "reloading must use the current lock version");
+      failWrite = true;
+      await chooseStatus("active");
+      const retryWrite = highlighted.getByRole("button", { name: locale.contentModel.action.retry, exact: true });
+      await retryWrite.waitFor();
+      failWrite = false;
+      await retryWrite.click();
+      await retryWrite.waitFor({ state: "hidden" });
+      assert.equal(placements[0].status, "active");
       await dialog.getByRole("button", { name: text.placeExisting, exact: true }).click();
       await dialog.getByRole("combobox", { name: text.chooseActivity, exact: true }).click();
       await page.getByRole("option", { name: activities[1].name, exact: true }).click();
+      assert.equal(await dialog.getByText(text.placementRelationHint, { exact: true }).count(), 0);
+      const formStatus = dialog.getByLabel(text.placementStatus, { exact: true });
+      assert.equal(await formStatus.innerText(), text.mapStates.paused, "new map links default to paused");
+      await formStatus.click();
+      assert.deepEqual(await page.getByRole("option").allTextContents(), [text.mapStates.active, text.mapStates.paused]);
+      await page.keyboard.press("Escape");
+      if (captureDir) await page.screenshot({ path: `${captureDir}/create.png`, animations: "disabled" });
       await dialog.getByRole("button", { name: text.savePlacement, exact: true }).click();
       await dialog.getByRole("heading", { name: activities[1].name, exact: true }).waitFor();
-      assert.equal(placements[1].status, "draft");
+      assert.equal(placements[1].status, "paused");
       await frame.waitForFunction(() => window.items.length === 2);
-      assert.equal(mutations.length, 3);
+      assert.equal(mutations.length, 5);
+
+      const originalId = placements[0].id;
+      failWrite = true;
+      await highlighted.getByRole("button", { name: text.unlink, exact: true }).click();
+      await highlighted.getByRole("button", { name: locale.contentModel.action.retry, exact: true }).waitFor();
+      assert.equal(placements[0].status, "active", "failed unlink preserves the map relation");
+      assert.equal(await statusControl.innerText(), text.mapStates.active, "unlink must not masquerade as a status change");
+      failWrite = false;
+      await highlighted.getByRole("button", { name: locale.contentModel.action.retry, exact: true }).click();
+      await highlighted.waitFor({ state: "hidden" });
+      await frame.waitForFunction(() => window.items.length === 1);
+      assert.equal(placements[0].status, "archived");
+      assert.equal(activities[0].state, "active", "unlink must not archive the activity itself");
+      assert.equal(placements.length, 2, "unlink retains the relation identity for its history");
+      assert.equal(placements[1].status, "paused", "other links are unaffected");
+      await dialog.getByRole("button", { name: text.placeExisting, exact: true }).click();
+      await dialog.getByRole("combobox", { name: text.chooseActivity, exact: true }).click();
+      await page.getByRole("option", { name: activities[0].name, exact: true }).click();
+      assert.equal(await dialog.getByLabel(text.placementStatus, { exact: true }).innerText(), text.mapStates.paused);
+      await dialog.getByRole("button", { name: text.savePlacement, exact: true }).click();
+      await dialog.getByRole("heading", { name: activities[0].name, exact: true }).waitFor();
+      await frame.waitForFunction(() => window.items.length === 2);
+      assert.equal(placements[0].id, originalId);
+      assert.equal(placements[0].status, "paused");
+      assert.equal(mutations.filter((entry) => entry.method === "POST").length, 1, "relink restores the existing relation");
+      assert.equal(mutations.length, 8);
     }
     await dialog.getByRole("button", { name: locale.common.close, exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.equal(await anchors.getAttribute("data-state"), "active");
     await trigger.click();
     await dialog.getByRole("heading", { name: activities[0].name, exact: true }).waitFor();
-    assert.equal(await dialog.getByLabel(text.placementStatus, { exact: true }).count(), 0, "reopen starts at the activity list");
+    assert.equal(await dialog.getByRole("combobox").count(), placements.length, "every relation has an inline status control");
+    assert.equal(await dialog.locator('li[aria-current="true"]').count(), 0, "reopen clears the marker highlight");
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });
     if (width === 1440 && language === "zh" && writable) {
@@ -167,11 +227,11 @@ try {
       await trigger.click();
       await dialog.getByRole("heading", { name: "Long activity 11 — community messages and neighborhood stories", exact: true }).waitFor();
       await dialog.evaluate((node) => Promise.all(node.getAnimations({ subtree: true }).map((animation) => animation.finished)));
-      const library = dialog.getByRole("link", { name: text.manage, exact: true });
-      const beforeScroll = await library.boundingBox();
+      const footerAction = dialog.getByRole("button", { name: text.placeExisting, exact: true });
+      const beforeScroll = await footerAction.boundingBox();
       const listRegion = dialog.locator("div.overflow-y-auto");
       await listRegion.evaluate((node) => { node.scrollTop = node.scrollHeight; });
-      assert.deepEqual(await library.boundingBox(), beforeScroll, "footer must stay fixed while the activity list scrolls");
+      assert.deepEqual(await footerAction.boundingBox(), beforeScroll, "footer must stay fixed while the activity list scrolls");
       assert.ok(beforeScroll.y + beforeScroll.height <= 900);
       if (captureDir) await page.screenshot({ path: `${captureDir}/long-list.png`, animations: "disabled" });
       await page.keyboard.press("Escape");

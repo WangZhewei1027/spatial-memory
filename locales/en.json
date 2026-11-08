@@ -1314,6 +1314,7 @@
   },
   "activities": {
     "title": "Activities",
+    "view": "View",
     "create": "Create activity",
     "name": "Activity name",
     "type": "Activity type",
@@ -1380,6 +1381,12 @@
     "map": "Map collection",
     "chooseMap": "Choose a map",
     "placementStatus": "Placement status",
+    "mapStates": {
+      "active": "Enabled",
+      "paused": "Paused"
+    },
+    "unlink": "Unlink",
+    "unlinking": "Unlinking…",
     "placementStates": {
       "draft": "Draft",
       "active": "Enabled",

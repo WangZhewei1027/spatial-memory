@@ -25,7 +25,7 @@ interface ActivityPlacementFormProps {
 export function ActivityPlacementForm({ activity, placement, collections, workspaceId, showHeading = true, onSaved, onCancel }: ActivityPlacementFormProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState(() => placement?.workspace_id ?? workspaceId ?? (collections.filter((entry) => entry.capabilities?.can_edit !== false).length === 1 ? collections.find((entry) => entry.capabilities?.can_edit !== false)!.id : ""));
-  const [status, setStatus] = useState<ActivityPlacementDto["status"]>(placement?.status ?? "draft");
+  const [status, setStatus] = useState<ActivityPlacementDto["status"]>(() => workspaceId ? (placement?.status === "active" ? "active" : "paused") : placement?.status ?? "draft");
   const [expectedLockVersion] = useState(placement?.lock_version);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -56,9 +56,9 @@ export function ActivityPlacementForm({ activity, placement, collections, worksp
         <Text as="h3" variant="headingMd" breakWord>{workspaceId ? activity.name : t(placement ? "activities.editPlacement" : "activities.place")}</Text>
         {!workspaceId && <Text as="p" variant="bodySm" tone="subdued" breakWord>{activity.name}</Text>}
       </div>}
-      <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementRelationHint")}</Text>
+      {!workspaceId && <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementRelationHint")}</Text>}
       {!workspaceId && <div className="space-y-2"><Label htmlFor="activity-placement-map">{t("activities.map")}</Label><Select value={workspace} disabled={pending || !canEdit || !!placement} onValueChange={(value) => { setWorkspace(value); intent.current = null; }}><SelectTrigger id="activity-placement-map" className="w-full"><SelectValue placeholder={t("activities.chooseMap")} /></SelectTrigger><SelectContent>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id} disabled={collection.capabilities?.can_edit === false && collection.id !== workspace}>{collection.name}</SelectItem>)}</SelectContent></Select></div>}
-      <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as ActivityPlacementDto["status"]); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{["draft", "active", "paused", "archived"].map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.placementStates.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as ActivityPlacementDto["status"]); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{(workspaceId ? ["active", "paused"] : ["draft", "active", "paused", "archived"]).map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.${workspaceId ? "mapStates" : "placementStates"}.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
       <ActivityFailure error={error} onReload={onCancel} />
     </div>
     <div className={workspaceId ? "flex shrink-0 justify-end gap-2 border-t px-5 py-4 sm:px-6" : "flex flex-wrap gap-2"}>
