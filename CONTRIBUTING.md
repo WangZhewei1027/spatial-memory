@@ -86,6 +86,8 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 基础素材详情浮岛运行 `node scripts/test-asset-inspector.mjs`，沿用同一本地服务与隔离 fixture。覆盖中英文、明暗主题、桌面/窄屏、列表筛选与滚动保留、历史导航和重命名后的列表同步；设置 `INSPECTOR_SCREENSHOTS` 可保存检查截图。
 
+地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、关联与状态写入、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
+
 ## CI 与发布
 
 保留现有工作流文件和 job ID；`ui-quality.yml` 的显示名称为 Engineering quality。PR 自动运行 `validate`（`npm run check`）与 `database-migrations`；主分支部署复用同一工作流，二者通过后才进入部署。

@@ -54,7 +54,6 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
   const statusFilter = usePlacementStore((state) => state.statusFilter);
   const fileTypeFilter = usePlacementStore((state) => state.fileTypeFilter);
   const tagFilter = usePlacementStore((state) => state.tagFilter);
-  const activitiesTab = usePlacementStore((state) => state.tab === "activities");
 
   const visible = useMemo(
     () => loadedScopeKey === scopeKey ? placements.filter((placement) => matchesFilters(placement, { status: statusFilter, fileTypes: fileTypeFilter, tagIds: tagFilter })) : [],
@@ -83,7 +82,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
   const requestedId = params.get("placementId");
   const requestedTab = params.get("tab");
   useEffect(() => {
-    if (requestedTab === "activities") usePlacementStore.getState().setTab("activities");
+    if (requestedTab === "activities") usePlacementStore.getState().setActivitiesOpen(true);
   }, [requestedTab, workspaceId]);
   const applied = useRef<string | null>(null);
   const { focusPlacement } = viewer;
@@ -138,7 +137,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
             <ViewerFrame iframeRef={iframeRef} organizationId={organizationId} />
           </>
         }
-        sidebar={activitiesTab ? null : <PlacementSidebar />}
+        sidebar={<PlacementSidebar />}
       />
     </PlacementMapProvider>
   );

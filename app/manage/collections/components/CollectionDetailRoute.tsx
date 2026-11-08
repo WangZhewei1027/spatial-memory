@@ -2,6 +2,7 @@
 
 import { ManageLayoutSkeleton } from "@/app/manage/components/placements/ManageLayoutSkeleton";
 import { PlacementMapView } from "@/app/manage/components/placements/PlacementMapView";
+import { MapActivitiesDialog } from "@/app/manage/components/activities/MapActivitiesDialog";
 import { CollectionHeaderBar, ContentErrorState, ContentNotice } from "@/app/manage/content";
 import { useCollections } from "@/app/manage/lib/collections";
 import { collectionApi, isContentApiError } from "@/app/manage/lib/content-api";
@@ -54,7 +55,10 @@ function CollectionDetailView({ id }: { id: string }) {
         name={collection?.name ?? null}
         archived={archived}
         backHref={backHref}
-        actions={organizationId && collection && settled ? <WorkspaceQrButton organizationId={organizationId} workspaceId={id} /> : undefined}
+        actions={organizationId && collection && settled ? <>
+          <MapActivitiesDialog organizationId={organizationId} workspaceId={id} workspaceName={collection.name} canEdit={!archived && !!collection.capabilities?.can_edit} />
+          <WorkspaceQrButton organizationId={organizationId} workspaceId={id} />
+        </> : undefined}
       />
       <div className="relative min-h-0 flex-1">{body}</div>
     </main>

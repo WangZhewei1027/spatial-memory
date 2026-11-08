@@ -35,38 +35,13 @@ const LAYOUTS: Partial<Record<string, Layout>> = {
   ],
 };
 
-// Activity controls live in the list. Reclaim the unused sidebar for the map;
-// on narrow screens the remaining list takes the full row below the viewer.
-const TWO_PANEL_LAYOUTS: Partial<Record<string, Layout>> = {
-  lg: [
-    { i: "assetManager", x: 0, y: 0, w: 3, h: 12, minW: 2, minH: 6 },
-    { i: "viewer", x: 3, y: 0, w: 9, h: 12, minW: 4, minH: 6 },
-  ],
-  md: [
-    { i: "assetManager", x: 0, y: 0, w: 2, h: 12, minW: 2, minH: 6 },
-    { i: "viewer", x: 2, y: 0, w: 8, h: 12, minW: 4, minH: 6 },
-  ],
-  sm: [
-    { i: "viewer", x: 0, y: 0, w: 6, h: 12, minW: 3, minH: 6 },
-    { i: "assetManager", x: 0, y: 12, w: 6, h: 10, minW: 2, minH: 6 },
-  ],
-  xs: [
-    { i: "viewer", x: 0, y: 0, w: 4, h: 11, minW: 2, minH: 6 },
-    { i: "assetManager", x: 0, y: 11, w: 4, h: 9, minW: 2, minH: 6 },
-  ],
-  xxs: [
-    { i: "viewer", x: 0, y: 0, w: 2, h: 11, minW: 1, minH: 6 },
-    { i: "assetManager", x: 0, y: 11, w: 2, h: 9, minW: 1, minH: 6 },
-  ],
-};
-
 interface ManageGridLayoutProps {
   /** Left list panel (placement list). */
   list: ReactNode;
   /** Contents of the bordered viewer panel (overlays + ViewerFrame). */
   viewer: ReactNode;
-  /** Omit when all controls are in the list; the viewer uses the remaining space. */
-  sidebar?: ReactNode;
+  /** Content placement controls, independent of the activity dialog. */
+  sidebar: ReactNode;
   /** Fill the parent's height (collection detail under its header bar) instead of the viewport. */
   fill?: boolean;
 }
@@ -77,7 +52,6 @@ interface ManageGridLayoutProps {
 export function ManageGridLayout({ list, viewer, sidebar, fill }: ManageGridLayoutProps) {
   const { width, containerRef, mounted } = useContainerWidth();
   const [rowHeight, setRowHeight] = useState(50);
-  const hasSidebar = sidebar != null;
 
   // 动态计算 rowHeight
   useEffect(() => {
@@ -107,7 +81,7 @@ export function ManageGridLayout({ list, viewer, sidebar, fill }: ManageGridLayo
       {mounted && (
         <Responsive
           className="layout"
-          layouts={hasSidebar ? LAYOUTS : TWO_PANEL_LAYOUTS}
+          layouts={LAYOUTS}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
           cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
           rowHeight={rowHeight}
@@ -126,9 +100,9 @@ export function ManageGridLayout({ list, viewer, sidebar, fill }: ManageGridLayo
           </div>
 
           {/* Sidebar 面板 */}
-          {hasSidebar && <div key="sidebar">
+          <div key="sidebar">
             {sidebar}
-          </div>}
+          </div>
         </Responsive>
       )}
     </div>

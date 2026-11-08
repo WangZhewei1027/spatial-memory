@@ -12,12 +12,11 @@ import { PlacementCard } from "./PlacementCard";
 import { PlacementListHeader } from "./PlacementListHeader";
 import { usePlacementMap } from "./PlacementMapContext";
 import { listTabOf } from "./placement-utils";
-import { MapActivities } from "../activities/MapActivities";
 
-const TABS: PlacementListTab[] = ["placements", "activities", "anchors"];
+const TABS: PlacementListTab[] = ["placements", "anchors"];
 
 /**
- * Map content, independent activity placements and recognition targets.
+ * Map content and recognition targets. Activities open from the map header.
  */
 export function PlacementList({ visible }: { visible: PlacementDto[] }) {
   const { tx, tags, setViewerSelection } = usePlacementMap();
@@ -30,7 +29,7 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
   const [selectMode, setSelectMode] = useState(false);
 
   const groups = useMemo(() => {
-    const out: Record<PlacementListTab, PlacementDto[]> = { placements: [], activities: [], anchors: [] };
+    const out: Record<PlacementListTab, PlacementDto[]> = { placements: [], anchors: [] };
     for (const placement of visible) out[listTabOf(placement)].push(placement);
     return out;
   }, [visible]);
@@ -72,7 +71,7 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
   const rows = groups[tab];
   return (
     <Card className="flex h-full flex-col overflow-hidden">
-      {tab !== "activities" && <PlacementListHeader shownCount={visible.length} totalCount={placements.length} fileTypes={fileTypes} selectMode={selectMode} onToggleSelectMode={toggleSelectMode} />}
+      <PlacementListHeader shownCount={visible.length} totalCount={placements.length} fileTypes={fileTypes} selectMode={selectMode} onToggleSelectMode={toggleSelectMode} />
       <Tabs value={tab} onValueChange={(value) => usePlacementStore.getState().setTab(value as PlacementListTab)} className="px-3 pt-2">
         <TabsList className="w-full">
           {TABS.map((key) => (
@@ -84,7 +83,7 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
         </TabsList>
       </Tabs>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {tab === "activities" ? <MapActivities /> : tab === "anchors" ? (
+        {tab === "anchors" ? (
           <AnchorList anchorPlacements={groups.anchors} />
         ) : status === "loading" && !placements.length ? (
           <ContentListSkeleton label={tx("contentModel.integration.map.list.loading")} rows={4} />

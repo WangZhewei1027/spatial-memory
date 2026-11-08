@@ -47,13 +47,22 @@ export function ActivityPlacementForm({ activity, placement, collections, worksp
     } catch (failure) { setError(failure); }
     finally { setPending(false); }
   };
+  const cancelButton = <Button variant="outline" type="button" onClick={onCancel} disabled={pending} className={workspaceId ? "min-h-10 flex-1 sm:flex-none" : undefined}>{t("activities.cancel")}</Button>;
+  const saveButton = canEdit && <Button type="submit" disabled={disabled || !workspace} className={workspaceId ? "min-h-10 flex-1 sm:flex-none" : undefined}>{t(pending ? "activities.saving" : "activities.savePlacement")}</Button>;
 
-  return <form className="space-y-4" onSubmit={submit}>
-    {showHeading && <div className="space-y-1"><Text as="h3" variant="headingMd">{t(placement ? "activities.editPlacement" : "activities.place")}</Text><Text as="p" variant="bodySm" tone="subdued">{activity.name}</Text></div>}
-    <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementRelationHint")}</Text>
-    <div className="space-y-2"><Label htmlFor="activity-placement-map">{t("activities.map")}</Label><Select value={workspace} disabled={pending || !canEdit || !!placement || !!workspaceId} onValueChange={(value) => { setWorkspace(value); intent.current = null; }}><SelectTrigger id="activity-placement-map" className="w-full"><SelectValue placeholder={t("activities.chooseMap")} /></SelectTrigger><SelectContent>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id} disabled={collection.capabilities?.can_edit === false && collection.id !== workspace}>{collection.name}</SelectItem>)}</SelectContent></Select></div>
-    <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as ActivityPlacementDto["status"]); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{["draft", "active", "paused", "archived"].map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.placementStates.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
-    <ActivityFailure error={error} onReload={onCancel} />
-    <div className="flex flex-wrap gap-2">{canEdit && <Button type="submit" disabled={disabled || !workspace}>{t(pending ? "activities.saving" : "activities.savePlacement")}</Button>}<Button variant="outline" type="button" onClick={onCancel} disabled={pending}>{t("activities.cancel")}</Button></div>
+  return <form className={workspaceId ? "flex min-h-0 flex-1 flex-col" : "space-y-4"} onSubmit={submit}>
+    <div className={workspaceId ? "min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6" : "space-y-4"}>
+      {showHeading && <div className="space-y-1">
+        <Text as="h3" variant="headingMd" breakWord>{workspaceId ? activity.name : t(placement ? "activities.editPlacement" : "activities.place")}</Text>
+        {!workspaceId && <Text as="p" variant="bodySm" tone="subdued" breakWord>{activity.name}</Text>}
+      </div>}
+      <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementRelationHint")}</Text>
+      {!workspaceId && <div className="space-y-2"><Label htmlFor="activity-placement-map">{t("activities.map")}</Label><Select value={workspace} disabled={pending || !canEdit || !!placement} onValueChange={(value) => { setWorkspace(value); intent.current = null; }}><SelectTrigger id="activity-placement-map" className="w-full"><SelectValue placeholder={t("activities.chooseMap")} /></SelectTrigger><SelectContent>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id} disabled={collection.capabilities?.can_edit === false && collection.id !== workspace}>{collection.name}</SelectItem>)}</SelectContent></Select></div>}
+      <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as ActivityPlacementDto["status"]); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{["draft", "active", "paused", "archived"].map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.placementStates.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
+      <ActivityFailure error={error} onReload={onCancel} />
+    </div>
+    <div className={workspaceId ? "flex shrink-0 justify-end gap-2 border-t px-5 py-4 sm:px-6" : "flex flex-wrap gap-2"}>
+      {workspaceId ? <>{cancelButton}{saveButton}</> : <>{saveButton}{cancelButton}</>}
+    </div>
   </form>;
 }
