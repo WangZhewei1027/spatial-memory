@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import {
+  Anchor,
   Archive,
   ArchiveRestore,
   Box,
@@ -31,6 +32,7 @@ export const WORKBENCH_TYPE_ICONS: Record<WorkbenchType, LucideIcon> = {
   text: Type,
   link: Link2,
   document: FileText,
+  anchor: Anchor,
 };
 
 /** Locale key of a workbench type, singular ("场景", "3D模型"). */

@@ -8,6 +8,7 @@ import { errorMessage } from "@/app/manage/lib/content-errors";
 import { toDetailData, toUsageSummary, usageByKind } from "@/app/manage/lib/content-mappers";
 import { acceptFor } from "@/app/manage/lib/content-upload";
 import { useIntegrationText, type IntegrationT } from "@/app/manage/lib/integration-text";
+import type { ContentActionResult } from "@/app/manage/content/types";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, PencilLine } from "lucide-react";
 import Link from "next/link";
@@ -38,7 +39,21 @@ export function AssetDetailRoute({ params }: { params: Promise<{ id: string }> }
   return <AssetDetailView key={id} id={id} />;
 }
 
-export function AssetDetailView({ id, inspector = false }: { id: string; inspector?: boolean }) {
+interface AssetDetailViewProps {
+  id: string;
+  inspector?: boolean;
+  /**
+   * Hosted inside another page (the collection map): the host owns the URL and
+   * team, so no team routing, and library-only navigation is hidden.
+   */
+  embedded?: boolean;
+  /** Called after a successful content, name or lifecycle write. */
+  onChanged?: () => void;
+  /** Type-specific section shown first in the panel body. */
+  children?: ReactNode;
+}
+
+export function AssetDetailView({ id, inspector = false, embedded = false, onChanged, children }: AssetDetailViewProps) {
   const { t } = useTranslation();
   const tx = useIntegrationText(ASSET_TEXTS);
   const router = useRouter();
@@ -48,7 +63,13 @@ export function AssetDetailView({ id, inspector = false }: { id: string; inspect
   const organizationId = asset?.organization_id ?? team.organizationId;
   const writes = useAssetWrites(detail, tx);
   // The asset's team drives the URL and header; a later header switch leaves for that team's assets.
-  const { settled } = useResourceTeam(asset?.organization_id, "/manage/assets");
+  const routed = useResourceTeam(embedded ? null : asset?.organization_id, "/manage/assets");
+  const settled = embedded || routed.settled;
+  const notify = <A extends unknown[]>(write: (...args: A) => Promise<ContentActionResult>) => async (...args: A) => {
+    const result = await write(...args);
+    if (result.ok) onChanged?.();
+    return result;
+  };
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
 
@@ -101,14 +122,16 @@ export function AssetDetailView({ id, inspector = false }: { id: string; inspect
         initialText={asset.payload.kind === "text" ? asset.payload.text : asset.payload.kind === "link" ? asset.payload.url : undefined}
         uploadAccept={isFileType(type) ? acceptFor(type) || undefined : undefined}
         uploadProgress={null}
-        onEditContent={writes.editContent}
+        onEditContent={notify(writes.editContent)}
         usage={toUsageSummary(detail.usage?.impact, asset.organization_id)}
         usageByKind={usageByKind(detail.usage?.impact)}
         usageStatus={detail.usageStatus}
         onRetryUsage={detail.retryUsage}
-        onArchive={writes.archive}
-        onRestore={writes.restore}
-      />
+        onArchive={notify(writes.archive)}
+        onRestore={notify(writes.restore)}
+      >
+        {children}
+      </AssetDetail>
       <AssetNameDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
@@ -118,7 +141,7 @@ export function AssetDetailView({ id, inspector = false }: { id: string; inspect
         submitLabel={tx("contentModel.integration.assetDetail.save")}
         cancelLabel={tx("contentModel.integration.assetDetail.cancel")}
         initialName={asset.name ?? ""}
-        onSubmit={writes.rename}
+        onSubmit={notify(writes.rename)}
       />
       <AssetDuplicateDialog
         open={copyOpen}
@@ -134,7 +157,7 @@ export function AssetDetailView({ id, inspector = false }: { id: string; inspect
       {!archived && canMaintain && (
         <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}><PencilLine aria-hidden />{tx("contentModel.integration.assetDetail.rename")}</Button>
       )}
-      {!archived && canCopy && (
+      {!archived && canCopy && !embedded && (
         <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}><Copy aria-hidden />{tx("contentModel.integration.assetDetail.duplicate")}</Button>
       )}
     </>,

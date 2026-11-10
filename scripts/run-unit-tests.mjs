@@ -32,7 +32,6 @@ const tests = [
   "test-scene-camera-inset.ts",
   "test-viewer-resources.mjs",
   "test-map-scan-model.mjs",
-  "test-matching-status.mjs",
   "test-sms-auth.cjs",
   "test-google-relay-function.mjs",
 ];

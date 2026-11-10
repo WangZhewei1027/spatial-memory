@@ -8,7 +8,9 @@ export type ContentAssetType =
   | "model"
   | "text"
   | "link"
-  | "document";
+  | "document"
+  /** Recognition target; shown in the map's asset panel, not the library. */
+  | "anchor";
 
 export type ContentLifecycle = "active" | "archived";
 export type AssetOrigin = "team_upload" | "public_submission" | "legacy";

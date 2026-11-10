@@ -25,12 +25,13 @@ import { collectionHref, teamHref } from "./content-context";
 
 const CONTENT_TYPES: readonly ContentAssetType[] = ["image", "video", "audio", "model", "text", "link", "document"];
 
-/** Anchors have their own map panel; the generic library contains media content. */
+/** Anchors are maintained from the collection map; the generic library contains media content. */
 export function isLibraryAsset(asset: Pick<AssetDto, "file_type">) {
   return (CONTENT_TYPES as readonly string[]).includes(asset.file_type);
 }
 
 export function contentType(fileType: string): ContentAssetType {
+  if (fileType === "anchor") return "anchor";
   return (CONTENT_TYPES as readonly string[]).includes(fileType) ? (fileType as ContentAssetType) : "document";
 }
 

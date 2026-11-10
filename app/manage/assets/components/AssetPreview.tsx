@@ -22,7 +22,7 @@ export function hasPreview(content: AssetContentDto | null): content is AssetCon
   if (!content) return false;
   const kind = content.payload.kind;
   if (kind === "text" || kind === "link") return true;
-  return ["image", "audio", "video", "model"].includes(kind) && !!primaryResource(content);
+  return ["image", "anchor", "audio", "video", "model"].includes(kind) && !!primaryResource(content);
 }
 
 /**
@@ -55,7 +55,7 @@ export function AssetPreview({ content, name, tx, fullWidth = false }: { content
     );
   }
   if (!url) return null;
-  if (payload.kind === "image") return frame(<AssetImagePreview fileUrl={url} fileName={name} />);
+  if (payload.kind === "image" || payload.kind === "anchor") return frame(<AssetImagePreview fileUrl={url} fileName={name} />);
   if (payload.kind === "audio") return frame(<AssetAudioPreview fileUrl={url} fileName={name} />);
   if (payload.kind === "video") return frame(<AssetVideoPreview fileUrl={url} fileName={name} posterUrl={thumbnailOf(content)} />);
   if (payload.kind === "model") return frame(<AssetModelPreview fileUrl={url} fileName={name} />);
