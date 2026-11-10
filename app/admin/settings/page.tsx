@@ -38,7 +38,7 @@ export default function SettingsPage() {
 
   const orgId = selectedOrganization?.id;
 
-  // 表单需要完整组织行（map_center / allowed_file_types / config），
+  // 表单需要完整组织行（map_center / allowed_file_types），
   // store 里的 selectedOrganization 不含这些字段，进页面时拉一次
   const [org, setOrg] = useState<OrgSettingsSource | null>(null);
   const [loading, setLoading] = useState(true);

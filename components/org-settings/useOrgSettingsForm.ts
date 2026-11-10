@@ -1,8 +1,6 @@
 import { useState, useTransition } from "react";
 import { DEFAULT_UPLOAD_TYPES, FILE_TYPE_CONFIGS } from "@/lib/upload/config";
-import type { TextAssetMiniappStyle } from "@/app/manage/types";
 import {
-  DEFAULT_TEXT_ASSET_MINIAPP_STYLE,
   type OrgSettingsSource,
   type SaveOrgSettings,
 } from "./types";
@@ -39,17 +37,6 @@ export function useOrgSettingsForm(
   const [fileTypes, setFileTypes] = useState<Set<string>>(
     new Set(fileTypesBaseline),
   );
-  const [textAssetMiniappStyle, setTextAssetMiniappStyle] =
-    useState<TextAssetMiniappStyle>(
-      (org.config?.text_asset_miniapp_style as TextAssetMiniappStyle) ??
-        DEFAULT_TEXT_ASSET_MINIAPP_STYLE,
-    );
-  const [confettiEnabled, setConfettiEnabled] = useState<boolean>(
-    org.config?.confetti_enabled ?? false,
-  );
-  const [footerEnabled, setFooterEnabled] = useState<boolean>(
-    org.config?.footer_enabled ?? false,
-  );
   const [saveError, setSaveError] = useState("");
 
   const hasChanged =
@@ -57,12 +44,7 @@ export function useOrgSettingsForm(
     description !== (org.description ?? "") ||
     lat !== (org.map_center?.lat != null ? String(org.map_center.lat) : "") ||
     lng !== (org.map_center?.lng != null ? String(org.map_center.lng) : "") ||
-    !sameSet(fileTypes, fileTypesBaseline) ||
-    textAssetMiniappStyle !==
-      ((org.config?.text_asset_miniapp_style as TextAssetMiniappStyle) ??
-        DEFAULT_TEXT_ASSET_MINIAPP_STYLE) ||
-    confettiEnabled !== (org.config?.confetti_enabled ?? false) ||
-    footerEnabled !== (org.config?.footer_enabled ?? false);
+    !sameSet(fileTypes, fileTypesBaseline);
 
   const toggleFileType = (type: string) => {
     setFileTypes((prev) => {
@@ -97,12 +79,6 @@ export function useOrgSettingsForm(
         description: description.trim() || null,
         map_center: mapCenter,
         allowed_file_types: fileTypesPayload,
-        config: {
-          ...org.config,
-          text_asset_miniapp_style: textAssetMiniappStyle,
-          confetti_enabled: confettiEnabled,
-          footer_enabled: footerEnabled,
-        },
       });
       if (result.error) {
         setSaveError(result.error);
@@ -123,12 +99,6 @@ export function useOrgSettingsForm(
     setLng,
     fileTypes,
     toggleFileType,
-    textAssetMiniappStyle,
-    setTextAssetMiniappStyle,
-    confettiEnabled,
-    setConfettiEnabled,
-    footerEnabled,
-    setFooterEnabled,
     saveError,
     hasChanged,
     handleSave,

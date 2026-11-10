@@ -65,7 +65,7 @@ npm run hooks:install
 
 CI 的数据库 job 定义在 [.github/workflows/ui-quality.yml](.github/workflows/ui-quality.yml)，使用临时 PostGIS 实例运行迁移回归，并在全新 `content_services` 库运行服务集成测试。默认 `npm test` 不操作数据库。
 
-内容服务、路由和上传改动还需要对应集成测试：`scripts/test-content-model-services.ts`、`scripts/test-team-workbench-routes.ts`、`scripts/test-upload-dedup.ts`、`scripts/test-activities.ts`。先阅读脚本及 `scripts/test-content-model-services-fixture.ts`，按其中允许的主机、端口和库名准备专用数据库，显式设置 `DATABASE_URL` 后运行：
+内容服务、路由和上传改动还需要对应集成测试：`scripts/test-content-model-services.ts`、`scripts/test-team-workbench-routes.ts`、`scripts/test-upload-dedup.ts`、`scripts/test-activities.ts`、`scripts/test-collection-settings.ts`。先阅读脚本及 `scripts/test-content-model-services-fixture.ts`，按其中允许的主机、端口和库名准备专用数据库，显式设置 `DATABASE_URL` 后运行：
 
 ```bash
 npm run db:migrate
@@ -89,6 +89,8 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 地图首屏布局运行 `node scripts/test-map-layout.mjs`，需要本地服务，API 与 viewer 使用隔离 fixture。逐帧比较加载占位到正式内容的三栏位置、尺寸与顶栏，覆盖直接进入、刷新和从地图列表打开、中英文、明暗主题、桌面/平板/手机及矮视口；不只检查加载完成后的截图。设置 `MAP_LAYOUT_SCREENSHOTS` 可保存截图。
 
 地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
+
+地图设置弹窗运行 `node scripts/test-map-settings.mjs`，使用上述本地服务及隔离 API/viewer fixture，覆盖保存/重新打开、放弃草稿、失败重试、并发冲突重载、只读/归档、中英文、明暗主题与 320px 窄屏，并检查地图不重挂载或改变尺寸。设置 `MAP_SETTINGS_SCREENSHOTS` 保存截图。迁移回归 `scripts/test-collection-config-migration.ts` 只允许本机 55439 的专用 PostgreSQL 实例，以唯一临时数据库验证旧团队值复制、地图隔离、新地图默认值、约束、回滚及迁移幂等；CI 运行同一脚本。
 
 ## CI 与发布
 

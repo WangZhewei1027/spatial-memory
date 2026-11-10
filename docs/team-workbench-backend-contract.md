@@ -24,7 +24,7 @@ Asset visibility, maintainer and origin collection are metadata, not permission 
 | `POST /api/scenes/[id]/copy` | Copy saved content into an independent team scene |
 | `GET/PATCH /api/scenes/[id]` | Read/save schema-6 scene with direct asset references |
 | `GET/POST /api/organizations/[id]/collections` | List/create collections |
-| `GET/PATCH /api/collections/[id]` | Read/rename collection |
+| `GET/PATCH /api/collections/[id]` | Read/rename collection or update its mini-program settings |
 | `POST/DELETE /api/collections/[id]/archive` | Archive/restore collection |
 | `GET/POST /api/collections/[id]/placements` | List/create independently editable placements; upload-and-place is atomic |
 | `GET/PATCH/DELETE /api/placements/[id]` | Read/edit/archive a placement |
@@ -41,6 +41,8 @@ The scene, activity and collection catalogs accept optional `limit` (1–200) an
 ## Consistency
 
 Asset/scene/placement writes require `expectedLockVersion` (428 if missing, 409 if stale). It is a concurrency counter, not an asset content version. Asset PATCH accepts `payload` and `resources` together, replacing both atomically. Creation supports idempotency keys. Scene saves take effect immediately.
+
+Collection DTOs include `miniapp_config` and `config_lock_version`. Updating settings submits the complete four-field `miniappConfig` with `expectedLockVersion` equal to that configuration counter (428 if missing, 409 if stale). A team writer may edit an open map; archived teams/maps and viewers cannot write. The transaction locks the team and map, validates the version, saves settings and increments the counter. Rename/description-only updates leave settings and their counter unchanged. Settings never inherit subsequent team changes; defaults, migration and the public whitelist are documented in [mini-program API](miniapp-api.md#每个地图合集的小程序设置).
 
 Placements target `{kind:"asset", assetId}` or `{kind:"scene", sceneId}`. Scene resource aliases use `{assetId}` in schema 6; playback compiles to schema 4/5 for model scenes, 7 for presentation/media, 8 for opacity/volume automation or spatial audio, and 9 for an explicit viewer position (see [scene-asset.md](scene-asset.md)). All asset references resolve current content, including every saved scene; asset edits require no placement upgrade or scene publication. Public discovery reads active placements in open teams and collections, with stable placement IDs.
 

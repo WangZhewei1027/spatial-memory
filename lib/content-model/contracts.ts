@@ -168,6 +168,8 @@ export interface CollectionDto {
   create_date: string | null;
   archived_at: string | null;
   capabilities: CollectionCapabilities;
+  miniapp_config: import("./collection-config").CollectionMiniappConfig;
+  config_lock_version: number;
 }
 
 export type CollectionState = "active" | "archived" | "all";
@@ -191,6 +193,9 @@ export interface CreateCollectionRequest {
 export interface UpdateCollectionRequest {
   name?: string;
   description?: string | null;
+  miniappConfig?: import("./collection-config").CollectionMiniappConfig;
+  /** Required when saving miniappConfig; guards the map configuration only. */
+  expectedLockVersion?: number;
 }
 
 // ───────────────────────── uploads ─────────────────────────

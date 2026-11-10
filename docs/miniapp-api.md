@@ -4,8 +4,9 @@
 
 | 接口 | 请求与返回 |
 | --- | --- |
-| GET `/organizations?ids=a,b` | 最多 50 个团队，返回 id/name 和小程序配置 |
-| GET `/workspaces?ids=a,b` | 最多 50 个地图合集，返回 id/name；workspace UUID 就是 collection ID |
+| GET `/organizations?ids=a,b` | 最多 50 个团队，只返回 id/name |
+| GET `/workspaces?ids=a,b&organization_id=…` | 最多 50 个地图合集，返回 id/name/organization_id/config；团队参数可选，提供时必须匹配；workspace UUID 就是 collection ID |
+| GET `/workspaces?organization_id=…` | 指定团队的所有未归档地图，按名称和 ID 排序，供团队入口选择具体地图；不允许无范围枚举 |
 | GET `/scenes?ids=a,b&organization_id=…` | 最多 50 个指定团队的 Scene，返回 id/name；仅包含未归档团队中的 active 场景，供扫码历史展示名称 |
 | POST `/assets/nearby` | `{user_lat,user_lng,max_distance_meters,p_workspace_id?,p_organization_id?}`；GPS 范围内启用投放 |
 | POST `/assets/huge` | `{p_organization_id,p_workspace_id?}`；启用的巨大模型投放 |
@@ -31,7 +32,20 @@ Asset 文件取当前 `asset_resource`，Scene 取当前 `scene.document` 并解
 
 音频同名 `.webm`/`.m4a` 文件由保留层相互保护；上传不自动生成衍生文件，见 [素材流水线](asset-pipeline.md)。微信合法域名需包含后端 request/uploadFile 域名；媒体域名同时加入 request（视频 MP4 Range 索引请求）和 downloadFile（模型、图片及旧媒体兼容下载）。
 
-组织配置仅公开 `confetti_enabled`、`footer_enabled` 和 `text_asset_miniapp_style`。新增公开配置时同步更新 `app/api/miniapp/organizations/route.ts` 的 `PUBLIC_CONFIG_KEYS`；未在白名单中的键不返回小程序。
+## 每个地图合集的小程序设置
+
+地图的 `config` 固定包含以下公开字段，来自 `workspace.miniapp_config`；团队的 `organization.config` 不再用于小程序显示。地图查询排除归档地图及归档团队，未知或不匹配的 ID 不返回记录。
+
+| 字段 | 取值 | 新地图默认值 |
+| --- | --- | --- |
+| `retrieval_mode` | `gps` / `anchor`（匹配识别） | `gps` |
+| `text_asset_miniapp_style` | `plain_white` / `dialog_decorated` | `dialog_decorated` |
+| `confetti_enabled` | boolean | false |
+| `footer_enabled` | boolean | false |
+
+管理端在地图 navbar 的“设置”弹窗保存这四项；团队设置不再提供这些控件。小程序进入或重新显示 AR 页时，先读取并校验当前地图的完整配置，再启动 GPS 的 SLAM 或匹配的 OSD 会话；页面不再提供识别模式切换。读取失败、配置无效或地图已归档时保留重试，不回退到 GPS 或旧团队缓存。首页水印也读取当前地图。仅团队入口先选择一个具体地图；独立 Scene 预览不读取此配置。
+
+发布顺序：先备份数据库并执行 `20261108000000_collection_miniapp_config.sql`，再发布 Web，最后发布配套小程序。迁移把每个团队原有的三个显示设置一次性复制到其全部地图（含已归档地图），识别方式初始化为 GPS；之后各地图独立保存，新地图使用表中默认值。原组织 JSON 只保留作回滚依据，新配置不会双写回组织。旧小程序不能执行服务端识别方式，必须配套升级；新小程序访问未升级 Web 会提示配置加载失败。迁移回归见 `scripts/test-collection-config-migration.ts`，真实路由见 `scripts/test-collection-settings.ts`。
 
 ## 活动与普通内容
 

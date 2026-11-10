@@ -359,10 +359,12 @@ export interface Users {
 export interface Workspace {
   archived_at: Timestamp | null;
   archived_by: string | null;
+  config_lock_version: Generated<number>;
   create_date: Generated<Timestamp | null>;
   description: string | null;
   id: Generated<string>;
   legacy_spatial_content_mode_20261011: Generated<string>;
+  miniapp_config: Generated<Json>;
   name: string;
   organization_id: string;
 }

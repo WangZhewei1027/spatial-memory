@@ -9,6 +9,7 @@
     "manage": "Manage"
   },
   "common": {
+    "saving": "Saving…",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -1311,6 +1312,22 @@
         "archivedBody": "Archived scenes appear here and can be restored at any time."
       }
     }
+  },
+  "collectionSettings": {
+    "trigger": "Settings",
+    "title": "Map settings",
+    "retrievalMode": "Recognition mode",
+    "modes": {
+      "anchor": "Image recognition",
+      "gps": "GPS recognition"
+    },
+    "textStyle": "Text appearance",
+    "styles": {
+      "plain_white": "Plain white text",
+      "dialog_decorated": "Speech bubbles"
+    },
+    "confetti_enabled": "Confetti",
+    "footer_enabled": "Watermark logo"
   },
   "activities": {
     "title": "Activities",

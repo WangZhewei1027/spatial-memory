@@ -6,8 +6,6 @@ export interface LocationData {
   height: number;
 }
 
-export type TextAssetMiniappStyle = "plain_white" | "dialog_decorated";
-
 export interface Organization {
   archived_at?: string | null;
   id: string;

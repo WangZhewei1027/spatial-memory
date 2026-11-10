@@ -16,7 +16,7 @@ interface OrgSettingsFormProps {
 }
 
 /**
- * 组织设置表单（基本信息 + 地图中心 + 文件类型 + 文本样式 + 小程序配置 + 保存按钮）。
+ * 组织设置表单（基本信息 + 地图中心 + 文件类型 + 保存按钮）。
  * super-admin 组织详情面板与 /admin/settings 共用。
  */
 export function OrgSettingsForm({ org, save, onSuccess }: OrgSettingsFormProps) {
@@ -32,12 +32,6 @@ export function OrgSettingsForm({ org, save, onSuccess }: OrgSettingsFormProps) 
     setLng,
     fileTypes,
     toggleFileType,
-    textAssetMiniappStyle,
-    setTextAssetMiniappStyle,
-    confettiEnabled,
-    setConfettiEnabled,
-    footerEnabled,
-    setFooterEnabled,
     saveError,
     hasChanged,
     handleSave,
@@ -60,12 +54,6 @@ export function OrgSettingsForm({ org, save, onSuccess }: OrgSettingsFormProps) 
         setLng={setLng}
         fileTypes={fileTypes}
         toggleFileType={toggleFileType}
-        textAssetMiniappStyle={textAssetMiniappStyle}
-        setTextAssetMiniappStyle={setTextAssetMiniappStyle}
-        confettiEnabled={confettiEnabled}
-        setConfettiEnabled={setConfettiEnabled}
-        footerEnabled={footerEnabled}
-        setFooterEnabled={setFooterEnabled}
       />
 
       <div className="border-t" />

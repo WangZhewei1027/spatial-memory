@@ -9,6 +9,7 @@
     "manage": "管理"
   },
   "common": {
+    "saving": "保存中…",
     "loading": "加载中...",
     "save": "保存",
     "cancel": "取消",
@@ -1299,6 +1300,22 @@
         "archivedBody": "已归档的场景会显示在这里，可以随时恢复。"
       }
     }
+  },
+  "collectionSettings": {
+    "trigger": "设置",
+    "title": "地图设置",
+    "retrievalMode": "识别方式",
+    "modes": {
+      "anchor": "匹配识别",
+      "gps": "GPS 识别"
+    },
+    "textStyle": "文本资源样式",
+    "styles": {
+      "plain_white": "纯白文字",
+      "dialog_decorated": "气泡样式"
+    },
+    "confetti_enabled": "彩带效果",
+    "footer_enabled": "水印 Logo"
   },
   "activities": {
     "title": "活动",

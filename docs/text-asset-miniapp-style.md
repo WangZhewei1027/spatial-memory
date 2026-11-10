@@ -1,22 +1,7 @@
 # 小程序文字素材样式
 
-`organization.config.text_asset_miniapp_style` 控制团队文字素材在小程序中的展示。它是 jsonb 配置键，不是独立数据库列；新增样式无需修改数据库 CHECK 约束。
+`workspace.miniapp_config.text_asset_miniapp_style` 控制当前地图的普通文字素材及弹幕显示。`plain_white` 使用纯白文字，`dialog_decorated` 使用气泡，新地图默认气泡。完整配置、历史值迁移和跨端发布顺序见[小程序接口](miniapp-api.md#每个地图合集的小程序设置)。
 
-| 值 | 展示 |
-| --- | --- |
-| plain_white | 纯白文字 |
-| dialog_decorated | 对话框气泡，键缺失时的默认值 |
+地图 navbar 的“设置”弹窗通过 `PATCH /api/collections/[id]` 保存完整配置并携带并发锁版本，团队写入者可修改未归档地图。团队设置和超级管理员团队详情不再维护文字样式。
 
-Web 默认值定义在 [components/org-settings/types.ts](../components/org-settings/types.ts)，类型 `TextAssetMiniappStyle` 定义在 `app/manage/types.ts`。
-
-## 配置与读取
-
-- 团队 owner / super_admin 在 `/admin/settings` 配置；super_admin 也可通过 `/super-admin/organizations` 的团队详情配置。
-- 两处共用 `components/org-settings/OrgSettingsForm.tsx` 和 `TextAssetStyleSection.tsx`，状态与保存由 `useOrgSettingsForm.ts` 管理。
-- 团队设置通过 `PUT /api/organizations/[id]` 保存，超级管理员通过 `app/super-admin/organizations/actions.ts` 的 `updateOrganization` 保存。
-- 两条写路径都过滤非法样式值；有效值随 config 写入，不改动独立列。
-- 小程序通过 `GET /api/miniapp/organizations?ids=…` 获取公开 config 子集。字段必须在路由的 `PUBLIC_CONFIG_KEYS` 白名单中，见 [小程序接口](miniapp-api.md)。
-
-## 扩展样式
-
-同步修改 TypeScript 类型、两个写入口的白名单、共享表单选项和 `superAdmin.orgs.textAsset` 下的中英文文案。小程序独立仓库还需实现对应渲染分支，并验证缺省样式与 Web 一致。组织配置的通用扩展流程见 [开发指引](../.github/instructions/org-config.instructions.md)。
+扩展样式时，同步修改 `lib/content-model/collection-config.ts` 的类型与严格解析、新数据库迁移中的 CHECK 约束、弹窗选项及 `collectionSettings.styles` 中英文文案。小程序独立仓库同步更新 `utils/map-config.ts` 校验和渲染分支；配置成功加载后才可启动 AR，独立 Scene 预览保持自己的样式行为。

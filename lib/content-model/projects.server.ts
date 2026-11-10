@@ -15,8 +15,9 @@ import {
   type CollectionDto,
   type LibraryListQuery
 } from "./contracts";
-import { archived, notFound } from "./errors";
-import { optionalString, rejectUnknown, requireString, type JsonRecord } from "./input";
+import { archived, checkLockVersion, notFound } from "./errors";
+import { optionalInt, optionalString, rejectUnknown, requireString, type JsonRecord } from "./input";
+import { parseCollectionMiniappConfig } from "./collection-config";
 import { audit, toIso, type Trx } from "./tx.server";
 
 // Map collections (workspace rows): create, rename, archive, and the
@@ -33,6 +34,8 @@ export function workspaceDto(access: WorkspaceAccess): CollectionDto {
     create_date: toIso(access.workspace.create_date),
     archived_at: toIso(access.workspace.archived_at),
     capabilities: access.capabilities,
+    miniapp_config: parseCollectionMiniappConfig(access.workspace.miniapp_config),
+    config_lock_version: access.workspace.config_lock_version,
   };
 }
 
@@ -52,7 +55,7 @@ async function lockOrgForCollections(trx: Trx, organizationId: string): Promise<
 }
 
 function parseCollectionFields(body: JsonRecord, requireName: boolean): { name?: string; description?: string | null } {
-  rejectUnknown(body, ["name", "description"]);
+  rejectUnknown(body, requireName ? ["name", "description"] : ["name", "description", "miniappConfig", "expectedLockVersion"]);
   const name = body.name === undefined && !requireName ? undefined : requireString(body.name, "name", { max: 200 });
   const description = optionalString(body.description, "description", { max: 1000 });
   return { name, description };
@@ -86,19 +89,26 @@ export async function createCollection(actor: Actor, organizationId: string, bod
   return getCollection(actor, id);
 }
 
-/** PATCH /api/collections/[id] { name?, description? }: an open collection, any team writer. */
+/** PATCH an open collection. Settings require their own optimistic configuration version. */
 export async function updateCollection(actor: Actor, workspaceId: string, body: JsonRecord): Promise<CollectionDto> {
   const fields = parseCollectionFields(body, false);
+  const config = body.miniappConfig === undefined ? undefined : parseCollectionMiniappConfig(body.miniappConfig);
+  const expected = optionalInt(body.expectedLockVersion, "expectedLockVersion", 1);
   const access = await requireWorkspaceEdit(db, actor, workspaceId);
-  const changes: { name?: string; description?: string | null } = {};
+  const changes: { name?: string; description?: string | null; miniapp_config?: string; config_lock_version?: number } = {};
   if (fields.name !== undefined && fields.name !== access.workspace.name) changes.name = fields.name;
   if (fields.description !== undefined && fields.description !== access.workspace.description) changes.description = fields.description;
-  if (Object.keys(changes).length) {
+  if (Object.keys(changes).length || config) {
     await db.transaction().execute(async (trx) => {
       await lockOrgForCollections(trx, access.workspace.organization_id);
-      const row = await trx.selectFrom("workspace").select("archived_at").where("id", "=", workspaceId).forUpdate().executeTakeFirst();
+      const row = await trx.selectFrom("workspace").select(["archived_at", "miniapp_config", "config_lock_version"]).where("id", "=", workspaceId).forUpdate().executeTakeFirst();
       if (!row) throw notFound("合集不存在");
       if (row.archived_at) throw archived("合集已归档，请先恢复");
+      if (config) {
+        checkLockVersion(expected, row.config_lock_version, "地图设置");
+        changes.miniapp_config = JSON.stringify(config);
+        changes.config_lock_version = row.config_lock_version + 1;
+      }
       await trx.updateTable("workspace").set(changes).where("id", "=", workspaceId).execute();
       await audit(trx, {
         organizationId: access.workspace.organization_id,
@@ -107,7 +117,7 @@ export async function updateCollection(actor: Actor, workspaceId: string, body: 
         objectType: "workspace",
         objectId: workspaceId,
         workspaceId,
-        details: { changes, before: { name: access.workspace.name, description: access.workspace.description } },
+        details: { changes, before: { name: access.workspace.name, description: access.workspace.description, ...(config ? { miniapp_config: row.miniapp_config } : {}) } },
       });
     });
   }

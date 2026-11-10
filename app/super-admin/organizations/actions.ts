@@ -5,8 +5,6 @@ import { getSessionUser } from "@/lib/auth/server";
 import { purgeOrganizations } from "@/lib/user-deletion.server";
 import { revalidatePath } from "next/cache";
 
-const VALID_MINIAPP_STYLES = ["plain_white", "dialog_decorated"] as const;
-
 import type { OrgConfig } from "./types";
 
 interface UpdateOrgPayload {
@@ -38,18 +36,6 @@ export async function updateOrganization(
   try {
     await requireSuperAdmin();
     const safePayload = { ...payload };
-    if (safePayload.config) {
-      const safeConfig = { ...safePayload.config };
-      if (
-        safeConfig.text_asset_miniapp_style !== undefined &&
-        !VALID_MINIAPP_STYLES.includes(
-          safeConfig.text_asset_miniapp_style as (typeof VALID_MINIAPP_STYLES)[number],
-        )
-      ) {
-        delete safeConfig.text_asset_miniapp_style;
-      }
-      safePayload.config = safeConfig;
-    }
     // 未携带（undefined）的字段不更新；jsonb 列（map_center / config）以 JSON 字符串写入
     await db
       .updateTable("organization")

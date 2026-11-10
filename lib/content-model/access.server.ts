@@ -127,6 +127,8 @@ export interface WorkspaceInfo {
   organization_id: string;
   create_date: Date | null;
   archived_at: Date | null;
+  miniapp_config: unknown;
+  config_lock_version: number;
 }
 
 export interface WorkspaceAccess extends OrgAccess {
@@ -145,6 +147,8 @@ interface WorkspaceRow {
   organization_id: string;
   create_date: Date | null;
   archived_at: Date | null;
+  miniapp_config: unknown;
+  config_lock_version: number;
   org_name: string;
   org_archived_at: Date | null;
   org_role: string | null;
@@ -167,6 +171,8 @@ function workspaceAccessFrom(actor: Actor, row: WorkspaceRow): WorkspaceAccess {
       organization_id: row.organization_id,
       create_date: row.create_date,
       archived_at: row.archived_at,
+      miniapp_config: row.miniapp_config,
+      config_lock_version: row.config_lock_version,
     },
     canEdit,
     canManage,
@@ -190,6 +196,8 @@ function workspaceQuery(exec: Executor, actor: Actor) {
       "w.organization_id",
       "w.create_date",
       "w.archived_at",
+      "w.miniapp_config",
+      "w.config_lock_version",
       "o.name as org_name",
       "o.archived_at as org_archived_at",
       "m.role as org_role",

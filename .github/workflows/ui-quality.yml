@@ -50,6 +50,8 @@ jobs:
         run: node --import tsx scripts/test-spatial-memory-media-migration.ts
       - name: Verify activity-owned location upgrade and conflicts
         run: node --import tsx scripts/test-activity-owned-locations-migration.ts
+      - name: Verify per-map configuration upgrade and rollback
+        run: node --import tsx scripts/test-collection-config-migration.ts
       - name: Create isolated migration and service fixture databases
         run: |
           node --input-type=module <<'JS'

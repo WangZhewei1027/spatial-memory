@@ -116,14 +116,6 @@ export async function PUT(
         return NextResponse.json({ error: "无效的组织配置" }, { status: 400 });
       }
       const safeConfig = { ...config };
-      if (
-        safeConfig.text_asset_miniapp_style !== undefined &&
-        !["plain_white", "dialog_decorated"].includes(
-          safeConfig.text_asset_miniapp_style,
-        )
-      ) {
-        delete safeConfig.text_asset_miniapp_style;
-      }
       updatePayload.config = JSON.stringify(safeConfig);
     }
 
