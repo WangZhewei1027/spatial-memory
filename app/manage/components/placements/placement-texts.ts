@@ -62,6 +62,7 @@ export const MAP_TEXTS: IntegrationTexts = {
   [`${P}.anchors.notOnMap`]: ["未放到地图上", "Not on the map"],
   [`${P}.anchors.panelTitle`]: ["识别目标", "Recognition target"],
   [`${P}.anchors.missing`]: ["此识别目标不在当前合集中。", "This recognition target is not in this collection."],
+  [`${P}.anchors.detachedToDraft`]: ["「{{name}}」没有地图位置，取消挂载后已转为草稿。设置位置或识别目标后可重新启用。", "“{{name}}” has no map location, so it became a draft after detaching. Set a location or recognition target to activate it again."],
   [`${P}.anchors.childReadOnly`]: ["这个投放是只读的，不能更改它的识别目标。", "This placement is read-only; its recognition target can't be changed."],
 
   [`${P}.selection.count`]: ["已选 {{count}} 个投放", "{{count}} placements selected"],

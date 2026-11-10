@@ -13,6 +13,7 @@ const tests = [
   "test-content-model-url-resources.ts",
   "test-content-model-altitude.ts",
   "test-content-model-legacy-anchor.ts",
+  "test-anchor-attachments.ts",
   "test-content-model-legacy-animations.ts",
   "test-scene-core.ts",
   "test-scene-lighting.ts",

@@ -14,6 +14,7 @@ import { usePlacementStore } from "../../lib/placement-store";
 import { placementDisplayName, placementFileType } from "../../lib/placement-to-viewer";
 import { MatchingPointAttachments } from "../AssetEditor/MatchingPointAttachments";
 import { usePlacementMap } from "./PlacementMapContext";
+import { anchorChangeRequest } from "./placement-utils";
 
 /**
  * A recognition target is an anchor asset, so the map shows the library's
@@ -44,8 +45,13 @@ export function AnchorPanel({ anchorId }: { anchorId: string }) {
     setAttaching(true);
     setError(null);
     try {
-      const updated = await placementApi.update(placement.id, { expectedLockVersion: placement.lock_version, anchorId: next });
-      usePlacementStore.getState().upsertPlacements([updated]);
+      const { request, draftedOnDetach } = anchorChangeRequest(placement, next);
+      const updated = await placementApi.update(placement.id, request);
+      const store = usePlacementStore.getState();
+      store.upsertPlacements([updated]);
+      if (draftedOnDetach) {
+        store.setNotice({ tone: "warning", message: tx("contentModel.integration.map.anchors.detachedToDraft", { name: placementDisplayName(updated) }) });
+      }
     } catch (failure) {
       setError(errorMessage(failure, tx));
     } finally {

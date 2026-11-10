@@ -1,4 +1,4 @@
-import type { PayloadScalar, PlacementDto, PlacementRenderConfig } from "@/lib/content-model/contracts";
+import type { PayloadScalar, PlacementDto, PlacementRenderConfig, UpdatePlacementRequest } from "@/lib/content-model/contracts";
 import type { PlacementListTab, PlacementStatusFilter } from "../../lib/placement-store";
 import { placementFileType } from "../../lib/placement-to-viewer";
 
@@ -7,6 +7,20 @@ export function listTabOf(placement: PlacementDto): PlacementListTab {
   const type = placementFileType(placement);
   if (type === "anchor") return "anchors";
   return "placements";
+}
+
+/**
+ * Update that attaches a placement to a recognition target, or detaches it
+ * (`anchorId` null). An active placement needs GPS or a recognition target
+ * to be discoverable, so detaching one without a map location also turns it
+ * into a draft; `draftedOnDetach` lets the caller say so.
+ */
+export function anchorChangeRequest(placement: PlacementDto, anchorId: string | null): { request: UpdatePlacementRequest; draftedOnDetach: boolean } {
+  const draftedOnDetach = anchorId === null && placement.status === "active" && !placement.location;
+  return {
+    request: { expectedLockVersion: placement.lock_version, anchorId, ...(draftedOnDetach ? { status: "draft" as const } : {}) },
+    draftedOnDetach,
+  };
 }
 
 export interface PlacementFilters {
