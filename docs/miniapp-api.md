@@ -61,7 +61,7 @@ Asset 文件取当前 `asset_resource`，Scene 取当前 `scene.document` 并解
 
 两个新接口使用 JSON：`{workspace_id,latitude,longitude,accuracy,gps_timestamp,coordinate_system:"wgs84"}`。GPS 时间戳为毫秒，沿用服务端精度与时效校验；请求超时与重试由客户端管理。相机帧不上传。
 
-`candidates` 返回 `{candidates:[{id,name,image_url,reference_version,distance_meters}],gps_radius_meters}`。候选来自当前地图、未归档团队和地图中的 active anchor Placement，距离最多 200 米；同一基础 anchor 按最近投放去重。这里的 `id` 是 Anchor Asset ID，区别于返回内容里的 Placement ID。超过 200 个候选返回 422，客户端分批扫描所有候选，不静默截断。
+`candidates` 返回 `{candidates:[{id,name,image_url,image_urls,reference_version,distance_meters}],gps_radius_meters}`。`image_urls` 按顺序列出目标的全部识别图（1–5 张），`image_url` 等于其中第一张，供只读一张图的旧客户端使用；`reference_version` 覆盖全部识别图及顺序，单图目标的版本值与多图支持之前相同。候选来自当前地图、未归档团队和地图中的 active anchor Placement，距离最多 200 米；同一基础 anchor 按最近投放去重。这里的 `id` 是 Anchor Asset ID，区别于返回内容里的 Placement ID。超过 200 个候选返回 422，客户端分批扫描所有候选，不静默截断。
 
 `content` 还需 `anchor_id` 和候选返回的 `reference_version`。服务端重新读取当前候选及关联投放：目标离开 GPS 范围、暂停、删除或作用域归档返回 404，参考图版本变化返回 409。成功为 `{anchor:{id,name},assets:[...]}`，assets 仅包含当前启用的关联投放，沿用公开播放字段。版本是服务端不透明校验值，客户端原样回传。
 

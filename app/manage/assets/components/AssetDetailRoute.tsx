@@ -24,6 +24,7 @@ import { ASSET_TEXTS } from "./texts";
 import { useAssetDetail } from "./useAssetDetail";
 import { useAssetWrites } from "./useAssetWrites";
 import { openAssetInspector } from "../../lib/asset-inspector";
+import { AnchorReferenceImages } from "../../components/AssetEditor/AnchorReferenceImages";
 
 function loadErrorText(error: unknown, tx: IntegrationT) {
   if (isEndpointMissing(error)) return tx("contentModel.integration.assets.endpointMissing");
@@ -102,6 +103,8 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
   const canCopy = canMaintain || (sameTeam && teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole }));
   const data = toDetailData(asset);
   const type = asset.file_type as CreatableType;
+  // Recognition targets keep several reference images, managed in their own section.
+  const anchor = asset.file_type === "anchor";
 
   return content(
     <>
@@ -117,6 +120,7 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
         asset={data}
         preview={hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} fullWidth={inspector} /> : undefined}
         canMaintain={canMaintain}
+        canEditContent={!anchor}
         stale={writes.stale}
         onReload={writes.reload}
         initialText={asset.payload.kind === "text" ? asset.payload.text : asset.payload.kind === "link" ? asset.payload.url : undefined}
@@ -130,6 +134,7 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
         onArchive={notify(writes.archive)}
         onRestore={notify(writes.restore)}
       >
+        {anchor && <AnchorReferenceImages asset={asset} canEdit={canMaintain && !archived} onChange={notify(writes.editResources)} />}
         {children}
       </AssetDetail>
       <AssetNameDialog

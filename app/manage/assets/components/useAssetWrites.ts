@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { AssetDetailDto } from "@/lib/content-model/contracts";
+import type { AssetDetailDto, ResourceInput } from "@/lib/content-model/contracts";
 import type { AssetContentInput, ContentActionResult } from "@/app/manage/content";
 import { assetApi, isLockConflict } from "@/app/manage/lib/content-api";
 import { impactLines, runContentAction } from "@/app/manage/lib/content-errors";
@@ -91,6 +91,15 @@ export function useAssetWrites(detail: Detail, tx: IntegrationT) {
       await detail.refresh();
     },
     editContent,
+    /**
+     * Rewrite the resource list while keeping the payload, e.g. a recognition
+     * target's reference images. `build` runs inside the write, after the lock
+     * is read, so uploads it performs fail the action like any other error.
+     */
+    editResources: (build: (asset: AssetDetailDto) => Promise<ResourceInput[]>) => {
+      if (!asset) return Promise.resolve(failed());
+      return write(async (lock) => assetApi.update(asset.id, { payload: asset.payload, resources: await build(asset), expectedLockVersion: lock }), detail.applyAsset);
+    },
     rename: (name: string) => update({ name }),
     restore: async () => {
       const result = await update({ state: "active" });

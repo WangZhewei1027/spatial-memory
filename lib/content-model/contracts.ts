@@ -116,6 +116,8 @@ export const SPECIAL_ASSET_FILE_TYPES: readonly AssetFileType[] = ["anchor"];
 /** Role of one physical file of an asset. */
 export type ResourceRole = "primary" | "thumbnail" | "checkin" | "audio_compat" | "reference";
 export const RESOURCE_ROLES: readonly ResourceRole[] = ["primary", "thumbnail", "checkin", "audio_compat", "reference"];
+/** Reference images one recognition target may carry; the mini-program embeds each one on device. */
+export const MAX_ANCHOR_REFERENCES = 5;
 
 export type UploadPurpose = "asset";
 

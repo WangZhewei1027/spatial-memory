@@ -1,6 +1,7 @@
 import { mediaKeyFromUrl, mediaKeysInText } from "@/lib/storage/public-url";
 import {
   ASSET_FILE_TYPES,
+  MAX_ANCHOR_REFERENCES,
   RESOURCE_ROLES,
   type AssetFileType,
   type AssetPayload,
@@ -218,6 +219,8 @@ export function parseResourceInputs(fileType: AssetFileType, value: unknown): Re
     if (!/^https?:\/\//i.test(url)) throw invalid(`${path}.externalUrl 仅支持 http(s)`);
     return { role, ordinal, externalUrl: url };
   });
+  if (fileType === "anchor" && inputs.filter((input) => input.role === "reference").length > MAX_ANCHOR_REFERENCES)
+    throw invalid(`识别目标最多 ${MAX_ANCHOR_REFERENCES} 张识别图`);
   for (const role of REQUIRED_ROLES[fileType])
     if (!inputs.some((input) => input.role === role && (input.ordinal ?? 0) === 0)) throw invalid(`${fileType} 素材必须包含序号为 0 的 ${role} 资源`);
   return inputs;

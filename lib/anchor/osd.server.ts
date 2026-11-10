@@ -29,7 +29,7 @@ export async function osdCandidates(context: Awaited<ReturnType<typeof readOSDRe
   const candidates = await findNearbyAnchors(context.workspaceId, context.gps);
   if (candidates.length > 200) throw new MiniappError("附近匹配点过多，请缩小地图范围", 422);
   return { candidates: candidates.map((row) => ({
-    id: row.id, name: row.name, image_url: row.file_url,
+    id: row.id, name: row.name, image_url: row.file_url, image_urls: row.file_urls,
     reference_version: row.reference_version, distance_meters: row.distance_meters,
   })), gps_radius_meters: context.gps.radius };
 }

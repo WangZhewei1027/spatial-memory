@@ -917,12 +917,19 @@
     "countryCode": "Country code"
   },
   "matching": {
-    "imageHint": "Use a clear target photo with a simple background, at least 240 × 240. Avoid narrow images. Recognition runs on the phone and locks the attached content on a match.",
+    "imageHint": "Use clear target photos with a simple background, at least 240 × 240; avoid narrow images. Add photos from other angles or lighting. Recognition runs on the phone, and a match on any image shows the attached content.",
     "children": "Attached assets",
     "emptyChildren": "No attached assets yet. Choose a placement from this collection below to attach it.",
     "selectChildren": "Attach existing assets",
     "attach": "Attach",
-    "detach": "Detach"
+    "detach": "Detach",
+    "referenceImages": "Reference images · {{count}}/{{max}}",
+    "referenceImageAlt": "Reference image {{index}}",
+    "removeImage": "Remove reference image {{index}}",
+    "addImages": "Add reference images",
+    "saving": "Saving reference images…",
+    "maxImages": "Limit of {{max}} reached",
+    "childrenHint": "These assets appear after the target is recognized."
   },
   "sceneEditor": {
     "heading": "Scene editor",

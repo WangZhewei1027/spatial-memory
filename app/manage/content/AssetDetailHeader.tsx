@@ -13,6 +13,8 @@ import type { AssetDetailData } from "./types";
 export interface AssetDetailHeaderProps {
   asset: AssetDetailData;
   canMaintain: boolean;
+  /** Hide the content action when the asset type edits its content elsewhere. */
+  canEditContent?: boolean;
   onEditContent: () => void;
   /** Optional larger preview (image, model, audio) supplied by the page. */
   preview?: ReactNode;
@@ -20,7 +22,7 @@ export interface AssetDetailHeaderProps {
 }
 
 /** Identity block with the surface's single primary action: edit asset content. */
-export function AssetDetailHeader({ asset, canMaintain, onEditContent, preview, inspector }: AssetDetailHeaderProps) {
+export function AssetDetailHeader({ asset, canMaintain, canEditContent = true, onEditContent, preview, inspector }: AssetDetailHeaderProps) {
   const { t } = useTranslation();
   const format = useContentFormat();
   const archived = asset.state === "archived";
@@ -47,7 +49,7 @@ export function AssetDetailHeader({ asset, canMaintain, onEditContent, preview, 
               </div>
             )}
           </div>
-          {canMaintain && !archived && (
+          {canMaintain && canEditContent && !archived && (
             <Button onClick={onEditContent} className="self-start">
               <Upload aria-hidden />
               {t("contentModel.edit.action")}

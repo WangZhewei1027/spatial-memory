@@ -30,8 +30,7 @@ export interface MatchingPointAttachmentsProps {
 
 /**
  * Recognition-target section of the asset panel: content shown after the
- * target is recognized. The reference image itself is the asset content and
- * is replaced through the panel's regular edit action.
+ * target is recognized. Reference images have their own section.
  */
 export function MatchingPointAttachments(props: MatchingPointAttachmentsProps) {
   const { t } = useTranslation();
@@ -43,7 +42,7 @@ export function MatchingPointAttachments(props: MatchingPointAttachmentsProps) {
     <ContentSection
       plain
       title={`${t("matching.children")} · ${props.childrenAssets.length}`}
-      description={t("matching.imageHint")}
+      description={t("matching.childrenHint")}
     >
       <div className="space-y-2 pb-1">
         {!props.childrenAssets.length && (

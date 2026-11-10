@@ -4,7 +4,7 @@
 
 ## 素材、投放与参考特征
 
-匹配点是 `file_type="anchor"` 的团队素材，参考图片来自 `asset_resource` 的 reference/primary 资源，特征保存在 `anchor_embedding`。地理位置由该素材的 Placement 决定；其他投放通过 `anchor_id` 关联匹配点素材 ID。
+匹配点是 `file_type="anchor"` 的团队素材，参考图片来自 `asset_resource` 的 reference 资源（序号 0 起，最多 5 张；旧数据回退到 primary#0），特征保存在 `anchor_embedding`。地理位置由该素材的 Placement 决定；其他投放通过 `anchor_id` 关联匹配点素材 ID。
 
 创建匹配点素材、上传参考图和在合集投放是不同操作。浏览器上传 JPEG/PNG/WebP 原图（最多 32 MiB），服务端以最长边 1280px、JPEG quality 65 和 256 KiB 预算压缩，必要时降为 1024px / quality 50；透明图保留 PNG，最终上限 4 MiB；保存后可生成特征，失败不删除图片。修改参考图会使旧特征失效，生成任务通过 generation ID 防止旧结果覆盖新图；改名或移动投放不需要重新编码图片。
 

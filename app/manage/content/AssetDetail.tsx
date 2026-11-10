@@ -22,6 +22,8 @@ export interface AssetDetailProps {
   preview?: ReactNode;
   /** Server capability: editing team members may edit content, rename and archive. */
   canMaintain: boolean;
+  /** False when a type-specific section edits the content instead of the header action. */
+  canEditContent?: boolean;
   /** Set after a write returned a stale lock; the page reloads fresh data. */
   stale?: boolean;
   onReload?: () => void;
@@ -55,7 +57,7 @@ export function AssetDetail(props: AssetDetailProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <AssetDetailHeader asset={asset} inspector={props.inspector} canMaintain={props.canMaintain} onEditContent={() => setUploadOpen(true)} preview={props.preview} />
+      <AssetDetailHeader asset={asset} inspector={props.inspector} canMaintain={props.canMaintain} canEditContent={props.canEditContent ?? true} onEditContent={() => setUploadOpen(true)} preview={props.preview} />
 
       {props.stale && (
         <ContentNotice

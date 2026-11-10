@@ -14,6 +14,7 @@ const tests = [
   "test-content-model-altitude.ts",
   "test-content-model-legacy-anchor.ts",
   "test-anchor-attachments.ts",
+  "test-anchor-references.ts",
   "test-content-model-legacy-animations.ts",
   "test-scene-core.ts",
   "test-scene-lighting.ts",

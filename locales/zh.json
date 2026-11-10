@@ -917,12 +917,19 @@
     "countryCode": "国家区号"
   },
   "matching": {
-    "imageHint": "使用主体清晰、背景简单的目标照片，至少 240 × 240，避免狭长图片。小程序在本机识别，成功后锁定展示下方素材。",
+    "imageHint": "使用主体清晰、背景简单的目标照片，至少 240 × 240，避免狭长图片。可添加不同角度或光线下的照片，小程序在本机识别，命中任意一张即锁定展示挂载素材。",
     "children": "挂载素材",
     "emptyChildren": "暂无挂载素材。可在下方选择本合集的投放进行挂载。",
     "selectChildren": "挂载已有素材",
     "attach": "挂载",
-    "detach": "取消挂载"
+    "detach": "取消挂载",
+    "referenceImages": "识别图 · {{count}}/{{max}}",
+    "referenceImageAlt": "识别图 {{index}}",
+    "removeImage": "删除识别图 {{index}}",
+    "addImages": "添加识别图",
+    "saving": "正在保存识别图…",
+    "maxImages": "已达 {{max}} 张上限",
+    "childrenHint": "识别成功后展示这些素材。"
   },
   "sceneEditor": {
     "heading": "场景编排",
