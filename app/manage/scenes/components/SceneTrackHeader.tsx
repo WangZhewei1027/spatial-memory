@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
+import { useRef, useState, type CSSProperties, type DragEvent } from 'react';
 import { Box, ChevronRight, Copy, Film, Folder, FolderOpen, ImageIcon, Music2, Trash2, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,13 @@ import type { TrackRow } from '@/lib/scene/hierarchy-authoring';
 import { useTimeline } from './timeline-context';
 import type { SceneTrackKind } from './scene-region';
 import { MODEL_DRAG_TYPE } from '@/lib/scene/editor-interactions';
+import type { SelectionModifiers } from './scene-selection';
 import { SceneTrackControls } from './SceneTrackControls';
 
 export type DropPlace = 'before' | 'after' | 'inside';
 export interface SceneTrackHeaderProps {
   row: TrackRow; name: string; kind?: SceneTrackKind; selected: boolean; collapsed: boolean; automation: boolean; draggable: boolean;
-  onSelect(event: MouseEvent): void; onStack(): void; onAutomation(): void; onRename(name: string): void;
+  onSelect(event: SelectionModifiers): void; onNavigate?(direction: number, modifiers: SelectionModifiers): void; onStack(): void; onAutomation(): void; onRename(name: string): void;
   onDragStart(): void; onDrop(place: DropPlace): void; onDelete(selection: boolean): void;
   canDuplicate: boolean; onDuplicate?: () => void; hiddenByParent: boolean;
 }
@@ -44,6 +45,8 @@ export function SceneTrackHeader(p: SceneTrackHeaderProps) {
     onClick={p.onSelect}
     onKeyDown={e => {
       if (e.target !== e.currentTarget) return;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); p.onNavigate?.(e.key === 'ArrowUp' ? -1 : 1, e); }
+      if (e.key === ' ') { e.preventDefault(); p.onSelect({ ctrlKey: true }); }
       if (e.key === 'Enter') { e.preventDefault(); if (p.draggable) rename(); }
       if ((e.key === 'Delete' || e.key === 'Backspace') && p.draggable) { e.preventDefault(); p.onDelete(true); }
     }}

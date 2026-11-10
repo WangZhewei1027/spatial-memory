@@ -13,6 +13,8 @@ interface TrackShortcuts {
   paste(snapshot: TrackClipboard, steps: number): void;
   remove(): void;
   hasSelection: boolean;
+  selectAll(): void;
+  clear(): void;
 }
 
 export function useSceneEditorShortcuts(editor: SceneEditorState, tracks: TrackShortcuts) {
@@ -32,7 +34,10 @@ export function useSceneEditorShortcuts(editor: SceneEditorState, tracks: TrackS
         void editor.save(); return;
       }
       if (editingField(event.target)) return;
+      if (!(event.target instanceof Element) || !event.target.closest(".scene-native-stage")) return;
       const command = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey;
+      if (command && event.key.toLowerCase() === "a") { event.preventDefault(); tracks.selectAll(); return; }
+      if (event.key === "Escape") { event.preventDefault(); tracks.clear(); return; }
       if (command && event.key.toLowerCase() === "c") {
         const snapshot = tracks.copy();
         if (snapshot) { clipboard = snapshot; pastes = 0; event.preventDefault(); }

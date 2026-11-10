@@ -1,4 +1,5 @@
-import { AmbientLight, Box3, Color, DirectionalLight, Frustum, Matrix4, Mesh, PerspectiveCamera, Vector3, WebGLRenderer } from 'three';
+import { createSceneLighting } from '../../scene-lighting/index.js';
+import { Box3, Color, Frustum, Matrix4, Mesh, PerspectiveCamera, Vector3, WebGLRenderer } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { createSceneCore, mediaTime, samplePresentation, DEFAULT_SCENE_VIEWER_POSITION } from '@spatial-memory/scene-core';
@@ -49,12 +50,12 @@ async function load(input) {
   await document.fonts.ready;
   const core = await createSceneCore({ content: doc.content });
   const editor = new Editor({ config: { getKey: () => 'en', setKey() {} }, history: { execute() {}, clear() {} } });
-  const renderer = new WebGLRenderer({ canvas: document.querySelector('#scene'), antialias: true, preserveDrawingBuffer: true });
+  const renderer = new WebGLRenderer({ canvas: document.querySelector('#scene'), antialias: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
   renderer.setSize(options.width ?? 720, options.height ?? 960, false);
   editor.scene.background = new Color(options.background ?? '#edf0f4');
-  const light = new DirectionalLight(0xffffff, 2); light.position.set(5, 8, 5);
-  editor.scene.add(new AmbientLight(0xffffff, 1.2), light);
+  const lighting = createSceneLighting(renderer, editor.scene);
+  lighting.apply(doc.content.lighting);
   const errors = [];
   const draco = new DRACOLoader(); draco.setDecoderPath('/draco/');
   const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
@@ -70,7 +71,7 @@ async function load(input) {
   const models = new EditorModels(editor, () => props, () => false, () => {}, new ModelPool(url => loader.loadAsync(url)));
   const state = { core, editor, renderer, models, doc, resources, clips, errors, timeout: options.timeoutMs ?? 60000,
     pending: () => [...models.entries].filter(([, entry]) => !entryReady(entry)).map(([id]) => id),
-    dispose() { models.dispose(); core.dispose(); draco.dispose(); renderer.dispose(); renderer.forceContextLoss(); } };
+    dispose() { lighting.dispose(); models.dispose(); core.dispose(); draco.dispose(); renderer.dispose(); renderer.forceContextLoss(); } };
   active = state;
   for (const instance of doc.content.instances) if (!instance.text && !resources[instance.asset]?.url) throw new Error(`Missing resource for ${instance.id}`);
   models.sync();

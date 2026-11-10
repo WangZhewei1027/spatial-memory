@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/typography';
 import { type CompositionContent } from '@/lib/scene/protocol';
@@ -7,6 +7,7 @@ import { findNode, isGroup, trackRows, type SceneNode } from '@/lib/scene/hierar
 import { hiddenNodeIds } from '@/lib/scene/visibility';
 import { roundTime, unkeyAll, type TransformGroup } from '@/lib/scene/transform-authoring';
 import { MODEL_DRAG_TYPE } from '@/lib/scene/editor-interactions';
+import { selectSceneNodes, type SelectionModifiers } from './scene-selection';
 import { SceneTimelineRuler } from './SceneTimelineRuler';
 import { SceneTimelineToolbar } from './SceneTimelineToolbar';
 import { SceneTrack } from './SceneTrack';
@@ -55,6 +56,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
   const lastRegion = p.content.instances.reduce((last, instance) => Math.max(last, instanceRegion(instance, end).end), 0);
   const { scroller, span, laneWidth, labelWidth, compact, zoom, canZoomIn, zoomBy } = useTimelineView(Math.max(end, lastKey, lastRegion), p.time, p.playing);
   const steps = gridSteps(laneWidth / span), x = (time: number) => time / span * laneWidth, left = (time: number) => labelWidth + TIMELINE_LEAD + x(time);
+  const selectionAnchor = useRef<string | null>(null);
   const primary = p.selectedIds.at(-1), primaryNode = primary ? findNode(p.content, primary) : undefined;
   // Selection is shared with the viewport: a key never outlives its selected track.
   const selectedKey = storedKey?.nodeId === primary ? storedKey : null;
@@ -73,7 +75,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
   useEffect(() => {
     // A shows/hides keyframe lanes of the selected tracks; ⌘G / ⇧⌘G stack and unstack them.
     const keydown = (event: KeyboardEvent) => {
-      if (event.altKey || (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"]'))) return;
+      if (event.defaultPrevented || event.isComposing || event.altKey || (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"], [role=dialog], [role=menu], [role=listbox]'))) return;
       const key = event.key.toLowerCase(), command = event.metaKey || event.ctrlKey;
       if (key === 'a' && !command) shortcuts.current.automation();
       else if (key === 'g' && command) { event.preventDefault(); shortcuts.current[event.shiftKey ? 'ungroup' : 'group'](); }
@@ -104,11 +106,9 @@ export function SceneTimeline(p: SceneTimelineProps) {
       return event.altKey ? roundTime(raw) : Math.min(max, snapTime(raw, steps.minor));
     },
   };
-  const select = (event: MouseEvent, id: string) => {
-    if (event.metaKey || event.ctrlKey) return p.onSelect(p.selectedIds.includes(id) ? p.selectedIds.filter(item => item !== id) : [...p.selectedIds, id]);
-    const from = visible.findIndex(row => row.id === primary), to = visible.findIndex(row => row.id === id);
-    if (event.shiftKey && from >= 0) return p.onSelect(visible.slice(Math.min(from, to), Math.max(from, to) + 1).map(row => row.id));
-    if (!p.selectedIds.includes(id) || p.selectedIds.length > 1) p.onSelect([id]);
+  const select = (event: SelectionModifiers, id: string) => {
+    const next = selectSceneNodes(p.selectedIds, id, visible.map(row => row.id), selectionAnchor.current ?? primary ?? null, event);
+    selectionAnchor.current = next.anchor; setSelectedKey(null); p.onSelect(next.ids);
   };
   const drop = (targetId: string, place: DropPlace) => {
     const target = rows.find(row => row.id === targetId);
@@ -119,7 +119,7 @@ export function SceneTimeline(p: SceneTimelineProps) {
     p.tracks.move(dragId, { parent: target.node.parent, before: siblings[siblings.indexOf(target) + 1]?.id });
   };
   const gridStyle = { gridTemplateColumns: `${labelWidth}px ${laneWidth + TIMELINE_LEAD}px`, '--lead': `${TIMELINE_LEAD}px`, '--major': `${x(steps.major)}px`, '--minor': `${x(steps.minor)}px` } as CSSProperties;
-  return <section className="scene-timeline" data-compact={compact || undefined} data-collapsed={height.collapsed || undefined} style={{ height: height.collapsed ? "auto" : height.size }} aria-label={text('时间轴', 'Timeline')}>
+  return <section onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "a" && !(event.target as Element).closest("input, textarea, [contenteditable=true]")) { event.preventDefault(); setSelectedKey(null); p.onSelect(rows.map(row => row.id)); } }} className="scene-timeline" data-compact={compact || undefined} data-collapsed={height.collapsed || undefined} style={{ height: height.collapsed ? "auto" : height.size }} aria-label={text('时间轴', 'Timeline')}>
     <ScenePanelDivider panel="timeline" sizing={height} controls="scene-timeline-content" />
     <SceneTimelineToolbar collapsed={height.collapsed} text={text} time={p.time} duration={p.duration} end={end} loop={p.loop} playing={p.playing} disabled={disabled}
       onSeek={p.onSeek} onPlay={p.onPlay} onLoop={p.onLoop} onDuration={p.onDuration}
@@ -153,7 +153,11 @@ export function SceneTimeline(p: SceneTimelineProps) {
               kind={p.kindOf?.(row.node)} collapsed={collapsed.has(row.id)} automation={automationIds.has(row.id)} hiddenByParent={!!row.node.parent && hidden.has(row.node.parent)} draggable={!disabled}
               expandedParams={new Set((['position', 'rotation', 'scale'] as TransformGroup[]).filter(group => params.has(`${row.id}:${group}`)))}
               onParam={group => setParams(current => toggle(current, `${row.id}:${group}`))}
-              onSelect={event => select(event, row.id)} onStack={() => setCollapsed(current => toggle(current, row.id))}
+              onSelect={event => select(event, row.id)} onNavigate={(direction, modifiers) => {
+                const index = Math.max(0, Math.min(visible.length - 1, visible.findIndex(item => item.id === row.id) + direction));
+                select(modifiers, visible[index].id);
+                scroller.current?.querySelectorAll<HTMLElement>('.scene-track-heading-cell')[index]?.focus({ preventScroll: true });
+              }} onStack={() => setCollapsed(current => toggle(current, row.id))}
               onAutomation={() => toggleAutomation([row.id])} onRename={name => p.tracks.rename(row.id, name)}
               onDragStart={() => setDragId(row.id)} onDrop={place => { drop(row.id, place); setDragId(null); }}
               canDuplicate={!disabled}

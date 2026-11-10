@@ -4,6 +4,7 @@ export interface Signal { add(callback: (...args: unknown[]) => void): void; rem
 export interface NativeCommand { type: string; object: Object3D; newPosition?: Vector3; newRotation?: Euler; newScale?: Vector3; execute(): void }
 export class Editor {
   constructor(options: { config: { getKey(key: string): unknown; setKey(...args: unknown[]): void }; history: { execute(command: NativeCommand): void; clear(): void } });
+  environmentType: string;
   signals: Record<string, Signal>; scene: Scene; sceneHelpers: Scene; camera: PerspectiveCamera; viewportCamera: Camera; viewportColor: Color;
   selector: { select(object: Object3D | null): void }; selected: Object3D | null; controls: { focus(object: Object3D): void; center: Vector3 };
   mixer: AnimationMixer; materialsRefCounter: Map<unknown, number>; geometries: Record<string, unknown>;

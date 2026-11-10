@@ -1,3 +1,4 @@
+import { DEFAULT_SCENE_LIGHTING } from "../packages/scene-lighting/config.js";
 /** Real DB integration. Run with explicit DATABASE_URL and tsx --conditions react-server.
  * Uses only a dedicated database (content_services / team_wb_services) on the loopback
  * validation container; no auth sessions or OSS. Team model: the organization is the
@@ -426,14 +427,17 @@ async function main(): Promise<void> {
         target: { kind: "scene", sceneId: scene.id }, location: { longitude: 121.5, latitude: 31.2 }, renderConfig: { config: { scale: 2 } },
       })));
       const document = assetDocument(f.assets.shared); document.content.durationSeconds = 23;
+      document.content.lighting = { ...DEFAULT_SCENE_LIGHTING, directionalIntensity: 3.5, environmentRotation: 70 };
       const saved = await sceneService.saveScene(actors.editor, scene.id, { expectedLockVersion: scene.lock_version, document });
       for (const item of placed) {
         const manifest = await runtime.sceneManifest(item.placement.id, { workspaceId: item.placement.workspace_id, organizationId: f.organizations.team });
         assert.equal(manifest.content.durationSeconds, 23);
+        assert.equal(manifest.schemaVersion, 10); assert.deepEqual(manifest.content.lighting, document.content.lighting);
         assert.equal((await placementService.getPlacement(actors.editor, item.placement.id)).lock_version, item.placement.lock_version);
       }
       const preview = await runtime.previewSceneManifest(scene.id, f.organizations.team);
       assert.equal(preview.assetId, scene.id); assert.equal(preview.content.durationSeconds, 23);
+      assert.deepEqual(preview.content.lighting, document.content.lighting);
       await assert.rejects(() => runtime.previewSceneManifest(scene.id, f.organizations.foreign), runtime.RuntimeNotFound);
       const empty = { ...document, content: { ...document.content, assets: {}, instances: [] } };
       const cleared = await sceneService.saveScene(actors.editor, scene.id, { expectedLockVersion: saved.lock_version, document: empty });

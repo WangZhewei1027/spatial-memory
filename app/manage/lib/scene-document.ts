@@ -30,8 +30,8 @@ export function toDocument(definition: EditorDefinition): SceneDocumentJson {
   for (const [alias, ref] of Object.entries(definition.content.assets)) {
     assets[alias] = { assetId: ref.assetId };
   }
-  const { kind, units, durationSeconds, loop, instances, groups, viewerPosition } = definition.content;
-  return { schemaVersion: 6, content: { kind, units, durationSeconds, loop, assets, instances, ...(groups?.length ? { groups } : {}), ...(viewerPosition ? { viewerPosition: [...viewerPosition] } : {}) } };
+  const { kind, units, durationSeconds, loop, instances, groups, viewerPosition, lighting } = definition.content;
+  return { schemaVersion: 6, content: { kind, units, durationSeconds, loop, assets, instances, ...(groups?.length ? { groups } : {}), ...(lighting ? { lighting: { ...lighting } } : {}), ...(viewerPosition ? { viewerPosition: [...viewerPosition] } : {}) } };
 }
 
 /** Imports use the same asset-reference schema as saved drafts. */

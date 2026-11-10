@@ -1,3 +1,4 @@
+import { lightingIssues } from "../../scene-lighting/config.js";
 import {
   TRANSFORM_CHANNELS, AUTOMATION_CHANNELS,
 } from "./protocol";
@@ -62,7 +63,7 @@ function validateAnimation(
 export function validateCompositionContent(
   issues: IssueList,
   content: Record<string, unknown>,
-  options: { groups: boolean; presentation?: boolean; automation?: boolean; visibility?: boolean; viewerPosition?: boolean } = { groups: true, presentation: true, automation: true, visibility: true, viewerPosition: true },
+  options: { groups: boolean; presentation?: boolean; automation?: boolean; visibility?: boolean; viewerPosition?: boolean; lighting?: boolean } = { groups: true, presentation: true, automation: true, visibility: true, viewerPosition: true, lighting: true },
 ): void {
   rejectUnknownKeys(issues, "content", content, [
     "kind",
@@ -73,6 +74,7 @@ export function validateCompositionContent(
     "instances",
     "groups",
     "viewerPosition",
+    "lighting",
   ]);
   if (content.units !== "meters") issues.error("content.units", '必须是 "meters"');
   requireBoolean(issues, "content.loop", content.loop);
@@ -82,6 +84,11 @@ export function validateCompositionContent(
       const [x, , z] = content.viewerPosition as number[];
       if (x === 0 && z === 0) issues.error("content.viewerPosition", "观察位置的水平距离必须大于 0");
     }
+  }
+
+  if (content.lighting !== undefined) {
+    if (!options.lighting) issues.error("content.lighting", "灯光设置需要 schemaVersion 10 播放清单");
+    for (const field of lightingIssues(content.lighting)) issues.error(`content.lighting.${field}`, "灯光参数无效、缺失或超出范围");
   }
 
   // assets: alias → { assetId }

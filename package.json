@@ -14,7 +14,7 @@
     "test:scene-authoring": "npm --prefix packages/scene-authoring test",
     "test:scene-renderer": "npm --prefix packages/scene-renderer test",
     "test:integration": "node --import tsx --conditions react-server scripts/test-content-model-services.ts && node --import tsx --conditions react-server scripts/test-team-workbench-routes.ts && node --import tsx --conditions react-server scripts/test-upload-dedup.ts && node --import tsx --conditions react-server scripts/test-thumbnail-backfill.ts && node --import tsx --conditions react-server scripts/test-activities.ts && node --import tsx --conditions react-server scripts/test-collection-settings.ts",
-    "test:cross-runtime": "tsx scripts/test-three-editor.ts && tsx scripts/test-scene-playback-parity.ts && tsx scripts/test-scene-performance-parity.ts",
+    "test:cross-runtime": "tsx scripts/test-three-editor.ts && tsx scripts/test-scene-playback-parity.ts && tsx scripts/test-scene-performance-parity.ts && node scripts/test-scene-lighting-parity.mjs",
     "test:cli-auth": "node --import tsx --conditions react-server scripts/test-cli-auth-client.mjs",
     "check:fast": "npm run typecheck && npm run lint && npm test",
     "check": "npm run check:fast && npm run build",
@@ -73,7 +73,7 @@
     "sharp": "0.34.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.0",
-    "three": "^0.183.2",
+    "three": "0.183.2",
     "undici": "^7.30.0",
     "vaul": "^1.1.2",
     "zustand": "^5.0.9"

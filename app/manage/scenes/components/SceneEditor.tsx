@@ -7,10 +7,11 @@ import { Text } from "@/components/ui/typography";
 import type { SceneDetailDto } from "@/lib/content-model/contracts";
 import type { PlacementReader, ScenePosition } from "@/lib/scene/editor-interactions";
 import { type CompositionInstance } from "@/lib/scene/protocol";
-import { findNode, isGroup, type SceneNode } from "@/lib/scene/hierarchy-authoring";
+import { findNode, isGroup, trackRows, editNode, type SceneNode } from "@/lib/scene/hierarchy-authoring";
 import { hiddenNodeIds } from "@/lib/scene/visibility";
 import { editTransform } from "@/lib/scene/transform-authoring";
 import { copyTracks, pasteTracks, type TrackClipboard } from "./scene-clipboard";
+import { selectSceneNodes, type SelectionModifiers } from "./scene-selection";
 import { Component, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { teamHref } from "../../lib/content-context";
@@ -45,7 +46,9 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const text = (zh: string, en: string) => i18n.language.startsWith("zh") ? zh : en;
   const editor = useSceneDocument(sceneId, initial);
   const { session, document, clips, time, playing, commit, resolve, resources, detail, readOnly } = editor;
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [storedSelection, setSelectedIds] = useState<string[]>([]);
+  const selectedIds = storedSelection.filter(id => document && findNode(document.definition.content, id));
+  const selectionAnchor = useRef<string | null>(null);
   const selectedId = selectedIds.at(-1) ?? null;
   const [preview, setPreview] = useState(false);
   const [grid, setGrid] = useState(true);
@@ -81,6 +84,8 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   };
   useSceneEditorShortcuts(editor, {
     copy: () => document && copyTracks(document.definition.content, selectedIds, nameOf),
+    selectAll: () => { if (document) selectTracks(trackRows(document.definition.content).map(row => row.id)); },
+    clear: () => selectTracks([]),
     paste, remove: () => tracks.remove(selectedIds), hasSelection: !!selectedNode || selectedIds.length > 1,
   });
   if (!session || !document) return <main className="scene-workspace-theme scene-editor-status fixed inset-0 z-50 flex items-center justify-center bg-background"><div className="max-w-lg space-y-4 p-6"><Text as="h1" variant="headingMd">{t("sceneEditor.heading")}</Text><Text as="p" variant="bodyMd" tone={editor.loadError ? "critical" : "subdued"}>{editor.loadError || t("sceneEditor.loading")}</Text>{editor.loadError && <Button onClick={editor.retry}>{t("sceneEditor.retry")}</Button>}</div></main>;
@@ -96,7 +101,11 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const sceneOrganizationId = detail?.organization_id ?? organizationId;
   const canAdd = !readOnly && !playing;
   const resourceOf = (item: CompositionInstance) => item.asset ? resolve(assets[item.asset]) : undefined;
-  const select = (id: string | null) => selectTracks(id ? [id] : []);
+  const select = (id: string | null, modifiers: SelectionModifiers = {}) => {
+    if (!id) { if (!modifiers.metaKey && !modifiers.ctrlKey && !modifiers.shiftKey) selectTracks([]); return; }
+    const next = selectSceneNodes(selectedIds, id, trackRows(document.definition.content).map(row => row.id), selectionAnchor.current ?? selectedId, modifiers);
+    selectionAnchor.current = next.anchor; selectTracks(next.ids);
+  };
   const kindOf = (node: SceneNode) => isGroup(node) ? "group" as const : node.text ? "text" as const : resourceOf(node)?.kind ?? "model";
   const addAsset = (key: string, position: ScenePosition = [0, 0, 0], picked?: SceneResource, at = time) => {
     if (!canAdd) return;
@@ -167,12 +176,18 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
       <div className="scene-stage-area" data-preview-open={preview || undefined} data-inspector={!!selectedNode || undefined}>
         <SceneModelDropZone canDrop={key => !!resources[key]?.url && resources[key]?.assetState !== "archived"} enabled={canAdd} placementRef={placementRef} onAdd={addAsset}>
           <ViewportBoundary fallback={<Text as="p" variant="bodyMd" tone="critical">{t("sceneEditor.modelFailed")}</Text>}>
-            <SceneViewport placementRef={placementRef} session={session} instances={instances} groups={groups} resolveUrl={item => resourceOf(item)?.url} resolveResource={resourceOf} onClips={editor.onClips} fitRef={fitRef} originRef={originRef} previewRef={previewRef} cameraSettings={cameraSettings} selectedId={selectedId} onSelect={select} grid={grid} labels={labels} toolsRef={nativeToolsRef} shadingRef={shadingRef} language={i18n.language} preview={preview} onError={editor.reportError} editable={!readOnly && !playing} onTransform={(id, group, value) => tracks.edit(id, node => editTransform(node, group, session.time, value))} />
+            <SceneViewport placementRef={placementRef} session={session} instances={instances} groups={groups} resolveUrl={item => resourceOf(item)?.url} resolveResource={resourceOf} onClips={editor.onClips} fitRef={fitRef} originRef={originRef} previewRef={previewRef} cameraSettings={cameraSettings} lighting={document.definition.content.lighting} selectedIds={selectedIds} onTransforms={values => commit(current => ({ ...current, definition: { ...current.definition, content: values.reduce((content, value) => editNode(content, value.id, node => editTransform(editTransform(editTransform(node, "position", session.time, value.position), "rotation", session.time, value.rotation), "scale", session.time, value.scale)), current.definition.content) } }))} selectedId={selectedId} onSelect={select} grid={grid} labels={labels} toolsRef={nativeToolsRef} shadingRef={shadingRef} language={i18n.language} preview={preview} onError={editor.reportError} editable={!readOnly && !playing} onTransform={(id, group, value) => tracks.edit(id, node => editTransform(node, group, session.time, value))} />
           </ViewportBoundary>
         </SceneModelDropZone>
-        <div className="scene-tools-anchor"><SceneSidebar nativeToolsRef={nativeToolsRef} shadingRef={shadingRef} grid={grid} labels={labels} onLabels={() => setLabels(value => !value)} onGrid={() => setGrid(!grid)} onFit={() => fitRef.current?.()} onOrigin={() => originRef.current?.()} cameraSettings={cameraSettings} onCameraChange={changeCamera} positionDisabled={readOnly || playing} onPreview={() => setPreview(true)} /></div>
+        <div className="scene-tools-anchor"><SceneSidebar nativeToolsRef={nativeToolsRef} shadingRef={shadingRef} grid={grid} labels={labels} onLabels={() => setLabels(value => !value)} onGrid={() => setGrid(!grid)} onFit={() => fitRef.current?.()} onOrigin={() => originRef.current?.()} cameraSettings={cameraSettings} onCameraChange={changeCamera} lighting={document.definition.content.lighting} onLightingChange={lighting => commit(current => ({ ...current, definition: { ...current.definition, content: { ...current.definition.content, lighting } } }))} positionDisabled={readOnly || playing} onPreview={() => setPreview(true)} /></div>
         <SceneCameraPreview open={preview} frameRef={previewRef} settings={cameraSettings} onChange={changeCamera} positionDisabled={readOnly || playing} onClose={() => setPreview(false)} />
-        {selectedNode && !(compact && panelOpen) && <aside className="scene-inspector-island scene-island"><SceneInstancePanel key={selectedId} node={selectedNode} hiddenByParent={!!selectedNode.parent && hidden.has(selectedNode.parent)} name={nameOf(selectedNode)} resource={selectedResource} assetHref={teamHref(`/manage/assets/${selectedResource?.assetId}`, sceneOrganizationId)} clips={instance ? clips[instance.id] : undefined} readOnly={readOnly} playing={playing} time={time} duration={duration} onChange={updateInstance} onEdit={edit => selectedId && tracks.edit(selectedId, edit)} onRename={name => selectedId && tracks.rename(selectedId, name)} onClose={() => select(null)} onAnimation={animation => updateInstance({ animation })} onUngroup={() => selectedId && tracks.ungroup(selectedId)} onReplaceAsset={key => selectedId && replaceAsset(selectedId, key)} /></aside>}
+        {selectedNode && selectedIds.length === 1 && !(compact && panelOpen) && <aside className="scene-inspector-island scene-island"><SceneInstancePanel key={selectedId} node={selectedNode} hiddenByParent={!!selectedNode.parent && hidden.has(selectedNode.parent)} name={nameOf(selectedNode)} resource={selectedResource} assetHref={teamHref(`/manage/assets/${selectedResource?.assetId}`, sceneOrganizationId)} clips={instance ? clips[instance.id] : undefined} readOnly={readOnly} playing={playing} time={time} duration={duration} onChange={updateInstance} onEdit={edit => selectedId && tracks.edit(selectedId, edit)} onRename={name => selectedId && tracks.rename(selectedId, name)} onClose={() => select(null)} onAnimation={animation => updateInstance({ animation })} onUngroup={() => selectedId && tracks.ungroup(selectedId)} onReplaceAsset={key => selectedId && replaceAsset(selectedId, key)} /></aside>}
+        {selectedIds.length > 1 && <aside className="scene-inspector-island scene-island p-4 space-y-3" aria-label={text("多选对象", "Multiple selection")}>
+          <Text as="h2" variant="bodySm" fontWeight="semibold">{text(`已选择 ${selectedIds.length} 个对象`, `${selectedIds.length} objects selected`)}</Text>
+          <Text as="p" variant="bodySm" tone="subdued">{text("W / E / R 变换所选对象；⌘ / Ctrl + 点击增减选择，Shift + 点击连续选择。", "W / E / R transform the selection. ⌘ / Ctrl-click toggles; Shift-click selects a range.")}</Text>
+          <Button variant="secondary" disabled={!canAdd} onClick={tracks.group}>{text("编组", "Group")}</Button>
+          <Button variant="ghost" onClick={() => selectTracks([])}>{text("取消选择", "Clear selection")}</Button>
+        </aside>}
         {!instances.length && <div className="scene-stage-empty"><Text as="p" variant="bodyXs" tone="subdued">{text("拖入素材或添加文字", "Drop an asset or add text")}</Text></div>}
         {grid && labels && <div className="scene-stage-hint"><Text as="span" variant="bodyXs" tone="subdued">{text("每格 1 米", "1 m per cell")}</Text></div>}
       </div>

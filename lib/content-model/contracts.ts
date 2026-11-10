@@ -500,6 +500,7 @@ export interface SceneDocumentJson {
     assets: Record<string, AssetRef>;
     /** Scene-local viewing position in meters; omitted uses [0, 1.5, 2]. */
     viewerPosition?: [number, number, number];
+    lighting?: import("../scene/protocol").SceneLighting;
     instances: unknown[];
     groups?: unknown[];
   };

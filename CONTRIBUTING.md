@@ -97,3 +97,5 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 保留现有工作流文件和 job ID；`ui-quality.yml` 的显示名称为 Engineering quality。PR 自动运行 `validate`（`npm run check`）与 `database-migrations`；主分支部署复用同一工作流，二者通过后才进入部署。
 
 这是仓库内的检查配置；GitHub 分支保护是否将检查设为必需项，由仓库设置决定。生产迁移、发布和外部服务操作按 [部署说明](docs/production-deployment.md) 执行。
+
+Scene 选择与灯光的浏览器回归运行 `node scripts/test-scene-editor-selection.mjs`，需要本地 Next 服务，使用隔离 API fixture，覆盖舞台/轨道全选、多选、复制删除撤销、灯光保存重开、中英文、窄屏和只读。`SCENE_EDITOR_SCREENSHOTS` 可保存截图。`test:cross-runtime` 额外运行实际两端 Three renderer 的 GPU 灯光与环境像素对比，需要浏览器和兄弟小程序的已构建 runtime。

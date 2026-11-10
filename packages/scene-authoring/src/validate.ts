@@ -1,4 +1,4 @@
-import { SCENE_DOCUMENT_VERSION, SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, SCENE_VIEWER_SCHEMA_VERSION, type SceneDefinition, type SceneDocument, type ValidationResult } from "./protocol";
+import { SCENE_DOCUMENT_VERSION, SCENE_FLAT_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, SCENE_PERFORMANCE_SCHEMA_VERSION, SCENE_AUTOMATION_SCHEMA_VERSION, SCENE_VIEWER_SCHEMA_VERSION, SCENE_LIGHTING_SCHEMA_VERSION, type SceneDefinition, type SceneDocument, type ValidationResult } from "./protocol";
 import { IssueList, rejectUnknownKeys, requireObject } from "./validate-utils";
 import { validateCompositionContent } from "./validate-content";
 
@@ -14,14 +14,16 @@ export function validateSceneDefinition(def: unknown): ValidationResult {
   if (root) {
     rejectUnknownKeys(issues, "$", root, ["schemaVersion", "content"]);
     const flat = root.schemaVersion === SCENE_FLAT_SCHEMA_VERSION;
-    const viewerPosition = root.schemaVersion === SCENE_VIEWER_SCHEMA_VERSION;
+    const lighting = root.schemaVersion === SCENE_LIGHTING_SCHEMA_VERSION;
+    const viewerPosition = lighting || root.schemaVersion === SCENE_VIEWER_SCHEMA_VERSION;
     const automation = viewerPosition || root.schemaVersion === SCENE_AUTOMATION_SCHEMA_VERSION;
     const performance = automation || root.schemaVersion === SCENE_PERFORMANCE_SCHEMA_VERSION;
-    if (!flat && !performance && root.schemaVersion !== SCENE_SCHEMA_VERSION) issues.error("schemaVersion", "播放清单必须是 schemaVersion 4、5、7、8 或 9");
+    if (!flat && !performance && root.schemaVersion !== SCENE_SCHEMA_VERSION) issues.error("schemaVersion", "播放清单必须是 schemaVersion 4、5、7、8、9 或 10");
     const content = requireObject(issues, "content", root.content);
-    if (viewerPosition && content?.viewerPosition === undefined) issues.error("content.viewerPosition", "schemaVersion 9 播放清单必须指定观察位置");
+    if (root.schemaVersion === SCENE_VIEWER_SCHEMA_VERSION && content?.viewerPosition === undefined) issues.error("content.viewerPosition", "schemaVersion 9 播放清单必须指定观察位置");
+    if (lighting && content?.lighting === undefined) issues.error("content.lighting", "schemaVersion 10 播放清单必须指定灯光");
     // Schema 4 is the flat format released mini-programs play; groups need schema 5.
-    if (content?.kind === "composition") validateCompositionContent(issues, content, { groups: !flat, presentation: performance, automation, viewerPosition });
+    if (content?.kind === "composition") validateCompositionContent(issues, content, { groups: !flat, presentation: performance, automation, viewerPosition, lighting });
     else if (content) issues.error("content.kind", "场景素材仅支持 composition");
   }
   return { ok: !issues.hasErrors, issues: issues.issues };

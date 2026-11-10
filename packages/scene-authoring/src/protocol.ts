@@ -7,6 +7,13 @@ export const SCENE_PERFORMANCE_SCHEMA_VERSION = 7 as const;
 export const SCENE_AUTOMATION_SCHEMA_VERSION = 8 as const;
 /** Authored viewer position requires a player that aligns it with the tracked camera. */
 export const SCENE_VIEWER_SCHEMA_VERSION = 9 as const;
+export const SCENE_LIGHTING_SCHEMA_VERSION = 10 as const;
+export interface SceneLighting {
+  ambientColor: string; ambientIntensity: number;
+  directionalColor: string; directionalIntensity: number;
+  azimuth: number; elevation: number;
+  environment: "none" | "studio"; environmentIntensity: number; environmentRotation: number;
+}
 export const SCENE_DOCUMENT_VERSION = 6 as const;
 
 export interface CompositionAssetRef {
@@ -134,13 +141,15 @@ export interface CompositionContent<Ref = CompositionAssetRef> {
   assets: Record<string, Ref>;
   /** Viewer position in scene-local meters; omitted uses [0, 1.5, 2]. X/Z cannot both be zero. */
   viewerPosition?: [number, number, number];
+  /** Shared scene-local lighting and reflection environment. */
+  lighting?: SceneLighting;
   /** Instance order is the timeline track order; group members are contiguous. */
   instances: CompositionInstance[];
   groups?: CompositionGroup[];
 }
 
 export interface SceneDefinition {
-  schemaVersion: typeof SCENE_SCHEMA_VERSION | typeof SCENE_FLAT_SCHEMA_VERSION | typeof SCENE_PERFORMANCE_SCHEMA_VERSION | typeof SCENE_AUTOMATION_SCHEMA_VERSION | typeof SCENE_VIEWER_SCHEMA_VERSION;
+  schemaVersion: typeof SCENE_SCHEMA_VERSION | typeof SCENE_FLAT_SCHEMA_VERSION | typeof SCENE_PERFORMANCE_SCHEMA_VERSION | typeof SCENE_AUTOMATION_SCHEMA_VERSION | typeof SCENE_VIEWER_SCHEMA_VERSION | typeof SCENE_LIGHTING_SCHEMA_VERSION;
   content: CompositionContent;
 }
 

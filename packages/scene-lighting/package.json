@@ -1,0 +1,11 @@
+{
+  "name": "@spatial-memory/scene-lighting",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": { ".": "./index.js", "./config": "./config.js" },
+  "files": ["*.js", "*.d.ts", "README.md"],
+  "peerDependencies": { "three": "0.183.2" }
+}

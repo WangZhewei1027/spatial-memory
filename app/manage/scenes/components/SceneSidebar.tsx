@@ -4,13 +4,15 @@ import { LocateFixed, Maximize } from "lucide-react";
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneCameraControls } from "./SceneCameraControls";
+import { SceneLightingControls } from "./SceneLightingControls";
 import { SceneGizmosMenu } from "./SceneGizmosMenu";
 import type { SceneCameraSettings } from "./three-editor/spatial-reference";
 
 /** Floating tool island; the native transform controls keep their upstream behavior. */
-export function SceneSidebar({ nativeToolsRef, shadingRef, grid, labels, onGrid, onLabels, onFit, onOrigin, cameraSettings, onCameraChange, onPreview, positionDisabled }: {
+export function SceneSidebar({ nativeToolsRef, shadingRef, grid, labels, onGrid, onLabels, onFit, onOrigin, cameraSettings, onCameraChange, onPreview, positionDisabled, lighting, onLightingChange }: {
   nativeToolsRef: RefObject<HTMLDivElement | null>; grid: boolean; onGrid: () => void; onFit: () => void;
   shadingRef: RefObject<HTMLDivElement | null>;
+  lighting?: import("@/packages/scene-lighting").SceneLighting; onLightingChange(value: import("@/packages/scene-lighting").SceneLighting): void;
   labels: boolean; onLabels: () => void;
   onOrigin: () => void; cameraSettings: SceneCameraSettings; onCameraChange: (value: SceneCameraSettings) => void; onPreview: () => void; positionDisabled: boolean;
 }) {
@@ -23,6 +25,7 @@ export function SceneSidebar({ nativeToolsRef, shadingRef, grid, labels, onGrid,
       <div className="scene-view-actions" role="group" aria-label={text("视角与相机", "View and camera")}>
         <Button size="icon" className="size-7" variant="ghost" title={`${t("sceneEditor.fit")} (F)`} aria-label={t("sceneEditor.fit")} onClick={onFit}><Maximize /></Button>
         <Button size="icon" className="size-7" variant="ghost" title={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} aria-label={i18n.language.startsWith("zh") ? "回到原点" : "Focus origin"} onClick={onOrigin}><LocateFixed /></Button>
+        <SceneLightingControls settings={lighting} disabled={positionDisabled} onChange={onLightingChange} />
         <SceneCameraControls settings={cameraSettings} onChange={onCameraChange} positionDisabled={positionDisabled} onPreview={onPreview} />
       </div>
     </div>
