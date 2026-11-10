@@ -379,8 +379,9 @@ async function main(): Promise<void> {
       const candidate = result.candidates.find((row: Body) => row.id === anchor.asset);
       assert.ok(candidate, "a reference without an embedding must be discoverable");
       assert.equal(candidate.image_url, "https://fixture.invalid/osd-reference.png");
+      assert.deepEqual(candidate.image_urls, [candidate.image_url]);
       assert.match(candidate.reference_version, /^[a-f0-9]{64}$/);
-      assert.deepEqual(Object.keys(candidate).sort(), ["distance_meters", "id", "image_url", "name", "reference_version"]);
+      assert.deepEqual(Object.keys(candidate).sort(), ["distance_meters", "id", "image_url", "image_urls", "name", "reference_version"]);
       const content = (extra: Body = {}) => call(routes.osdContent.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/content",
         body: { ...input(), anchor_id: anchor.asset, reference_version: candidate.reference_version, ...extra } });
       assert.ok(expect(await content(), 200).assets.some((row: Body) => row.id === attached.placement));
@@ -412,6 +413,15 @@ async function main(): Promise<void> {
       expect(await content(), 409);
       const changed = expect(await discover(), 200).candidates.find((row: Body) => row.id === anchor.asset);
       assert.notEqual(changed.reference_version, candidate.reference_version);
+      await client.query(`insert into asset_resource(asset_id,role,ordinal,external_url) values
+        ($1,'reference',2,'https://fixture.invalid/third.jpg'),
+        ($1,'reference',1,'https://fixture.invalid/second.jpg')`, [anchor.asset]);
+      const multiple = expect(await discover(), 200).candidates.find((row: Body) => row.id === anchor.asset);
+      assert.equal(multiple.image_url, changed.image_url, "legacy clients still receive the first reference");
+      assert.deepEqual(multiple.image_urls, ["https://fixture.invalid/updated.jpg", "https://fixture.invalid/second.jpg", "https://fixture.invalid/third.jpg"]);
+      assert.notEqual(multiple.reference_version, changed.reference_version, "additional references invalidate the single-image version");
+      expect(await content({ reference_version: changed.reference_version }), 409);
+      expect(await content({ reference_version: multiple.reference_version }), 200);
       expect(await call(routes.retiredRecognition.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/recognize" }), 410, "recognition_retired");
     });
 
