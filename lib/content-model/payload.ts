@@ -149,7 +149,8 @@ export function parseAssetPayload(fileType: AssetFileType, value: unknown): Asse
         ...(value.preview !== undefined ? { preview: parseScalarMap(value.preview, "payload.preview") } : {}),
       };
     case "anchor":
-      return { kind: "anchor", ...base, ...(value.text !== undefined ? { text: text(value.text, "payload.text") } : {}) };
+      // Anchor descriptions are optional; migrated anchors may keep an empty string.
+      return { kind: "anchor", ...base, ...(value.text !== undefined ? { text: plainText(value.text, "payload.text", MAX_TEXT) } : {}) };
     default:
       return { kind: fileType, ...base } as AssetPayload;
   }

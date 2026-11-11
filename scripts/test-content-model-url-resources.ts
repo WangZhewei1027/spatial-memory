@@ -15,6 +15,7 @@ async function main() {
     assert.equal(mediaKeyFromUrl(url), "assets/a.glb", "equivalent managed URLs resolve to the same retained key");
     assert.throws(() => parseResourceInputs("model", [{ role: "primary", externalUrl: url }]), "managed URLs require a receipt or authorized version reference");
     assert.throws(() => parseAssetPayload("model", { kind: "model", attributes: { note: `linked media: ${url}` } }), "embedded managed URLs cannot bypass the resource manifest");
+    assert.throws(() => parseAssetPayload("anchor", { kind: "anchor", text: `reference image: ${url}` }), "optional anchor text cannot bypass the resource manifest");
   }
   for (const url of [
     "https://media.example.test.evil.test/media/assets/a.glb",

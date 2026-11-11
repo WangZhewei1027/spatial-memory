@@ -4,13 +4,24 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 import { referenceImagesOf, referenceResources } from "../app/manage/components/AssetEditor/anchor-references";
 import { MAX_ANCHOR_REFERENCES, type AssetResourceDto } from "../lib/content-model/contracts";
-import { parseResourceInputs } from "../lib/content-model/payload";
+import { parseAssetPayload, parseResourceInputs } from "../lib/content-model/payload";
 import { referenceVersion } from "../lib/anchor/reference-version";
 
 const id = (n: number) => `10190000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const file = (role: AssetResourceDto["role"], ordinal: number): AssetResourceDto => ({
   role, ordinal, storage_key: null, external_url: null, url: `https://media.test/${role}-${ordinal}.jpg`,
   managed: true, content_hash: null, mime_type: "image/jpeg", size_bytes: 1,
+});
+
+test("reference edits accept an anchor's existing empty text without weakening text validation", () => {
+  assert.deepEqual(parseAssetPayload("anchor", { kind: "anchor" }), { kind: "anchor" });
+  for (const text of ["", "识别目标说明", "  保留换行\n和空格  "]) {
+    assert.deepEqual(parseAssetPayload("anchor", { kind: "anchor", text }), { kind: "anchor", text });
+  }
+  for (const text of [null, 42, {}, "x".repeat(10_001)]) {
+    assert.throws(() => parseAssetPayload("anchor", { kind: "anchor", text }));
+  }
+  assert.throws(() => parseAssetPayload("text", { kind: "text", text: "" }), /payload.text 不能为空/);
 });
 
 test("an anchor accepts up to the reference limit and still requires ordinal 0", () => {

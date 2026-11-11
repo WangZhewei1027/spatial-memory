@@ -15,6 +15,8 @@ import { Client } from "pg";
 import { assertServicesDatabase, cleanupServicesFixture, fixtureIds, seedServicesFixture, seedRuntimeProjectionFixture, assetDocument } from "./test-content-model-services-fixture";
 import { installRouteStubs } from "./test-support/install-route-stubs";
 import { modelGlb } from "./test-support/model-thumbnail-fixtures";
+import { referenceImagesOf, referenceResources } from "../app/manage/components/AssetEditor/anchor-references";
+import type { AssetDetailDto } from "../lib/content-model/contracts";
 import type * as AuthStub from "./test-support/stub-auth-server";
 import type * as OssStub from "./test-support/stub-oss";
 
@@ -365,6 +367,44 @@ async function main(): Promise<void> {
         await client.query("update organization set archived_at=null where id=$1", [f.organizations.team]);
         await client.query("update scene set name=$2,state=$3 where id=$1", [id, original.name, original.state]);
       }
+    });
+
+    await check("anchor reference edits preserve legacy empty text when adding and removing images", async () => {
+      const anchor = await seedRuntimeProjectionFixture(client, f, { kind: "anchor", payload: { kind: "anchor", text: "" },
+        resources: [{ role: "primary", url: "https://fixture.invalid/legacy-anchor.jpg" }] });
+      const url = `/api/assets/${anchor.asset}`, params = { id: anchor.asset };
+      const read = async (): Promise<AssetDetailDto> => expect(await call(routes.asset.GET, { user: u.editor, url, params }), 200).data;
+      const original = await read();
+      const sharp = (await import("sharp")).default;
+      const receipts: string[] = [];
+      for (let index = 0; index < 2; index++) {
+        const bytes = await sharp({ create: { width: 16, height: 16, channels: 3, background: index ? "blue" : "red" } }).jpeg().toBuffer();
+        const form = new FormData();
+        form.set("file", new File([Uint8Array.from(bytes)], `reference-${index}.jpg`, { type: "image/jpeg" }));
+        form.set("type", "anchor");
+        form.set("organization_id", f.organizations.team);
+        receipts.push(expect(await call(routes.upload.POST, { user: u.editor, method: "POST", url: "/api/upload", form }), 200).data.id);
+      }
+      const body = { payload: original.payload, resources: referenceResources(original, referenceImagesOf(original), receipts), expectedLockVersion: original.lock_version };
+      expect(await call(routes.asset.PATCH, { user: u.editor, method: "PATCH", url, params, body }), 200);
+      const added = await read();
+      assert.deepEqual(added.payload, original.payload);
+      assert.equal(added.lock_version, original.lock_version + 1);
+      assert.deepEqual(added.resources.map(({ role, ordinal }) => ({ role, ordinal })), [
+        { role: "reference", ordinal: 0 }, { role: "reference", ordinal: 1 }, { role: "reference", ordinal: 2 },
+      ]);
+      assert.equal(added.resources[0].url, original.resources[0].url);
+      const resources = referenceResources(added, referenceImagesOf(added).filter((resource) => resource.ordinal !== 1), []);
+      const removal = { payload: added.payload, resources, expectedLockVersion: added.lock_version };
+      expect(await call(routes.asset.PATCH, { user: u.viewer, method: "PATCH", url, params, body: removal }), 403, "FORBIDDEN");
+      expect(await call(routes.asset.PATCH, { user: u.editor, method: "PATCH", url, params, body: { ...removal, expectedLockVersion: original.lock_version } }), 409, "LOCK_VERSION_CONFLICT");
+      expect(await call(routes.asset.PATCH, { user: u.editor, method: "PATCH", url, params, body: removal }), 200);
+      const removed = await read();
+      assert.deepEqual(removed.payload, original.payload);
+      assert.deepEqual(removed.resources.map(({ role, ordinal }) => ({ role, ordinal })), [
+        { role: "reference", ordinal: 0 }, { role: "reference", ordinal: 1 },
+      ]);
+      assert.deepEqual(removed.resources.map(({ url }) => url), [added.resources[0].url, added.resources[2].url]);
     });
 
     await check("R09d OSD reference discovery/content: GPS scope, versions, archives and no inference", async () => {
