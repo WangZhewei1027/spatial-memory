@@ -50,10 +50,38 @@ function ScopeBadge({ scope }: { scope: string | null }) {
   return <span className="text-xs text-muted-foreground">{scope || "—"}</span>;
 }
 
+const PRE_CLASS =
+  "text-xs bg-background border rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-words max-h-64";
+
+function DetailBlock({ label, children }: { label: string; children: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      <pre className={PRE_CLASS}>{children}</pre>
+    </div>
+  );
+}
+
+/** Stacks read line by line; the rest of the context stays as JSON. */
+function splitContext(context: ErrorLogRow["context"]) {
+  if (!context) return { rest: null };
+  const { stack, stack_original: stackOriginal, ...rest } = context;
+  return {
+    stack: typeof stack === "string" ? stack : undefined,
+    stackOriginal: typeof stackOriginal === "string" ? stackOriginal : undefined,
+    rest: {
+      ...rest,
+      ...(stack !== undefined && typeof stack !== "string" ? { stack } : {}),
+      ...(stackOriginal !== undefined && typeof stackOriginal !== "string" ? { stack_original: stackOriginal } : {}),
+    },
+  };
+}
+
 function Row({ row }: { row: ErrorLogRow }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const sv = statusVariant(row.status);
+  const { stack, stackOriginal, rest } = splitContext(row.context);
   const hasDetail =
     (row.message && row.message.length > 80) ||
     row.context != null ||
@@ -132,24 +160,24 @@ function Row({ row }: { row: ErrorLogRow }) {
               </div>
             )}
             {row.message && (
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  {t("superAdmin.errorLogs.detail.message", "Message")}
-                </div>
-                <pre className="text-xs bg-background border rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-words max-h-64">
-                  {row.message}
-                </pre>
-              </div>
+              <DetailBlock label={t("superAdmin.errorLogs.detail.message", "Message")}>
+                {row.message}
+              </DetailBlock>
             )}
-            {row.context && (
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  {t("superAdmin.errorLogs.detail.context", "Context")}
-                </div>
-                <pre className="text-xs bg-background border rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-words max-h-64">
-                  {JSON.stringify(row.context, null, 2)}
-                </pre>
-              </div>
+            {stackOriginal && (
+              <DetailBlock label={t("superAdmin.errorLogs.detail.stackOriginal", "Source stack")}>
+                {stackOriginal}
+              </DetailBlock>
+            )}
+            {stack && (
+              <DetailBlock label={t("superAdmin.errorLogs.detail.stack", "Reported stack")}>
+                {stack}
+              </DetailBlock>
+            )}
+            {rest && Object.keys(rest).length > 0 && (
+              <DetailBlock label={t("superAdmin.errorLogs.detail.context", "Context")}>
+                {JSON.stringify(rest, null, 2)}
+              </DetailBlock>
             )}
           </td>
         </tr>
