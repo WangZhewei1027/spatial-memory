@@ -18,7 +18,7 @@ import { unboundedScene } from './test-support/unbounded-scene';
 import { validateSceneDocument } from '../lib/scene/validate';
 
 const require = createRequire(import.meta.url), miniRoot = resolve('../spatial-memory-mini-program/miniprogram');
-const { createFixtureGLB } = require(`${miniRoot}/labs/xr-three/runtime`);
+const { createFixtureGLB } = require(`${miniRoot}/../ignore/labs/xr-three/runtime`);
 const { THREE } = require(`${miniRoot}/lib/three-runtime/runtime`);
 const { ModelCache } = require(`${miniRoot}/lib/three-runtime/resources`);
 const { createCompositionPlayer } = require(`${miniRoot}/lib/scene-runtime/composition`);
