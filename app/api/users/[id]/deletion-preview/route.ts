@@ -57,7 +57,7 @@ export async function GET(
       method: "GET",
       path: "/api/users/[id]/deletion-preview",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取删除预览失败" }, { status: 500 });
   }

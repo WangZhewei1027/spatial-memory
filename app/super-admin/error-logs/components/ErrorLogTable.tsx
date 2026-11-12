@@ -41,6 +41,12 @@ function ScopeBadge({ scope }: { scope: string | null }) {
         {t("superAdmin.errorLogs.scope.api", "API")}
       </Badge>
     );
+  if (scope === "server")
+    return (
+      <Badge variant="secondary" className="font-normal">
+        {t("superAdmin.errorLogs.scope.server", "Server")}
+      </Badge>
+    );
   return <span className="text-xs text-muted-foreground">{scope || "—"}</span>;
 }
 

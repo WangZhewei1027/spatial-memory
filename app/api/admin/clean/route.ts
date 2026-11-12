@@ -186,7 +186,7 @@ export async function POST(request: Request) {
       method: "POST",
       path: "/api/admin/clean",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }

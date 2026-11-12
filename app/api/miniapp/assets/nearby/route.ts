@@ -25,6 +25,6 @@ export async function POST(request: Request) {
     const organizationId = optionalUuid(body.p_organization_id, "p_organization_id");
     return json(await nearbyPlacements({ workspaceId, organizationId }, lat, lng, radius));
   } catch (error) {
-    return errorResponse(error);
+    return errorResponse(error, request);
   }
 }

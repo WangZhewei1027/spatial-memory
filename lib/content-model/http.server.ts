@@ -71,7 +71,7 @@ export async function failure(error: unknown, ctx: RouteContext): Promise<NextRe
     method: ctx.method,
     path: ctx.path,
     status: 500,
-    message: error instanceof Error ? error.message : String(error),
+    error,
   });
   return errorJson(new ContentError("INTERNAL", "服务器错误"));
 }

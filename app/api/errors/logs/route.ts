@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       : 50;
     const offset = Number.isFinite(rawOffset) ? Math.max(rawOffset, 0) : 0;
 
-    const pScope = scope === "client" || scope === "api" ? scope : null;
+    const pScope = scope === "client" || scope === "api" || scope === "server" ? scope : null;
     const pStatusClass =
       statusClass === "zero" || statusClass === "4xx" || statusClass === "5xx"
         ? statusClass
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       method: "GET",
       path: "/api/errors/logs",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取错误日志失败" }, { status: 500 });
   }

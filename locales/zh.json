@@ -322,13 +322,14 @@
     },
     "errorLogs": {
       "title": "错误日志",
-      "description": "分析和筛选客户端与 API 错误",
+      "description": "分析和筛选客户端、API 与服务端错误",
       "empty": "暂无错误日志",
       "emptyHint": "没有符合筛选条件的记录",
       "loadError": "加载错误日志失败",
       "scope": {
         "client": "客户端",
-        "api": "API"
+        "api": "API",
+        "server": "服务端"
       },
       "columns": {
         "time": "时间",
@@ -356,6 +357,7 @@
         "total": "总计",
         "client": "客户端",
         "api": "API",
+        "server": "服务端",
         "client4xx": "4xx",
         "client5xx": "5xx",
         "network": "网络 / 0",

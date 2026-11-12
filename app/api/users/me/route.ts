@@ -24,7 +24,7 @@ export async function GET() {
       method: "GET",
       path: "/api/users/me",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取个人信息失败" }, { status: 500 });
   }
@@ -66,7 +66,7 @@ export async function PATCH(request: Request) {
       method: "PATCH",
       path: "/api/users/me",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "更新个人信息失败" }, { status: 500 });
   }

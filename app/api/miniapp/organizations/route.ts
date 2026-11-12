@@ -16,6 +16,6 @@ export async function GET(request: Request) {
       .execute();
     return json(rows);
   } catch (error) {
-    return errorResponse(error);
+    return errorResponse(error, request);
   }
 }

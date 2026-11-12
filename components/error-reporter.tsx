@@ -1,27 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-
-interface ClientErrorPayload {
-  method: string;
-  path: string;
-  status: number;
-  message: string;
-  context: Record<string, unknown>;
-}
-
-function report(payload: ClientErrorPayload) {
-  try {
-    fetch("/api/errors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // ignore
-  }
-}
+import { reportClientError } from "@/lib/errors/client-report";
+import { describeError } from "@/lib/errors/describe";
 
 /**
  * Global client-side error capture. Mounted once in the root layout.
@@ -44,41 +25,26 @@ export function ErrorReporter() {
     };
 
     const onError = (e: ErrorEvent) => {
-      const message = e.message || String(e.error ?? "unknown error");
+      const error = e.error === undefined ? undefined : describeError(e.error);
+      const message = e.message || error?.message || "unknown error";
       if (!once(`${message}|${e.filename}|${e.lineno}`)) return;
-      report({
+      reportClientError({
         method: "window.error",
-        path: location.pathname,
-        status: 0,
         message,
         context: {
-          stack:
-            e.error instanceof Error
-              ? e.error.stack?.slice(0, 4000)
-              : undefined,
+          stack: error?.stack,
+          name: error?.name,
           filename: e.filename,
           line: e.lineno,
           col: e.colno,
-          ua: navigator.userAgent,
         },
       });
     };
 
     const onRejection = (e: PromiseRejectionEvent) => {
-      const reason = e.reason;
-      const message =
-        reason instanceof Error ? reason.message : String(reason);
+      const { message, ...error } = describeError(e.reason);
       if (!once(`rejection|${message}`)) return;
-      report({
-        method: "unhandledrejection",
-        path: location.pathname,
-        status: 0,
-        message,
-        context: {
-          stack: reason instanceof Error ? reason.stack?.slice(0, 4000) : undefined,
-          ua: navigator.userAgent,
-        },
-      });
+      reportClientError({ method: "unhandledrejection", message, context: error });
     };
 
     window.addEventListener("error", onError);

@@ -32,7 +32,7 @@ export async function GET() {
       method: "GET",
       path: "/api/auth/role",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取用户角色失败" }, { status: 500 });
   }

@@ -100,7 +100,7 @@ export function ErrorLogStatsPanel({ total, stats }: Props) {
 
   return (
     <div className="space-y-3 mb-5">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <StatTile
           label={t("superAdmin.errorLogs.stats.total", "Total")}
           value={total}
@@ -112,6 +112,10 @@ export function ErrorLogStatsPanel({ total, stats }: Props) {
         <StatTile
           label={t("superAdmin.errorLogs.stats.api", "API")}
           value={stats.byScope.api ?? 0}
+        />
+        <StatTile
+          label={t("superAdmin.errorLogs.stats.server", "Server")}
+          value={stats.byScope.server ?? 0}
         />
         <StatTile
           label={t("superAdmin.errorLogs.stats.client4xx", "4xx")}

@@ -143,6 +143,10 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 
 pgAdmin 的首次 secret 和数据库角色需按 [部署说明](pgadmin.md) 初始化；后续 Web 部署同步其公开配置与镜像，保留账号配置卷和私有凭据。
 
+### 错误日志的版本与堆栈还原
+
+镜像构建参数 `APP_RELEASE` 为提交号（CI 用 `github.sha`，手工脚本用镜像标签），写入每条 `error_log` 的 `context.release`；未提供时本地构建读取 Git，Docker 构建记为 `dev`。生产构建生成不带 `sourceMappingURL` 的客户端 source map，`scripts/extract-client-sourcemaps.mjs` 将其从公开的 `.next/static` 移到 `.next/client-sourcemaps`，镜像单独复制该目录。`/api/errors` 只用当前版本的 map 把浏览器堆栈还原到 `context.stack_original`；旧版本页面上报的堆栈保持原样。
+
 ### 服务端素材缩略图（2026-11-04）
 
 视频上传在服务端用 FFmpeg 截帧，模型上传用无头 Chromium / Three.js 生成图片；替换主文件时同时更新图片。生产镜像安装与锁定的 `playwright-core` 匹配的 Chromium headless shell 及系统依赖，Next standalone 包含本地渲染器、Draco 与 Meshopt 解码器。部署后应实际运行一次模型渲染验证 Linux 软件 WebGL，不能只检查首页。

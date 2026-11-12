@@ -15,7 +15,10 @@ COPY . .
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_MEDIA_BASE_URL
 ARG NEXT_PUBLIC_TIANDITU_KEY
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+# Commit identifier recorded with every error report (.git is not in the context).
+ARG APP_RELEASE
+ENV APP_RELEASE=$APP_RELEASE \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_MEDIA_BASE_URL=$NEXT_PUBLIC_MEDIA_BASE_URL \
     NEXT_PUBLIC_TIANDITU_KEY=$NEXT_PUBLIC_TIANDITU_KEY \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -40,6 +43,8 @@ ENV NODE_ENV=production \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+# Read by /api/errors to map browser stacks; never served as static files.
+COPY --from=builder --chown=node:node /app/.next/client-sourcemaps ./.next/client-sourcemaps
 COPY --chown=node:node scripts/standalone-http.cjs ./
 USER node
 EXPOSE 3000

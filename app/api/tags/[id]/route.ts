@@ -80,7 +80,7 @@ export async function PATCH(
       method: "PATCH",
       path: "/api/tags/[id]",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }
@@ -126,7 +126,7 @@ export async function DELETE(
       method: "DELETE",
       path: "/api/tags/[id]",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }

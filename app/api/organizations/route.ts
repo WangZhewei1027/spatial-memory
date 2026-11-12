@@ -37,7 +37,7 @@ export async function GET() {
       method: "GET",
       path: "/api/organizations",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取组织失败" }, { status: 500 });
   }
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       method: "POST",
       path: "/api/organizations",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "创建组织失败" }, { status: 500 });
   }

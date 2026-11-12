@@ -5,5 +5,5 @@ export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams;
     return json(await publicActivities({ workspaceId: optionalUuid(params.get("workspace_id"), "workspace_id"), organizationId: optionalUuid(params.get("organization_id"), "organization_id") }));
-  } catch (error) { return activityFailure(error); }
+  } catch (error) { return activityFailure(error, request); }
 }

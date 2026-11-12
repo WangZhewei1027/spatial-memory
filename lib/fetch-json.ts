@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import i18n from "@/lib/i18n/config";
+import { reportClientError } from "@/lib/errors/client-report";
 
 /** Thrown by fetchJson on any non-2xx response or network failure. */
 export class ApiError extends Error {
@@ -58,27 +59,4 @@ export async function fetchJson<T = unknown>(
   }
 
   return body as T;
-}
-
-function reportClientError(payload: {
-  method: string;
-  path: string;
-  status: number;
-  message: string;
-}) {
-  try {
-    fetch("/api/errors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...payload,
-        context: {
-          ua: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        },
-      }),
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // ignore
-  }
 }

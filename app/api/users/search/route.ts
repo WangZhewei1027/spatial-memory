@@ -75,7 +75,7 @@ export async function GET(request: Request) {
       method: "GET",
       path: "/api/users/search",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "搜索用户失败" }, { status: 500 });
   }

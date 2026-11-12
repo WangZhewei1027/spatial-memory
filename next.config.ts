@@ -1,9 +1,21 @@
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+import { execFileSync } from "node:child_process";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
+
+// Build identifier stamped on every error_log row. Docker builds have no .git,
+// so the deploy pipeline passes the commit as APP_RELEASE.
+function resolveRelease(): string {
+  if (process.env.APP_RELEASE) return process.env.APP_RELEASE;
+  try {
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] }).toString().trim() || "dev";
+  } catch {
+    return "dev";
+  }
+}
 
 const withMDX = createMDX({
   options: {
@@ -36,6 +48,14 @@ const nextConfig: NextConfig = {
     ],
   },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  env: { NEXT_PUBLIC_APP_RELEASE: resolveRelease() },
+  // Client source maps without a sourceMappingURL comment; the build moves them
+  // out of the public static directory so only /api/errors reads them
+  // (scripts/extract-client-sourcemaps.mjs).
+  webpack(config, { dev, isServer }) {
+    if (!dev && !isServer) config.devtool = "hidden-source-map";
+    return config;
+  },
   cacheComponents: true,
   // Upload is excluded from proxy.ts: large originals stream directly to disk.
   // Preserve this buffer bound for other proxied routes.

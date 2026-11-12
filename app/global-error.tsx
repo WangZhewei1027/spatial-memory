@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportClientError } from "@/lib/errors/client-report";
+import { describeError } from "@/lib/errors/describe";
 
 /**
  * Root error boundary — catches render crashes that bubble past all segment
@@ -15,27 +17,15 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    try {
-      fetch("/api/errors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "react.global-error",
-          path: typeof location !== "undefined" ? location.pathname : null,
-          status: 500,
-          message: error.message || "render crash",
-          context: {
-            stack: error.stack?.slice(0, 4000),
-            digest: error.digest,
-            ua:
-              typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-          },
-        }),
-        keepalive: true,
-      }).catch(() => {});
-    } catch {
-      // ignore
-    }
+    // A server render failure arrives with only its digest; the matching
+    // scope='server' row carries the original message and stack.
+    const { message, ...details } = describeError(error);
+    reportClientError({
+      method: "react.global-error",
+      status: 500,
+      message: message || "render crash",
+      context: details,
+    });
   }, [error]);
 
   return (

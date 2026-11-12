@@ -322,13 +322,14 @@
     },
     "errorLogs": {
       "title": "Error Logs",
-      "description": "Analyze and filter client & API errors",
+      "description": "Analyze and filter client, API and server errors",
       "empty": "No error logs",
       "emptyHint": "No records match your filters",
       "loadError": "Failed to load error logs",
       "scope": {
         "client": "Client",
-        "api": "API"
+        "api": "API",
+        "server": "Server"
       },
       "columns": {
         "time": "Time",
@@ -356,6 +357,7 @@
         "total": "Total",
         "client": "Client",
         "api": "API",
+        "server": "Server",
         "client4xx": "4xx",
         "client5xx": "5xx",
         "network": "Network / 0",

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/server";
-
-const MAX_MESSAGE = 2000;
-const MAX_PATH = 500;
+import { APP_RELEASE } from "@/lib/errors/describe";
+import { parseClientErrorReport } from "@/lib/errors/ingest";
+import { symbolicateClientStack } from "@/lib/errors/source-maps.server";
 
 /**
  * Client error sink. Captures uncaught errors / rejections / fetch failures
@@ -12,6 +12,9 @@ const MAX_PATH = 500;
  * session exists, null otherwise. Always returns 200-ish so the reporter never
  * cascades into another error.
  *
+ * Minified stacks from this build are mapped back to source positions into
+ * `context.stack_original`; stacks from an older release stay as reported.
+ *
  * NOTE: intentionally does not gate on auth so public-page crashes are still
  * captured; this trades a small spam surface for coverage. Add rate-limiting
  * here if abuse becomes a concern.
@@ -19,33 +22,24 @@ const MAX_PATH = 500;
 export async function POST(request: Request) {
   try {
     const user = await getSessionUser();
+    const record = parseClientErrorReport(await request.json().catch(() => ({})), APP_RELEASE);
 
-    const body = (await request.json().catch(() => ({}))) as {
-      method?: unknown;
-      path?: unknown;
-      status?: unknown;
-      message?: unknown;
-      context?: unknown;
-    };
+    const { stack } = record.context;
+    if (typeof stack === "string" && record.context.release === APP_RELEASE) {
+      const original = await symbolicateClientStack(stack).catch(() => null);
+      if (original) record.context.stack_original = original;
+    }
 
     await db
       .insertInto("error_log")
       .values({
         user_id: user?.id ?? null,
         scope: "client",
-        method:
-          typeof body.method === "string" ? body.method.slice(0, 16) : null,
-        path:
-          typeof body.path === "string" ? body.path.slice(0, MAX_PATH) : null,
-        status: Number.isInteger(body.status) ? (body.status as number) : null,
-        message:
-          typeof body.message === "string"
-            ? body.message.slice(0, MAX_MESSAGE)
-            : null,
-        context:
-          body.context && typeof body.context === "object"
-            ? JSON.stringify(body.context)
-            : null,
+        method: record.method,
+        path: record.path,
+        status: record.status,
+        message: record.message,
+        context: JSON.stringify(record.context),
       })
       .execute();
 
