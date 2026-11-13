@@ -6,11 +6,11 @@ import { anchorPlacements } from "@/lib/placements/runtime.server";
 import { findNearbyAnchors } from "./nearby.server";
 
 /** Public map discovery, not proof of recognition or authorization to check in. */
-export async function readOSDRequest(request: Request) {
+export async function readRecognitionRequest(request: Request) {
   const body = await readJson(request);
   const workspaceId = requireUuid(body.workspace_id, "workspace_id");
-  if (!consumeRequest(`osd:${workspaceId}:${clientKey(request)}`, 60, 60_000).allowed ||
-      !consumeRequest(`osd:${workspaceId}`, 3000, 60_000).allowed)
+  if (!consumeRequest(`recognition:${workspaceId}:${clientKey(request)}`, 60, 60_000).allowed ||
+      !consumeRequest(`recognition:${workspaceId}`, 3000, 60_000).allowed)
     throw new MiniappError("请求过于频繁，请稍后重新扫描", 429);
   const form = new FormData();
   for (const field of ["latitude", "longitude", "accuracy", "gps_timestamp", "coordinate_system"]) {
@@ -25,7 +25,7 @@ export async function readOSDRequest(request: Request) {
   }
 }
 
-export async function osdCandidates(context: Awaited<ReturnType<typeof readOSDRequest>>) {
+export async function recognitionCandidates(context: Awaited<ReturnType<typeof readRecognitionRequest>>) {
   const candidates = await findNearbyAnchors(context.workspaceId, context.gps);
   if (candidates.length > 200) throw new MiniappError("附近匹配点过多，请缩小地图范围", 422);
   return { candidates: candidates.map((row) => ({
@@ -34,7 +34,7 @@ export async function osdCandidates(context: Awaited<ReturnType<typeof readOSDRe
   })), gps_radius_meters: context.gps.radius };
 }
 
-export async function osdContent(context: Awaited<ReturnType<typeof readOSDRequest>>) {
+export async function recognitionContent(context: Awaited<ReturnType<typeof readRecognitionRequest>>) {
   const anchorId = requireUuid(context.body.anchor_id, "anchor_id");
   const version = context.body.reference_version;
   if (typeof version !== "string" || !/^[a-f0-9]{64}$/.test(version))
