@@ -37,7 +37,7 @@ export function MapActivities({ workspaceId, workspaceName, organizationId, canE
   // Retired map links keep their identity and participation history for relinking.
   const linkedPlacements = (placements.data ?? []).filter((placement) => placement.status !== "archived");
   const linkedActivityIds = new Set(linkedPlacements.map((placement) => placement.activity_id));
-  const availableActivities = (activities.data ?? []).filter((activity) => activity.state === "active" && activity.capabilities.can_edit && !linkedActivityIds.has(activity.id));
+  const availableActivities = (activities.data ?? []).filter((activity) => activity.state === "active" && activity.capabilities.can_edit && activity.has_map_link === false && !linkedActivityIds.has(activity.id));
   const choicesReady = !activities.loading && !activities.error && !placements.loading && !placements.error;
   const selected = availableActivities.find((activity) => activity.id === selectedId);
   const previousLink = placements.data?.find((placement) => placement.activity_id === selectedId && placement.status === "archived");
@@ -70,7 +70,8 @@ export function MapActivities({ workspaceId, workspaceName, organizationId, canE
             <MapActivityRow key={placement.id} placement={placement} activity={activities.data?.find((activity) => activity.id === placement.activity_id)} canEdit={canEdit} highlighted={highlightedId === placement.id} onReload={placements.reload} />
           ))}</ul>}
       </div>
-      {canEdit && <div className="flex shrink-0 justify-end border-t px-5 py-3 sm:px-6">
+      {canEdit && <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t px-5 py-3 sm:px-6">
+        {choicesReady && !availableActivities.length && <Text as="p" variant="bodySm" tone="subdued">{t("activities.noAvailableActivities")}</Text>}
         <Button className="min-h-10" disabled={!choicesReady || !availableActivities.length} onClick={() => setCreating(true)}><Plus aria-hidden />{t("activities.placeExisting")}</Button>
       </div>}
     </div>

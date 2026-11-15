@@ -1,15 +1,13 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Plus, MessageSquare, MapPin } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { ActivityType } from "@/lib/activities/contracts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
 import { ContentEmptyState, ContentErrorState } from "../../content/ContentFeedback";
@@ -18,11 +16,13 @@ import { ContentFeatureState } from "../ContentFeatureState";
 import { teamCanWrite, teamHref, useTeamContext } from "../../lib/content-context";
 import { activityApi } from "../../lib/activity-api";
 import { LibraryLayout } from "../../content/LibraryLayout";
+import { LIBRARY_GRID, LibraryGridSkeleton } from "../../content/LibraryCard";
 import { getTeamLibraryPage } from "../../lib/content-api";
 import { subscribeContentChanges } from "../../lib/content-events";
 import { useLibraryPages, useLibrarySearch } from "../../workbench/useLibraryPages";
 import type { CollectionState } from "@/lib/content-model/contracts";
 import { ActivityFailure } from "./ActivityFeedback";
+import { ActivityCard } from "./ActivityCard";
 
 export function ActivitiesRoute() {
   const team = useTeamContext();
@@ -100,33 +100,16 @@ function ActivityLibrary({ organizationId, canCreate }: { organizationId: string
         </Card>
       )}
       {list.status === "loading" ? (
-        <TeamPageLoading label={t("activities.loading")} />
+        <LibraryGridSkeleton label={t("activities.loading")} />
       ) : list.status === "error" ? (
         <div className="my-auto"><ContentErrorState onRetry={list.reload} /></div>
       ) : !list.items.length ? (
         <div className="my-auto"><ContentEmptyState headingAs="h2" title={t("activities.empty")} description={t("activities.emptyHint")} /></div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {list.items.map(activity => {
-            const Icon = activity.type === "shop_checkin" ? MapPin : MessageSquare;
-            return (
-              <Card key={activity.id} className="p-4">
-                <Link href={teamHref(`/manage/activities/${activity.id}`, organizationId)}
-                  className="flex items-start gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Icon className="mt-1 size-5 shrink-0" aria-hidden />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <Text as="h2" variant="headingMd" breakWord>{activity.name}</Text>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary">{t(`activities.types.${activity.type}`)}</Badge>
-                      <Badge variant="outline">{t(`activities.states.${activity.state}`)}</Badge>
-                    </div>
-                    {activity.description && <Text as="p" variant="bodySm" tone="subdued" breakWord>{activity.description}</Text>}
-                  </div>
-                </Link>
-              </Card>
-            );
-          })}
-        </div>
+        <ul aria-label={t("activities.title")} className={LIBRARY_GRID}>
+          {list.items.map(activity => <ActivityCard key={activity.id} activity={activity}
+            href={teamHref(`/manage/activities/${activity.id}`, organizationId)} />)}
+        </ul>
       )}
     </LibraryLayout>
   );

@@ -17,29 +17,27 @@ function placement(id: string, workspaceId: string): ActivityPlacementDto {
 function activity(): ActivityDto {
   return {
     id: "shared-activity", organization_id: "team", name: "A walking activity", type: "shop_checkin",
-    description: null, config: {}, state: "active", lock_version: 1, location: null, radius_meters: null,
+    description: null, config: {}, state: "active", has_map_link: true, lock_version: 1, location: null, radius_meters: null,
     capabilities: { can_read: true, can_edit: true }, created_at: "2026-10-28T00:00:00Z", updated_at: "2026-10-28T00:00:00Z",
     points: [{ id: "shared-point", activity_id: "shared-activity", name: "First stop", description: null, ordinal: 0,
       image_asset_id: null, reward_asset_id: null, image_url: null, reward_url: null, state: "active", location: { longitude: 121, latitude: 31 } }],
   };
 }
 
-test("each map association displays the same fixed activity point with a distinct marker identity", () => {
-  const first = placement("first", "map-a"), second = placement("second", "map-b");
-  const definition = activity();
-  const markers = toActivityViewerItems([first, second], [definition]);
-  assert.deepEqual(markers.map((marker) => [marker.id, marker.activityPlacementId, marker.workspace_id]), [
-    ["first:shared-point", "first", "map-a"], ["second:shared-point", "second", "map-b"],
-  ]);
-  for (const marker of markers) {
-    assert.equal(marker.sourceAssetId, null, "an activity marker must not select or mutate a source asset");
-    assert.equal(marker.sceneId, null);
-    assert.deepEqual(marker.metadata, { longitude: 121, latitude: 31, height: 0 });
-  }
+test("switching maps retains the point identity and omits the old association marker", () => {
+  const first = { ...placement("first", "map-a"), status: "archived" as const }, second = placement("second", "map-b");
+  const definition = { ...activity(), has_map_link: true };
+  const [marker] = toActivityViewerItems([first, second], [definition]);
+  assert.equal(marker.id, "second:shared-point");
+  assert.equal(marker.activityPlacementId, "second");
+  assert.equal(marker.workspace_id, "map-b");
+  assert.equal(marker.sourceAssetId, null, "an activity marker must not select or mutate a source asset");
+  assert.equal(marker.sceneId, null);
+  assert.deepEqual(marker.metadata, { longitude: 121, latitude: 31, height: 0 });
   definition.points[0].location = { longitude: 122, latitude: 32 };
-  for (const marker of toActivityViewerItems([first, second], [definition])) {
-    assert.deepEqual(marker.metadata, { longitude: 122, latitude: 32, height: 0 }, "editing activity content updates every associated map");
-  }
+  const updated = toActivityViewerItems([first, second], [definition]);
+  assert.equal(updated.length, 1);
+  assert.deepEqual(updated[0].metadata, { longitude: 122, latitude: 32, height: 0 });
 });
 
 test("map markers omit archived associations, archived points and points without coordinates", () => {

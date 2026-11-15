@@ -1331,7 +1331,7 @@
     "settings": "Activity content",
     "checkinRadius": "Check-in distance (m)",
     "maxLength": "Message length limit",
-    "sharedSettings": "Activity locations, area and rules are shared across all maps and take effect on save.",
+    "sharedSettings": "Manage activity locations, area and rules here. Saved changes take effect on the linked map.",
     "points": "Check-in points",
     "addPoint": "Add check-in point",
     "pointsHint": "Each shop has one fixed location. Select a check-in point to set its location and edit its content.",
@@ -1360,7 +1360,7 @@
     "reload": "Reload and discard current input",
     "placements": "Placements",
     "place": "Link to a map",
-    "placementsHint": "Link this activity to multiple maps. Locations, content and rules are managed in the activity.",
+    "placementsHint": "Each activity can link to one map collection. Unlink it before linking another map.",
     "noMaps": "Create a map collection first",
     "noPlacements": "No activity placements",
     "noPlacementsHint": "Choose a map and enable the link to display this activity.",
@@ -1379,10 +1379,9 @@
     "unlink": "Unlink",
     "unlinking": "Unlinking…",
     "placementStates": {
-      "draft": "Draft",
       "active": "Enabled",
       "paused": "Paused",
-      "archived": "Archived"
+      "archived": "Unlinked"
     },
     "longitude": "Longitude",
     "latitude": "Latitude",
@@ -1410,7 +1409,7 @@
     "placeExisting": "Link an existing activity",
     "chooseActivity": "Choose an activity",
     "chooseActivityHint": "Choose an existing activity or create one in the activity library.",
-    "moveHint": "Edit locations in Activity content. All maps share the same location.",
+    "moveHint": "Edit locations in Activity content to update the linked map.",
     "mapSidebarHint": "Activity locations and area are managed in Activity content. This page only manages map links.",
     "recordCount_one": "{{count}} record",
     "recordCount_other": "{{count}} records",
@@ -1418,7 +1417,7 @@
     "locationMapUnavailable": "The map is not ready. Retry, or expand “Enter coordinates” to continue.",
     "areaCenter": "Activity area center",
     "participationArea": "Participation area",
-    "wholeMapSimpleHint": "The activity is available on every linked map. No coordinates needed.",
+    "wholeMapSimpleHint": "The activity is available on the linked map. No coordinates needed.",
     "locatedProgress": "{{located}} / {{total}} located",
     "pointLocated": "Location set",
     "pointNeedsLocation": "Location needed",
@@ -1434,9 +1433,8 @@
     "pointNameRequired": "Enter a name for every check-in point.",
     "editContent": "Edit activity content",
     "viewContent": "View activity content",
-    "allMapsLinked": "This activity is linked to every editable map. Restore an archived link by changing its status below.",
+    "alreadyLinked": "Unlink the current map before linking another map collection.",
     "noEditableMaps": "No editable maps are available. Request map editing access first.",
-    "allActivitiesLinked": "Every available activity is linked to this map. Restore an archived link by changing its status below.",
-    "noAvailableActivities": "No activities are available to link. Create or restore one in activity management."
+    "noAvailableActivities": "No activities are available to link. Unlink an activity from its current map, or create one."
   }
 }

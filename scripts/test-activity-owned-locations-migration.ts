@@ -99,6 +99,14 @@ async function main() {
     assert.equal((await activityLocationMigrationReport(client)).conflicts.length, 0, "Explicit disabled and missing both mean unavailable");
     await client.query("rollback");
 
+    // The location upgrade preserves both maps; the later single-map upgrade
+    // must stop until the fixture owner explicitly chooses which links to retain.
+    const blocked = spawnSync(process.execPath, ["--import", "tsx", "scripts/db/migrate.ts"], {
+      env: { ...process.env, DATABASE_URL: url.toString() }, encoding: "utf8",
+    });
+    assert.notEqual(blocked.status, 0);
+    assert.match(blocked.stderr, /Activities linked to multiple maps/);
+    await client.query("update activity_placement set status='archived',lock_version=lock_version+1 where id=any($1::uuid[])", [[id(31), id(33)]]);
     // Use the actual migrator to verify integration and ledger-based replay.
     for (let attempt = 0; attempt < 2; attempt++) {
       const result = spawnSync(process.execPath, ["--import", "tsx", "scripts/db/migrate.ts"], {
@@ -121,6 +129,7 @@ async function main() {
       const archive = (await client.query("select row_data from migration_archive.activity_location_source where source_table=$1 order by row_data::text", [table])).rows.map((row) => row.row_data);
       assert.deepEqual(archive, rows, "Every obsolete source row is fully retained");
     }
+    await client.query("update activity_placement set status='archived',lock_version=lock_version+1 where id=$1", [id(30)]);
     await client.query("insert into activity_placement(id,activity_id,organization_id,workspace_id,status) values($1,$2,$3,$4,'active')", [id(35), id(20), id(1), id(12)]);
     await client.query("update activity_placement set status='archived' where id=$1", [id(35)]);
     await assert.rejects(client.query("insert into activity_placement(activity_id,organization_id,workspace_id) values($1,$2,$3)", [id(20), id(1), id(12)]), { code: "23505" });

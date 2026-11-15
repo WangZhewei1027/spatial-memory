@@ -23,9 +23,9 @@ try {
     const height = width === 320 ? 568 : 900;
     const context = await browser.newContext({ viewport: { width, height } });
     const collection = { id: mapId, organization_id: teamId, name: language === "zh" ? "街区活动地图" : "Neighborhood activity map", archived_at: archived ? "2026-11-01T00:00:00Z" : null, capabilities: { can_edit: writable, can_archive: !readOnly } };
-    const activities = ["Neighborhood check-in and community messages", "Weekend route"].map((name, index) => ({
+    const activities = ["Neighborhood check-in and community messages", "Weekend route", "Activity linked to another map"].map((name, index) => ({
       id: `activity-${index}`, name, organization_id: teamId, type: "danmaku", state: "active", lock_version: 1,
-      config: {}, points: [], location: { longitude: 121.5, latitude: 31.2 }, radius_meters: 100,
+      config: {}, has_map_link: index !== 1, points: [], location: { longitude: 121.5, latitude: 31.2 }, radius_meters: 100,
       capabilities: { can_read: true, can_edit: !readOnly },
     }));
     const makePlacement = (activity, status = "active") => ({
@@ -52,12 +52,13 @@ try {
           assert.equal(input.expectedLockVersion, placements[0].lock_version);
           if (conflict) { status = 409; body = { code: "LOCK_VERSION_CONFLICT", error: "Fixture conflict" }; }
           else if (failWrite) { status = 500; body = { error: "Fixture write failure" }; }
-          else { placements[0].status = input.status; placements[0].lock_version++; body = { data: placements[0] }; }
+          else { placements[0].status = input.status; activities[0].has_map_link = input.status !== "archived"; placements[0].lock_version++; body = { data: placements[0] }; }
         } else if (path === `/api/activities/${activities[1].id}/placements` && method === "POST") {
           assert.equal(input.workspaceId, mapId);
           assert.ok(input.idempotencyKey);
           const placement = makePlacement(activities[1], input.status);
           placements.push(placement);
+          activities[1].has_map_link = true;
           body = { data: placement };
         } else assert.fail(`Unexpected mutation: ${method} ${path}`);
       } else if (path === "/api/auth/get-session") body = { user: { id: "fixture", name: "Fixture", email: "fixture@example.invalid" }, session: { id: "fixture", expiresAt: "2099-01-01" } };
@@ -162,6 +163,7 @@ try {
       assert.equal(placements[0].status, "active");
       await dialog.getByRole("button", { name: text.placeExisting, exact: true }).click();
       await dialog.getByRole("combobox", { name: text.chooseActivity, exact: true }).click();
+      assert.deepEqual(await page.getByRole("option").allTextContents(), [activities[1].name], "activities linked to other maps must not be available");
       await page.getByRole("option", { name: activities[1].name, exact: true }).click();
       assert.equal(await dialog.getByText(text.placementRelationHint, { exact: true }).count(), 0);
       const formStatus = dialog.getByLabel(text.placementStatus, { exact: true });

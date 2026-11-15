@@ -1,7 +1,8 @@
 /** Client-safe activity authoring contracts. Requests use camelCase, DTOs snake_case. */
 export type ActivityType = "shop_checkin" | "danmaku";
 export type ActivityState = "active" | "archived";
-export type ActivityPlacementStatus = "draft" | "active" | "paused" | "archived";
+/** Archived placements retain history after unlinking; linked activities are active or paused. */
+export type ActivityPlacementStatus = "active" | "paused" | "archived";
 export interface ActivityLocation { longitude: number; latitude: number }
 export interface ActivityConfig { checkinRadiusMeters?: number; maxLength?: number }
 export interface ActivityCapabilities { can_read: boolean; can_edit: boolean }
@@ -24,6 +25,7 @@ export interface ActivityDto {
   id: string; organization_id: string; type: ActivityType; name: string; description: string | null;
   config: ActivityConfig; location: ActivityLocation | null; radius_meters: number | null;
   state: ActivityState; lock_version: number; created_at: string; updated_at: string;
+  has_map_link: boolean;
   capabilities: ActivityCapabilities; points: ActivityPointDto[];
 }
 export interface ActivityPlacementDto {

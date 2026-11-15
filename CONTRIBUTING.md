@@ -90,6 +90,8 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
 
+活动详情关联运行 `node scripts/test-activity-map-links.mjs`，使用上述本地服务与隔离 fixture，覆盖已有关联时禁用新增、仅开启/暂停、取消后关联新地图、恢复原地图的关联 ID、只读、中英文与明暗/窄屏。单地图迁移回归 `node --import tsx --conditions react-server scripts/test-activity-map-migration.ts` 使用本机 55439 的唯一临时数据库，验证多地图冲突中止、旧草稿转暂停、唯一约束、来源记录保留、回滚和重复迁移；CI 运行同一脚本。
+
 地图设置弹窗运行 `node scripts/test-map-settings.mjs`，使用上述本地服务及隔离 API/viewer fixture，覆盖保存/重新打开、放弃草稿、失败重试、并发冲突重载、只读/归档、中英文、明暗主题与 320px 窄屏，并检查地图不重挂载或改变尺寸。设置 `MAP_SETTINGS_SCREENSHOTS` 保存截图。迁移回归 `scripts/test-collection-config-migration.ts` 只允许本机 55439 的专用 PostgreSQL 实例，以唯一临时数据库验证旧团队值复制、地图隔离、新地图默认值、约束、回滚及迁移幂等；CI 运行同一脚本。
 
 ## CI 与发布

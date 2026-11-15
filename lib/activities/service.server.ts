@@ -26,6 +26,9 @@ async function activityAccess(exec: Executor, actor: Actor, id: string) {
 async function activityDto(exec: Executor, id: string, access: OrgAccess): Promise<ActivityDto> {
   const row = await exec.selectFrom("activity").selectAll()
     .select([sql<number | null>`ST_X(location)`.as("longitude"), sql<number | null>`ST_Y(location)`.as("latitude")])
+    // EXISTS also keeps legacy multi-map activities readable for unlinking before migration.
+    .select((eb) => eb.exists(eb.selectFrom("activity_placement").select("id")
+      .whereRef("activity_id", "=", "activity.id").where("status", "!=", "archived")).as("has_map_link"))
     .where("id", "=", id).executeTakeFirstOrThrow();
   const points = await exec.selectFrom("activity_point").selectAll()
     .select([sql<number | null>`ST_X(location)`.as("longitude"), sql<number | null>`ST_Y(location)`.as("latitude")])
@@ -35,7 +38,7 @@ async function activityDto(exec: Executor, id: string, access: OrgAccess): Promi
   return {
     id: row.id, organization_id: row.organization_id, type: typeOf(row.type), name: row.name, description: row.description,
     config: effectiveConfig(typeOf(row.type), row.config), state: requireEnum(row.state, "state", ["active", "archived"]),
-    location: locationOf(row), radius_meters: row.radius_meters,
+    location: locationOf(row), radius_meters: row.radius_meters, has_map_link: Boolean(row.has_map_link),
     lock_version: row.lock_version, created_at: toIsoRequired(row.created_at), updated_at: toIsoRequired(row.updated_at),
     capabilities: { can_read: access.canRead, can_edit: access.canWrite && !access.org.archived_at },
     points: points.map((point) => ({ id: point.id, activity_id: id, name: point.name, description: point.description, ordinal: point.ordinal,
@@ -152,7 +155,8 @@ async function placementDto(exec: Executor, id: string, actor: Actor): Promise<A
   return {
     id, activity_id: row.activity_id, organization_id: row.organization_id, workspace_id: row.workspace_id,
     activity_name: row.activity_name, activity_type: typeOf(row.activity_type), workspace_name: row.workspace_name,
-    status: requireEnum(row.status, "status", ["draft", "active", "paused", "archived"]), lock_version: row.lock_version,
+    // Old drafts remain editable during migration preparation; never expose a third enabled/paused state.
+    status: requireEnum(row.status === "draft" ? "paused" : row.status, "status", ["active", "paused", "archived"]), lock_version: row.lock_version,
     capabilities: { can_read: true, can_edit: access.canEdit && row.activity_state === "active" },
     created_at: toIsoRequired(row.created_at), updated_at: toIsoRequired(row.updated_at),
   };
@@ -172,11 +176,21 @@ export async function listCollectionActivityPlacements(actor: Actor, workspaceId
   return Promise.all(rows.map((row) => placementDto(db, row.id, actor)));
 }
 
+/** Called under the activity-wide association lock, including when restoring an old link. */
+async function assertActivityMapAvailable(trx: Trx, activityId: string, exceptPlacementId?: string) {
+  let query = trx.selectFrom("activity_placement").select("id")
+    .where("activity_id", "=", activityId).where("status", "!=", "archived");
+  if (exceptPlacementId) query = query.where("id", "!=", exceptPlacementId);
+  if (await query.executeTakeFirst()) {
+    throw new ContentError("DEPENDENCY_CONFLICT", "该活动已关联地图，请先取消原关联后再关联新的地图合集");
+  }
+}
+
 export async function createActivityPlacement(actor: Actor, activityId: string, value: unknown): Promise<ActivityPlacementDto> {
   const body = requireRecord(value, "placement");
   rejectUnknown(body, ["workspaceId", "status", "idempotencyKey"]);
   const workspaceId = requireUuid(body.workspaceId, "workspaceId");
-  const status = body.status === undefined ? "draft" : requireEnum(body.status, "status", ["draft", "active", "paused", "archived"]);
+  const status = body.status === undefined ? "paused" : requireEnum(body.status, "status", ["active", "paused"]);
   const key = optionalIdempotencyKey(body.idempotencyKey);
   const id = await contentTransaction(async (trx) => {
     const access = await requireWorkspaceEdit(trx, actor, workspaceId);
@@ -186,10 +200,11 @@ export async function createActivityPlacement(actor: Actor, activityId: string, 
     if (activity.state !== "active") throw archived("活动已归档");
     const scope = key ? { actorId: actor.userId, command: `activity.place:${activityId}`, key, hash: requestHash(body) } : null;
     if (scope) { const replay = await claimIdempotency(trx, scope); if (replay) return replay; }
-    await lockKeys(trx, [`activity-map:${activityId}:${workspaceId}`]);
+    await lockKeys(trx, [`activity-map:${activityId}`]);
     const existing = await trx.selectFrom("activity_placement").select("id")
       .where("activity_id", "=", activityId).where("workspace_id", "=", workspaceId).executeTakeFirst();
     if (existing) throw new ContentError("DEPENDENCY_CONFLICT", "该活动已关联到此地图，请编辑或重新启用已有投放");
+    await assertActivityMapAvailable(trx, activityId);
     const placement = await trx.insertInto("activity_placement").values({ activity_id: activityId, organization_id: activity.organization_id, workspace_id: workspaceId,
       status, created_by: actor.userId, updated_by: actor.userId }).returning("id").executeTakeFirstOrThrow();
     if (scope) await recordIdempotency(trx, scope, activity.organization_id, "activity_placement", placement.id);
@@ -209,9 +224,11 @@ export async function updateActivityPlacement(actor: Actor, id: string, value: u
     await lockWorkspaceForWrite(trx, access);
     const activity = await trx.selectFrom("activity").selectAll().where("id", "=", initial.activity_id).forShare().executeTakeFirstOrThrow();
     if (activity.state !== "active") throw archived("请先恢复活动再编辑投放");
+    await lockKeys(trx, [`activity-map:${initial.activity_id}`]);
     const row = await trx.selectFrom("activity_placement").selectAll().where("id", "=", id).forUpdate().executeTakeFirstOrThrow();
     checkLockVersion(optionalInt(body.expectedLockVersion, "expectedLockVersion", 1), row.lock_version, "活动投放");
-    const status = body.status === undefined ? row.status : requireEnum(body.status, "status", ["draft", "active", "paused", "archived"]);
+    const status = body.status === undefined ? row.status : requireEnum(body.status, "status", ["active", "paused", "archived"]);
+    if (status !== "archived") await assertActivityMapAvailable(trx, row.activity_id, row.id);
     await trx.updateTable("activity_placement").set({ status,
       lock_version: row.lock_version + 1, updated_at: new Date(), updated_by: actor.userId }).where("id", "=", id).execute();
     await audit(trx, { organizationId: row.organization_id, workspaceId: row.workspace_id, actorId: actor.userId, action: "activity.placement.update", objectType: "activity_placement", objectId: id });

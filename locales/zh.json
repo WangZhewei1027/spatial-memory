@@ -1319,7 +1319,7 @@
     "settings": "活动内容",
     "checkinRadius": "打卡距离（米）",
     "maxLength": "留言字数上限",
-    "sharedSettings": "活动地点、范围和规则由所有地图共享，保存后统一生效。",
+    "sharedSettings": "活动地点、范围和规则在这里统一维护，保存后在关联地图中生效。",
     "points": "打卡点",
     "addPoint": "添加打卡点",
     "pointsHint": "每个店铺有一个固定位置。选择打卡点后，在地图上设置位置并编辑内容。",
@@ -1348,7 +1348,7 @@
     "reload": "重新加载，放弃当前输入",
     "placements": "投放",
     "place": "关联到地图",
-    "placementsHint": "将同一活动关联到多个地图；地点、内容和规则由活动统一管理。",
+    "placementsHint": "每个活动最多关联一个地图合集；取消关联后才能关联其他地图。",
     "noMaps": "请先创建地图合集",
     "noPlacements": "还没有活动投放",
     "noPlacementsHint": "选择地图并启用，即可展示这项活动。",
@@ -1367,10 +1367,9 @@
     "unlink": "取消关联",
     "unlinking": "取消关联中…",
     "placementStates": {
-      "draft": "草稿",
-      "active": "已启用",
-      "paused": "已暂停",
-      "archived": "已归档"
+      "active": "开启",
+      "paused": "暂停",
+      "archived": "已取消关联"
     },
     "longitude": "经度",
     "latitude": "纬度",
@@ -1399,13 +1398,13 @@
     "placeExisting": "关联已有活动",
     "chooseActivity": "选择活动",
     "chooseActivityHint": "选择已有活动，或前往活动库创建。",
-    "moveHint": "请在活动内容中修改位置，所有地图共享同一位置。",
+    "moveHint": "请在活动内容中修改位置，关联地图会同步更新。",
     "mapSidebarHint": "活动地点和范围在活动内容中统一维护。这里仅管理地图关联。",
     "locationMapLoading": "地图加载中…",
     "locationMapUnavailable": "地图暂未就绪。可以重试，或展开“手动输入坐标”继续设置。",
     "areaCenter": "活动范围中心",
     "participationArea": "参与范围",
-    "wholeMapSimpleHint": "活动在所有已关联地图中可参与，无需设置坐标。",
+    "wholeMapSimpleHint": "活动在关联地图中可参与，无需设置坐标。",
     "locatedProgress": "已定位 {{located}} / {{total}}",
     "pointLocated": "已设置位置",
     "pointNeedsLocation": "待设置位置",
@@ -1421,9 +1420,8 @@
     "pointNameRequired": "请填写每个打卡点的名称。",
     "editContent": "编辑活动内容",
     "viewContent": "查看活动内容",
-    "allMapsLinked": "所有可编辑地图都已关联此活动。归档关联可在下方修改状态后恢复。",
+    "alreadyLinked": "请先取消当前地图关联，再关联新的地图合集。",
     "noEditableMaps": "暂无可编辑的地图，请先获取地图编辑权限。",
-    "allActivitiesLinked": "所有可关联活动都已投放到此地图。归档关联可在下方修改状态后恢复。",
-    "noAvailableActivities": "暂无可关联活动。请先在活动管理中创建或恢复活动。"
+    "noAvailableActivities": "暂无可关联活动。请先取消活动原有的地图关联，或创建活动。"
   }
 }
