@@ -206,6 +206,7 @@ try {
     if (shop && language === "zh" && width === 1440 && writable && !archived) {
       activity.points = [];
       await page.reload({ waitUntil: "networkidle" });
+      await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
       await page.getByRole("button", { name: t.addPoint, exact: true }).waitFor();
       assert.equal(await page.locator("[data-map-panel]").count(), 3, "empty check-in activities also use the three-column workspace");
       assert.equal(await page.getByLabel(t.pointName, { exact: true }).count(), 0);

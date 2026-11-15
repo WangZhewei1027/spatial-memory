@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { describeError, stripQuery } from "../lib/errors/describe";
 import { MAX_CLIENT_CONTEXT_BYTES, parseClientErrorReport } from "../lib/errors/ingest";
-import { chunkFile, cleanSourcePath, symbolicateStack, type PositionResolver } from "../lib/errors/stack-frames";
+import { chunkFile, cleanSourcePath, MAX_SYMBOLICATED_FILES, symbolicateStack, type PositionResolver } from "../lib/errors/stack-frames";
 
 test("thrown values keep stack, code, cause and digest within bounds", () => {
   const error = Object.assign(new Error("insert failed", { cause: new TypeError("socket closed") }), { code: "23505", digest: "123" });
@@ -73,4 +73,15 @@ test("browser stacks map to original positions and keep unresolved frames", asyn
   assert.equal(await symbolicateStack("Error\n    at native", resolve), null);
   assert.equal(await symbolicateStack("at https://example.test/_next/static/chunks/other.js:1:1", resolve), null);
   assert.equal(await symbolicateStack("at https://example.test/_next/static/chunks/main.js:1:1", async () => { throw new Error("bad map"); }), null);
+});
+
+test("one report loads a bounded number of distinct source maps", async () => {
+  const files = new Set<string>();
+  const resolve: PositionResolver = async (file) => { files.add(file); return { source: `src/${file}`, line: 1, column: 0 }; };
+  const stack = Array.from({ length: MAX_SYMBOLICATED_FILES + 4 }, (_, index) => `    at f (https://example.test/_next/static/chunks/c${index}.js:1:1)`)
+    .concat(["    at g (https://example.test/_next/static/chunks/c0.js:2:1)"]).join("\n");
+  const result = await symbolicateStack(stack, resolve);
+  assert.equal(files.size, MAX_SYMBOLICATED_FILES);
+  assert.match(result ?? "", /src\/chunks\/c0\.js:1:1/);
+  assert.match(result ?? "", new RegExp(`chunks/c${MAX_SYMBOLICATED_FILES}\\.js:1:1\\)`));
 });

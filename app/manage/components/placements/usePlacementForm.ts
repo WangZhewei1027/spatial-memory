@@ -138,7 +138,13 @@ export function usePlacementForm(placement: PlacementDto) {
       if (store.scopeKey !== scopeKey) return;
       store.upsertPlacements([updated]);
       // A later draft must survive an in-flight save from an unmounted editor.
-      if (scopeKey && store.placementDrafts[base.id] === draft) store.setPlacementDraft(scopeKey, base.id, null);
+      // It was edited on top of the values just saved, so it moves to the saved
+      // version instead of reporting this save as someone else's conflict.
+      const later = store.placementDrafts[base.id];
+      if (scopeKey && later === draft) store.setPlacementDraft(scopeKey, base.id, null);
+      else if (scopeKey && later && later.base.lock_version === base.lock_version) {
+        store.setPlacementDraft(scopeKey, base.id, sameValues(later.values, formValuesOf(updated)) ? null : { base: updated, values: later.values });
+      }
       setConflict(false);
     } catch (error) {
       if (isLockConflict(error)) setConflict(true);
