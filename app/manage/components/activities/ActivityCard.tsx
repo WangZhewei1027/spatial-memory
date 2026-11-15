@@ -19,6 +19,7 @@ export function ActivityCard({ activity, href }: { activity: ActivityDto; href: 
     <LibraryCard
       name={activity.name}
       href={href}
+      target="_blank"
       description={activity.description ?? undefined}
       thumbnail={<span className={`flex size-full items-center justify-center ${activity.state === "archived" ? "opacity-60" : ""}`}>
         {cover ? <Image src={cover} alt="" width={384} height={288} unoptimized className="size-full object-cover" />

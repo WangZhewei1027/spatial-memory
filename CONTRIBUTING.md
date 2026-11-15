@@ -92,6 +92,10 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 活动详情关联运行 `node scripts/test-activity-map-links.mjs`，使用上述本地服务与隔离 fixture，覆盖已有关联时禁用新增、仅开启/暂停、取消后关联新地图、恢复原地图的关联 ID、只读、中英文与明暗/窄屏。单地图迁移回归 `node --import tsx --conditions react-server scripts/test-activity-map-migration.ts` 使用本机 55439 的唯一临时数据库，验证多地图冲突中止、旧草稿转暂停、唯一约束、来源记录保留、回滚和重复迁移；CI 运行同一脚本。
 
+活动独立编辑器运行 `node scripts/test-activity-editor.mjs`，需要上述本地 Next 服务（同样支持 `MANAGE_TEST_ORIGIN`），API 与 viewer 均使用隔离 fixture。六组语言、主题、宽度与权限组合分别运行弹幕和店铺打卡，共十二个场景，覆盖中英文、明暗主题、1440/1100/390/320px、只读与归档。验证活动卡片打开新标签页且原列表保留、共享顶栏保存与三栏/窄屏布局、切换页签及隐藏记录时保留草稿和地图、冲突保留输入与显式重载；弹幕验证默认 50 字、地图坐标和范围保存，店铺验证列表/地图选点打开检视器、点位与奖励图片、打卡距离、点位新增/移除/归档/恢复、隐藏检视器中的无效输入，以及从空活动添加首个点位。设置 `ACTIVITY_EDITOR_SCREENSHOTS` 保存截图；截图中的地图为 fixture，不能作为真实 Cesium 影像验收。该脚本不属于无需运行服务的默认测试组。
+
+留言规则回归由默认测试中的 `scripts/test-activity-input.ts` 验证缺省值为 50、显式配置保留及 1–500 的配置边界；`scripts/test-activities.ts` 使用上述专用测试库验证新活动和公开接口返回默认值 50，并验证默认规则接受 50 字、拒绝 51 字。
+
 地图设置弹窗运行 `node scripts/test-map-settings.mjs`，使用上述本地服务及隔离 API/viewer fixture，覆盖保存/重新打开、放弃草稿、失败重试、并发冲突重载、只读/归档、中英文、明暗主题与 320px 窄屏，并检查地图不重挂载或改变尺寸。设置 `MAP_SETTINGS_SCREENSHOTS` 保存截图。迁移回归 `scripts/test-collection-config-migration.ts` 只允许本机 55439 的专用 PostgreSQL 实例，以唯一临时数据库验证旧团队值复制、地图隔离、新地图默认值、约束、回滚及迁移幂等；CI 运行同一脚本。
 
 ## CI 与发布

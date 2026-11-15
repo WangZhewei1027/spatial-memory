@@ -77,7 +77,7 @@ function UsageRow({ entry }: { entry: AssetUsageEntry }) {
     <li className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
       <div className="min-w-0 flex-1 basis-48">
         {entry.href ? (
-          <Link href={entry.href} className="text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+          <Link href={entry.href} target={entry.kind === "activity" ? "_blank" : undefined} rel={entry.kind === "activity" ? "noopener noreferrer" : undefined} className="text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
             {entry.targetName}
           </Link>
         ) : (

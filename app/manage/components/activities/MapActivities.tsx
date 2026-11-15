@@ -123,7 +123,7 @@ function MapActivityRow({ placement, activity, canEdit, highlighted, onReload }:
           </SelectTrigger>
           <SelectContent>{["active", "paused"].map((status) => <SelectItem key={status} value={status}>{t(`activities.mapStates.${status}`)}</SelectItem>)}</SelectContent>
         </Select>
-        <Button variant="outline" asChild className="min-h-10"><Link href={teamHref(`/manage/activities/${placement.activity_id}`, placement.organization_id)} aria-label={`${t(activity?.capabilities.can_edit ? "activities.editContent" : "activities.viewContent")} · ${placement.activity_name}`}>{t(activity?.capabilities.can_edit ? "common.edit" : "activities.view")}</Link></Button>
+        <Button variant="outline" asChild className="min-h-10"><Link href={teamHref(`/manage/activities/${placement.activity_id}`, placement.organization_id)} target="_blank" rel="noopener noreferrer" aria-label={`${t(activity?.capabilities.can_edit ? "activities.editContent" : "activities.viewContent")} · ${placement.activity_name}`}>{t(activity?.capabilities.can_edit ? "common.edit" : "activities.view")}</Link></Button>
         {canEdit && <Button variant="ghost" className="col-span-2 min-h-10 sm:col-span-1" disabled={disabled} onClick={() => void save({ status: "archived", expectedLockVersion: current.lock_version })}>{t(pending && unlinking ? "activities.unlinking" : "activities.unlink")}</Button>}
       </div>
       {error != null && <div className="mt-3 space-y-2">

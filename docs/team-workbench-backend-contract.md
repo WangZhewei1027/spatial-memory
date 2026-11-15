@@ -60,6 +60,8 @@ Focused checks: `test-single-content-model-migration.ts`, `test-mutable-assets-m
 
 Teams own independent `shop_checkin` and `danmaku` activities. A shop check-in activity contains multiple points with fixed locations. An activity has at most one non-archived map association. Active and paused links both occupy that slot; only unlinking (`archived`) releases it. New links default to paused; draft is no longer accepted. Legacy multi-map associations remain readable so owners can resolve migration conflicts; old drafts display as paused, while writes reject draft. Activity DTOs include `has_map_link` (false when unlinked). Placements contain only map association and status; they do not own point locations, rule overrides or point enablement. Point images and reward images reference ordinary image Assets, appear in asset usage, and keep existing storage retention semantics.
 
+Danmaku `config.maxLength` defaults to 50 for new activities and configurations without an explicit valid limit. The editor, effective configuration and public submission validation share `DEFAULT_DANMAKU_MAX_LENGTH` from `lib/activities/defaults.ts`. Explicit integer limits from 1 through 500 remain valid and are preserved; 500 is the configuration ceiling, not the default. Public activity responses expose the effective limit, and submission validation enforces that activity's limit.
+
 | Route | Behavior |
 | --- | --- |
 | `GET/POST /api/organizations/[id]/activities` | List/create team activities without selecting a map |

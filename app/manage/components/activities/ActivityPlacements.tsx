@@ -14,7 +14,7 @@ import { useActivityQuery } from "./useActivityQuery";
 import { ActivityFailure } from "./ActivityFeedback";
 import { isLockConflict } from "../../lib/content-api";
 
-export function ActivityPlacements({ activity }: { activity: ActivityDto }) {
+export function ActivityPlacements({ activity, compact }: { activity: ActivityDto; compact?: boolean }) {
   const { t } = useTranslation();
   const load = useCallback((signal: AbortSignal) => activityApi.placements(activity.id, signal), [activity.id]);
   const query = useActivityQuery(activity.id, load);
@@ -45,8 +45,8 @@ export function ActivityPlacements({ activity }: { activity: ActivityDto }) {
 
   return <section ref={section} className="scroll-mt-20 space-y-4">
     {!editing && <>
-      <div className="flex flex-wrap items-center justify-between gap-2"><Text as="h2" variant="headingMd">{t("activities.placements")}</Text>{canEdit && <Button disabled={!choicesReady || noMapChoices || !!unlinking} onClick={() => setEditing("new")}>{t("activities.place")}</Button>}</div>
-      <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementsHint")}</Text>
+      <div className="flex flex-wrap items-center justify-between gap-2">{!compact && <Text as="h2" variant="headingMd">{t("activities.placements")}</Text>}{canEdit && <Button variant={compact ? "outline" : "default"} className={compact ? "w-full" : undefined} disabled={!choicesReady || noMapChoices || !!unlinking} onClick={() => setEditing("new")}>{t("activities.place")}</Button>}</div>
+      {!compact && <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementsHint")}</Text>}
       {canEdit && choicesReady && noMapChoices && <Text as="p" variant="bodySm" tone="subdued">{t(alreadyLinked ? "activities.alreadyLinked" : collections.collections.length ? "activities.noEditableMaps" : "activities.noMaps")}</Text>}
       {canEdit && collections.error && <ContentErrorState onRetry={collections.reload} />}
       <ActivityFailure error={error} onReload={close} />
@@ -58,6 +58,6 @@ export function ActivityPlacements({ activity }: { activity: ActivityDto }) {
       : query.loading ? <ContentListSkeleton label={t("activities.loading")} />
       : query.error ? <ContentErrorState onRetry={query.reload} />
       : !linkedPlacements.length ? <ContentEmptyState title={t("activities.noPlacements")} description={t("activities.noPlacementsHint")} />
-      : <div className="space-y-3">{linkedPlacements.map((placement) => <Card key={placement.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0 space-y-2"><Text as="h3" variant="bodyMd" fontWeight="semibold" breakWord>{placement.workspace_name}</Text><Badge variant="outline">{t(`activities.mapStates.${placement.status}`)}</Badge></div><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!!unlinking} onClick={() => setEditing(placement)}>{t(placement.capabilities.can_edit ? "activities.editPlacement" : "activities.viewPlacement")}</Button>{canEdit && placement.capabilities.can_edit && <Button variant="ghost" disabled={!!unlinking || isLockConflict(error)} onClick={() => void unlink(placement)}>{t(unlinking === placement.id ? "activities.unlinking" : "activities.unlink")}</Button>}</div></Card>)}</div>}
+      : <div className="space-y-3">{linkedPlacements.map((placement) => <Card key={placement.id} className={compact ? "flex flex-wrap items-center justify-between gap-3 rounded-none border-0 border-t bg-transparent pt-4 shadow-none" : "flex flex-wrap items-center justify-between gap-3 p-4"}><div className="min-w-0 space-y-2"><Text as="h3" variant="bodyMd" fontWeight="semibold" breakWord>{placement.workspace_name}</Text><Badge variant="outline">{t(`activities.mapStates.${placement.status}`)}</Badge></div><div className="flex min-w-0 max-w-full flex-wrap gap-2"><Button variant="outline" className={compact ? "h-auto min-h-9 max-w-full whitespace-normal" : undefined} disabled={!!unlinking} onClick={() => setEditing(placement)}>{t(placement.capabilities.can_edit ? "activities.editPlacement" : "activities.viewPlacement")}</Button>{canEdit && placement.capabilities.can_edit && <Button variant="ghost" disabled={!!unlinking || isLockConflict(error)} onClick={() => void unlink(placement)}>{t(unlinking === placement.id ? "activities.unlinking" : "activities.unlink")}</Button>}</div></Card>)}</div>}
   </section>;
 }

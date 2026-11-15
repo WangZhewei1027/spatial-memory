@@ -11,7 +11,7 @@ import { isFullWindowEditorPath } from "@/app/manage/constants";
 
 export function Navbar() {
   const pathname = usePathname();
-  // Map and scene editors have their own full-window toolbars.
+  // Map, scene and activity editors have their own full-window toolbars.
   if (isFullWindowEditorPath(pathname)) return null;
 
   return (

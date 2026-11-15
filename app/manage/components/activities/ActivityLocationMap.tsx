@@ -23,6 +23,7 @@ interface ActivityLocationMapProps {
   center?: { lat: number; lng: number } | null;
   disabled: boolean;
   title: string;
+  fill?: boolean;
 }
 
 type MapStatus = "loading" | "ready" | "unavailable";
@@ -181,7 +182,7 @@ export function ActivityLocationMap(props: ActivityLocationMapProps) {
   };
 
   return (
-    <div role="region" aria-label={title} aria-busy={status === "loading"} className="relative h-80 min-w-0 overflow-hidden rounded-lg border bg-muted sm:h-96">
+    <div role="region" aria-label={title} aria-busy={status === "loading"} className={`relative min-w-0 overflow-hidden bg-muted ${props.fill ? "h-full" : "h-80 rounded-lg border sm:h-96"}`}>
       <ViewerFrame key={attempt} iframeRef={iframeRef} title={title} />
       {status !== "ready" && (
         <div role={status === "unavailable" ? "alert" : "status"} className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background p-6 text-center">

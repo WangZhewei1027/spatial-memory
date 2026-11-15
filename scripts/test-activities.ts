@@ -34,6 +34,7 @@ async function main() {
     await seedServicesFixture(client, f);
     const [editor, viewer, foreign] = await Promise.all([f.users.editor, f.users.viewer, f.users.foreign].map((id) => loadActor(db, id)));
     const standalone = await service.createActivity(await loadActor(db, f.users.owner), f.organizations.solo, { name: "No map needed", type: "danmaku" });
+    assert.equal(standalone.config.maxLength, 50, "new danmaku activities default to 50 characters");
     assert.equal(standalone.points.length, 0);
     auth.setStubSessionUser({ id: f.users.owner, email: null, name: null, emailVerified: false });
     const deleteOrg = await orgRoute.DELETE(new Request("http://test/api/organizations/x", { method: "DELETE" }), { params: Promise.resolve({ id: f.organizations.solo }) });
@@ -190,6 +191,13 @@ async function main() {
     await reject(() => runtime.submitActivityRecord({ ...checkin, pointId: second.id }), "IDEMPOTENCY_CONFLICT");
     checks++;
 
+    const defaultChat = await service.createActivity(editor, f.organizations.team, { name: "Default message limit", type: "danmaku" });
+    const defaultChatPlacement = await service.createActivityPlacement(editor, defaultChat.id, { workspaceId: f.workspaces.a, status: "active" });
+    assert.equal((await runtime.publicActivities({ workspaceId: f.workspaces.a, organizationId: f.organizations.team })).find((row) => row.activity_id === defaultChat.id)?.config.maxLength, 50);
+    const defaultSubmission: Submission = { placementId: defaultChatPlacement.id, kind: "danmaku", pointId: null, participantId: participant, content: "字".repeat(50), location: position, idempotencyKey: randomUUID() };
+    await runtime.submitActivityRecord(defaultSubmission);
+    await reject(() => runtime.submitActivityRecord({ ...defaultSubmission, content: "字".repeat(51), idempotencyKey: randomUUID() }), "VALIDATION_FAILED");
+    await service.updateActivityPlacement(editor, defaultChatPlacement.id, { expectedLockVersion: defaultChatPlacement.lock_version, status: "paused" });
     let chat = await service.createActivity(editor, f.organizations.team, { name: "Messages", type: "danmaku", config: { maxLength: 100 }, location: position, radiusMeters: 10 });
     const chatA = await service.createActivityPlacement(editor, chat.id, { workspaceId: f.workspaces.a, status: "active" });
     await service.updateActivityPlacement(editor, chatA.id, { expectedLockVersion: chatA.lock_version, status: "archived" });

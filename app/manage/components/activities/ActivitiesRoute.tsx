@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import type { ActivityType } from "@/lib/activities/contracts";
@@ -31,7 +31,6 @@ export function ActivitiesRoute() {
 
 function ActivityLibrary({ organizationId, canCreate }: { organizationId: string; canCreate: boolean }) {
   const { t } = useTranslation();
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [state, setState] = useState<CollectionState>("active");
   const q = useLibrarySearch(search);
@@ -51,7 +50,10 @@ function ActivityLibrary({ organizationId, canCreate }: { organizationId: string
     intent.current ??= crypto.randomUUID();
     try {
       const activity = await activityApi.create(organizationId, { name: name.trim(), type, idempotencyKey: intent.current });
-      router.push(teamHref(`/manage/activities/${activity.id}`, organizationId));
+      setCreating(false); setName(""); intent.current = null; list.reload();
+      toast.success(t("activities.created", { name: activity.name }), {
+        action: { label: t("activities.editContent"), onClick: () => window.open(teamHref(`/manage/activities/${activity.id}`, organizationId), "_blank", "noopener,noreferrer") },
+      });
     } catch (failure) { setError(failure); } finally { setPending(false); }
   };
   return (
