@@ -73,6 +73,7 @@ try {
     context.on("page", page => page.on("pageerror", error => errors.push(error.message)));
     const library = await context.newPage();
     await library.goto(`${origin}/manage/activities?organizationId=${team}`, { waitUntil: "networkidle" });
+    await library.addStyleTag({ content: "nextjs-portal{display:none!important}" });
     const link = library.getByRole("link", { name: activity.name, exact: true });
     await link.waitFor();
     assert.equal(await link.getAttribute("target"), "_blank");
@@ -81,6 +82,7 @@ try {
     const page = await popup;
     await page.getByLabel(t.name, { exact: true }).waitFor();
     await page.waitForLoadState("networkidle");
+    await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
     await page.evaluate(theme => document.documentElement.classList.toggle("dark", theme === "dark"), theme);
     assert.ok(new URL(library.url()).pathname === "/manage/activities", "the library remains open");
     assert.equal(await page.locator(".console-sidebar, .app-navbar").count(), 0, "editor owns its whole window");

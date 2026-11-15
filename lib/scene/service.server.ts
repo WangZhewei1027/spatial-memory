@@ -210,6 +210,8 @@ export async function resolveSceneResources(exec: Executor, refs: { resource_ali
       resource_alias: ref.resource_alias, asset_id: ref.asset_id, asset_name: identity?.name ?? null,
       file_type: asset?.file_type ?? "model", asset_state: identity?.state === "archived" ? "archived" : "active",
       asset_lock_version: asset?.lock_version ?? 0, url: primaryResource(asset)?.url ?? null,
+      thumbnail_url: asset?.resources.find(resource => resource.role === "thumbnail")?.url
+        ?? (asset?.file_type === "image" || asset?.file_type === "anchor" ? primaryResource(asset)?.url ?? null : null),
       animations: asset?.payload.kind === "model" ? asset.payload.animations ?? [] : [],
     };
   });

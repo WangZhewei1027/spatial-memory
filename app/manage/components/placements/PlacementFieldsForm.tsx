@@ -37,8 +37,8 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
   const anchorKnown = !values.anchorId || anchors.some((anchor) => anchor.id === values.anchorId);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-3">
+    <div className="space-y-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,6rem)] gap-2">
       <div className="space-y-1">
         <FieldLabel htmlFor={`${id}-name`}>{tx("contentModel.integration.map.field.name")}</FieldLabel>
         <Input id={`${id}-name`} value={values.name} disabled={!editable} placeholder={tx("contentModel.integration.map.field.namePlaceholder")} onChange={(event) => onChange({ name: event.target.value })} />
@@ -58,14 +58,14 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
       </div>
       </div>
 
-      <PlacementLocationFields
+      <div className="border-t pt-2"><PlacementLocationFields
         longitude={values.longitude}
         latitude={values.latitude}
         altitude={values.altitude}
         disabled={!editable}
         onChange={onChange}
         invalid={problem === "coordinates"}
-      />
+      /></div>
       {problem === "coordinates" && <p role="alert" className="text-xs text-destructive">{tx("contentModel.integration.map.problem.coordinates")}</p>}
 
       {showAnchor && (

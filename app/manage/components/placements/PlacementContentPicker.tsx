@@ -18,6 +18,7 @@ import { VideoUploadHint } from "../upload/VideoUploadHint";
 import { SourcePicker } from "./SourcePicker";
 import { usePlacementMap } from "./PlacementMapContext";
 import type { PlacementCreation } from "./usePlacementCreation";
+import workbench from "./MapWorkbench.module.css";
 
 export function PlacementContentPicker({ draft, open, onOpenChange, onReturnFocus }: { draft: PlacementCreation; open: boolean; onOpenChange: (open: boolean) => void; onReturnFocus: () => void }) {
   const { tx } = usePlacementMap();
@@ -26,7 +27,7 @@ export function PlacementContentPicker({ draft, open, onOpenChange, onReturnFocu
   useEffect(() => { if (open) setMode(draft.mode); }, [open, draft.mode]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(85dvh,44rem)] max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl" aria-describedby={undefined} onCloseAutoFocus={(event) => { event.preventDefault(); onReturnFocus(); }}>
+      <DialogContent className={`${workbench.controls} flex h-[min(85dvh,44rem)] max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl`} aria-describedby={undefined} onCloseAutoFocus={(event) => { event.preventDefault(); onReturnFocus(); }}>
         <DialogHeader className="shrink-0 border-b p-5 pr-12">
           <DialogTitle>{tx("contentModel.integration.map.create.chooseContent")}</DialogTitle>
         </DialogHeader>

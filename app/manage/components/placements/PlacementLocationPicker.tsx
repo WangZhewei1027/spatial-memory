@@ -25,12 +25,12 @@ export function PlacementLocationPicker({ owner, onApply, onReturnFocus }: { own
   };
 
   return (
-    <section aria-label={tx("contentModel.integration.map.field.pickOnMap")} className="pointer-events-auto absolute bottom-10 left-1/2 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 space-y-3 rounded-lg bg-background p-3 shadow-lg" data-location-picker onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); finish(false); } }}>
-      <div className="h-10" role="status" aria-live="polite">
-        <Text as="p" variant="bodySm" className="truncate tabular-nums">{point ? `${formatCoordinate(point.longitude)}, ${formatCoordinate(point.latitude)}` : tx("contentModel.integration.map.field.picking")}</Text>
+    <section aria-label={tx("contentModel.integration.map.field.pickOnMap")} className="pointer-events-auto absolute bottom-10 left-1/2 flex w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 items-center gap-2 rounded-md bg-background px-2 py-1 shadow-lg" data-location-picker onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); finish(false); } }}>
+      <div className="h-9 min-w-0 flex-1" role="status" aria-live="polite">
+        <Text as="p" variant="bodyXs" truncate title={point ? `${formatCoordinate(point.longitude)}, ${formatCoordinate(point.latitude)}` : undefined} className="tabular-nums">{point ? `${formatCoordinate(point.longitude)}, ${formatCoordinate(point.latitude)}` : tx("contentModel.integration.map.field.picking")}</Text>
         <Text as="p" variant="bodyXs" tone="subdued" className="tabular-nums">{point ? tx("contentModel.integration.map.field.heightSummary", { altitude: formatCoordinate(point.height, 2) }) : "\u00a0"}</Text>
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex shrink-0 items-center gap-1">
         <Button ref={cancel} type="button" variant="outline" size="sm" onClick={() => finish(false)}>{tx("contentModel.integration.map.action.cancel")}</Button>
         <Button type="button" size="sm" disabled={!point} onClick={() => finish(true)}>{tx("contentModel.integration.map.field.useClicked")}</Button>
       </div>

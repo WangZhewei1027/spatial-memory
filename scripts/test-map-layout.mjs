@@ -70,6 +70,67 @@ async function verifyLayout(page, label, width) {
   console.log(`PASS map layout ${label}: stable placeholder, panels and header`);
 }
 
+async function verifyResize(page, label, width, height) {
+  const left = page.locator('[data-map-resizer="list"]');
+  const right = page.locator('[data-map-resizer="sidebar"]');
+  if (width < 996) {
+    assert.equal(await left.isVisible(), false);
+    assert.equal(await right.isVisible(), false);
+    return;
+  }
+  const panel = name => page.locator(`[data-map-panel="${name}"]`);
+  const size = async name => (await panel(name).boundingBox()).width;
+  const drag = async (handle, delta) => {
+    const box = await handle.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + delta, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+  };
+  const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1, `${message}: ${actual} / ${expected}`);
+  const iframe = await page.locator('iframe[title="3D Viewer"]').elementHandle();
+  const initial = { list: await size("list"), sidebar: await size("sidebar"), viewer: await size("viewer") };
+  assert.ok(initial.list >= 272 && initial.list <= 320, "the list has a wider desktop default");
+  await drag(left, 48);
+  near(await size("list"), initial.list + 48, "left divider grows the list");
+  near(await size("sidebar"), initial.sidebar, "left drag preserves the opposite inspector");
+  near(await size("viewer"), initial.viewer - 48, "the map uses remaining space");
+  await drag(right, -32);
+  near(await size("sidebar"), initial.sidebar + 32, "right divider grows the inspector");
+  near(await size("list"), initial.list + 48, "right drag preserves the list");
+  assert.equal(await iframe.evaluate(el => el === document.querySelector('iframe[title="3D Viewer"]')), true, "resizing keeps the map mounted");
+  await right.focus(); await right.press("ArrowRight");
+  near(await size("sidebar"), initial.sidebar + 8, "keyboard arrows move the right divider in screen direction");
+  await right.press("ArrowLeft");
+  near(await size("sidebar"), initial.sidebar + 32, "keyboard resizing works in both directions");
+  if (captureDir) await page.screenshot({ path: `${captureDir}/resized-${label.replaceAll(" ", "-")}.png` });
+  // Crossing the iframe must not lose the gesture; both extremes preserve useful panels.
+  await drag(left, 1500);
+  assert.ok(await size("viewer") >= 319 && await size("list") <= 480);
+  await drag(right, -1500);
+  assert.ok(await size("viewer") >= 319 && await size("sidebar") <= 480);
+  await left.focus(); await left.press("Home");
+  near(await size("list"), 240, "left minimum remains usable");
+  await right.focus(); await right.press("Home");
+  near(await size("sidebar"), 320, "inspector minimum protects its fields");
+  await left.press("End"); await right.press("End");
+  const preferred = { list: await size("list"), sidebar: await size("sidebar") };
+  await page.setViewportSize({ width: 996, height });
+  assert.ok(await size("viewer") >= 319 && await size("list") >= 239 && await size("sidebar") >= 319, "smaller desktop clamps widths without squeezing the map away");
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.setViewportSize({ width: 390, height });
+  assert.equal(await left.isVisible(), false);
+  assert.equal(await right.isVisible(), false);
+  assert.ok(await size("viewer") >= 358);
+  await page.setViewportSize({ width, height });
+  near(await size("list"), preferred.list, "returning to desktop restores the chosen list width");
+  near(await size("sidebar"), preferred.sidebar, "returning to desktop restores the chosen inspector width");
+  await left.dblclick(); await right.focus(); await right.press("Enter");
+  near(await size("list"), initial.list, "double-click resets the list");
+  near(await size("sidebar"), initial.sidebar, "Enter resets the inspector");
+  console.log(`PASS map resizing ${label}: pointer, keyboard, bounds, responsive restore and mounted viewer`);
+}
+
 const browser = await chromium.launch();
 try {
   for (const [width, height, language, theme] of [
@@ -106,6 +167,7 @@ try {
     await page.goto(mapUrl, { waitUntil: "domcontentloaded" });
     await verifyLayout(page, `${label} entry`, width);
     if (captureDir) await page.screenshot({ path: `${captureDir}/${width}-${height}-${language}-${theme}.png` });
+    await verifyResize(page, label, width, height);
     await page.reload({ waitUntil: "domcontentloaded" });
     await verifyLayout(page, `${label} refresh`, width);
 

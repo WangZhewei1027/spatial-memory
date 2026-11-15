@@ -72,7 +72,7 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <PlacementListHeader shownCount={visible.length} totalCount={placements.length} fileTypes={fileTypes} selectMode={selectMode} onToggleSelectMode={toggleSelectMode} />
-      <Tabs value={tab} onValueChange={(value) => usePlacementStore.getState().setTab(value as PlacementListTab)} className="px-3 pt-2">
+      <Tabs value={tab} onValueChange={(value) => usePlacementStore.getState().setTab(value as PlacementListTab)} className="px-2 pt-1.5">
         <TabsList className="w-full">
           {TABS.map((key) => (
             <TabsTrigger key={key} value={key} className="flex-1 text-xs">

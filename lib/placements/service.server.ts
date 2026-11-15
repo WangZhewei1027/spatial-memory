@@ -141,6 +141,7 @@ export async function getPlacementContent(actor: Actor, placementId: string, vie
       asset_id: r.asset_id,
       file_type: r.file_type,
       url: r.url,
+      thumbnail_url: r.thumbnail_url ?? null,
       animations: r.animations,
     })),
   };

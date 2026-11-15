@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { WorkspaceQrButton } from "@/components/workspace-qr-button";
 import { use, useMemo, type ReactNode } from "react";
 import { CollectionSettingsDialog } from "./CollectionSettingsDialog";
+import workbench from "../../components/placements/MapWorkbench.module.css";
 
 const TEXTS: IntegrationTexts = {
   ...ERROR_TEXTS,
@@ -51,7 +52,7 @@ function CollectionDetailView({ id }: { id: string }) {
 
   const archived = !!collection?.archived_at;
   const frame = (body: ReactNode) => (
-    <main className="flex h-dvh flex-col overflow-hidden bg-muted/40">
+    <main className={`${workbench.workspace} flex h-dvh flex-col overflow-hidden bg-muted/40`}>
       <CollectionHeaderBar
         name={collection?.name ?? null}
         archived={archived}

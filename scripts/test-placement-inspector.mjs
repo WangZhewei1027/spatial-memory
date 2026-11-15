@@ -1,12 +1,16 @@
 /** Inspector tasks, drafts, explicit map locations and writes with isolated API/viewer fixtures. */
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
 
 const origin = process.env.MANAGE_TEST_ORIGIN ?? "http://localhost:3000";
 assert.ok(["localhost", "127.0.0.1"].includes(new URL(origin).hostname));
 const teamId = "11111111-1111-4111-8111-111111111111", mapId = "22222222-2222-4222-8222-222222222222";
 const capture = process.env.PLACEMENT_INSPECTOR_SCREENSHOTS;
+// The disabled global theme switch lets Tailwind omit .dark. Exercise the
+// existing source tokens explicitly so dark screenshots test actual colors.
+const darkTheme = (await readFile(new URL("../app/globals.css", import.meta.url), "utf8")).match(/\.dark\s*\{[^}]+\}/)?.[0];
+assert.ok(darkTheme);
 if (capture) await mkdir(capture, { recursive: true });
 const browser = await chromium.launch();
 try {
@@ -36,7 +40,9 @@ try {
       location: { longitude: 121.123456, latitude: 31.123456, altitude: 1 }, anchor_id: null, render_config: {}, status: "active", lock_version: 1,
       tag_ids: [], public_id: id, created_by: null, updated_by: null, created_at: "2026-11-15T00:00:00Z", updated_at: "2026-11-15T00:00:00Z",
       capabilities: { can_read: true, can_edit: writable, can_copy: writable, can_archive: writable } });
-    const placements = [makePlacement("placement-image", assets[0], "Image placement"), makePlacement("placement-text", assets[1], "Text placement")];
+    const placements = [makePlacement("placement-image", assets[0], "Image placement"), makePlacement("placement-text", assets[1], "Text placement"),
+      makePlacement("placement-model", assets[2], "Model placement"), makePlacement("placement-video", assets[3], "Video placement"), makePlacement("placement-no-thumbnail", assets[4], "No thumbnail"),
+      { ...makePlacement("placement-scene", assets[2], "Scene placement"), target: { kind: "scene", scene_id: scenes[0].id, scene_name: scenes[0].name, scene_state: "active" } }];
     const writes = [];
     let failure = 0;
     await context.route("**/api/**", async (route) => {
@@ -74,7 +80,11 @@ try {
       else if (path.startsWith("/api/assets/")) body = { data: assets.find((item) => path === `/api/assets/${item.id}`) };
       else if (path.startsWith("/api/placements/") && path.endsWith("/content")) {
         const p = placements.find((item) => path === `/api/placements/${item.id}/content`), a = assets.find((item) => item.id === p?.target.asset_id);
-        assert.ok(a); body = { data: { kind: "asset", placement_id: p.id, public_id: p.id, asset_id: a.id, asset_lock_version: 1, file_type: a.file_type, payload: a.payload, resources: [] } };
+        assert.ok(p);
+        if (p.target.kind === "scene") body = { data: { kind: "scene", placement_id: p.id, public_id: p.id, scene_id: p.target.scene_id, name: p.target.scene_name,
+          document: { schemaVersion: 6, content: { kind: "composition", units: "meters", durationSeconds: 10, loop: false, assets: {}, instances: [] } },
+          resources: [{ resource_alias: "model", asset_id: assets[2].id, file_type: "model", url: assets[2].resources[0].url, thumbnail_url: assets[2].resources[1].url, animations: [] }] } };
+        else { assert.ok(a); body = { data: { kind: "asset", placement_id: p.id, public_id: p.id, asset_id: a.id, asset_lock_version: 1, file_type: a.file_type, payload: a.payload, resources: a.resources } }; }
       } else if (path === "/api/tags") body = { tags: [] };
       await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
     });
@@ -83,8 +93,16 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${origin}/manage/collections/${mapId}?organizationId=${teamId}`, { waitUntil: "networkidle" });
     await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
-    await page.evaluate((theme) => document.documentElement.classList.toggle("dark", theme === "dark"), theme);
+    if (theme === "dark") await page.addStyleTag({ content: darkTheme });
+    await page.evaluate((theme) => {
+      const root = document.documentElement, dark = theme === "dark";
+      const apply = () => { if (root.classList.contains("dark") !== dark) root.classList.toggle("dark", dark); };
+      apply();
+      // Keep the requested test theme when Next refreshes root font classes.
+      new MutationObserver(apply).observe(root, { attributes: true, attributeFilter: ["class"] });
+    }, theme);
     assert.equal(await page.evaluate(() => document.documentElement.classList.contains("dark")), theme === "dark");
+    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--background").trim()), theme === "dark" ? "0 0% 3.9%" : "0 0% 100%");
     const iframe = await page.locator('iframe[title="3D Viewer"]').elementHandle();
     const mapBounds = await iframe.boundingBox();
     const list = page.locator('[data-map-panel="list"]');
@@ -92,13 +110,45 @@ try {
     const create = page.locator('[data-placement-create]:visible');
     const showList = async () => { if (width < 996 && !await list.isVisible()) await page.getByRole("button", { name: t("投放", "Placements"), exact: true }).click(); };
     const select = async (id) => { await showList(); await page.locator(`#placement-card-${id}`).click(); await editor.waitFor(); };
+    await showList();
+    for (const [id, index] of [["model", 2], ["video", 3], ["scene", 2]]) {
+      const thumbnail = page.locator(`#placement-card-placement-${id} img`);
+      await thumbnail.waitFor();
+      assert.equal(await thumbnail.getAttribute("src"), `${origin}/fixtures/source-${index}-thumbnail.png`);
+      await thumbnail.evaluate(img => img.decode());
+      assert.ok(await thumbnail.evaluate(img => img.naturalWidth > 0), "list thumbnails decode before selection");
+    }
+    assert.equal(await page.locator("#placement-card-placement-no-thumbnail img").count(), 0, "missing model previews retain an icon");
+    const checkActionBar = async panel => {
+      const bar = panel.locator("[data-inspector-actions]");
+      const box = await bar.boundingBox();
+      assert.ok(box.height <= 46, "footer is one compact row");
+      const controls = await bar.locator("button").all();
+      const first = await controls[0].boundingBox();
+      for (const button of controls) {
+        const bounds = await button.boundingBox();
+        assert.equal(bounds.y, first.y, "footer actions share one line");
+        assert.ok(bounds.x >= box.x && bounds.x + bounds.width <= box.x + box.width, "actions fit at the minimum width");
+      }
+      assert.ok(await bar.evaluate(el => el.scrollWidth <= el.clientWidth));
+    };
+    const checkControlWidths = async panel => assert.deepEqual(await panel.evaluate(el => [...el.querySelectorAll("button")].filter(button => button.offsetWidth && button.scrollWidth > button.clientWidth + 1).map(button => button.getAttribute("aria-label") || button.textContent)), [], "compact controls must fit their labels");
+    await checkControlWidths(list);
     const name = editor.getByLabel(t("投放名称", "Placement name"), { exact: true });
     const save = editor.getByRole("button", { name: t("保存投放", "Save placement"), exact: true });
+    await select("placement-model");
+    const identity = editor.locator("[data-inspector-identity]");
+    assert.ok((await identity.boundingBox()).height <= 58, "object identity and source share one compact header");
+    assert.equal((await identity.getByRole("img").boundingBox()).width, 40);
+    assert.equal(await editor.locator("[data-inspector-scroll] img").count(), 0, "large previews stay out of the fields");
     await select("placement-image");
     assert.equal(await create.count(), 0, "create and inspect are mutually exclusive");
     const bounds = await editor.boundingBox(), fieldBounds = await name.boundingBox();
+    assert.equal(await name.evaluate(el => getComputedStyle(el).height), width < 640 ? "32px" : "28px");
+    if (writable) await checkActionBar(editor);
+    await checkControlWidths(editor);
     assert.ok(fieldBounds.y >= bounds.y && fieldBounds.y + fieldBounds.height <= bounds.y + bounds.height, "name is in the inspector's initial viewport");
-    assert.equal(await editor.locator("img").count(), 0, "large previews aren't mounted in the inspector");
+    assert.equal(await editor.locator("[data-inspector-scroll] img").count(), 0, "large previews aren't mounted in the field area");
     assert.ok(await editor.evaluate((el) => el.scrollWidth <= el.clientWidth));
     await editor.getByRole("button", { name: t("预览", "Preview"), exact: true }).click();
     await page.getByRole("dialog").waitFor(); await page.keyboard.press("Escape");
@@ -136,6 +186,8 @@ try {
         await create.waitFor(); assert.equal(await editor.count(), 0);
       };
       await startCreate();
+      await checkActionBar(create);
+      await checkControlWidths(create);
       await create.getByRole("button", { name: t("选择投放内容", "Choose content"), exact: true }).click();
       let dialog = page.getByRole("dialog");
       for (const index of [2, 3]) {
@@ -155,6 +207,10 @@ try {
       const category = dialog.getByRole("combobox", { name: t("内容类别", "Content category"), exact: true });
       const toolbarBounds = await dialog.locator("[data-source-toolbar]").boundingBox();
       const searchBounds = await search.boundingBox();
+      const searchIcon = await dialog.locator("[data-source-toolbar] svg").first().boundingBox();
+      const textInset = await search.evaluate(input => parseFloat(getComputedStyle(input).paddingInlineStart));
+      assert.ok(searchBounds.x + textInset >= searchIcon.x + searchIcon.width + 4, "search text clears its leading icon");
+      assert.ok(Math.abs(searchBounds.y + searchBounds.height / 2 - searchIcon.y - searchIcon.height / 2) < 1, "search icon stays vertically centered at both control heights");
       const panelBounds = await dialog.locator('[data-slot="tabs-content"][data-state="active"]').boundingBox();
       const tabsBounds = await dialog.getByRole("tablist").boundingBox();
       assert.ok(searchBounds.y - panelBounds.y >= 4, "search focus ring fits inside the clipped panel");
@@ -232,7 +288,7 @@ try {
       const altitude = location.getByLabel(t("高度 (m)", "Height (m)"), { exact: true });
       const pick = location.getByRole("button", { name: t("地图选点", "Pick on map"), exact: true });
       const mapPicker = page.locator('[data-map-panel="viewer"] [data-location-picker]');
-      const applyPoint = mapPicker.getByRole("button", { name: t("使用此位置", "Use this location"), exact: true });
+      const applyPoint = mapPicker.getByRole("button", { name: t("确认位置", "Confirm"), exact: true });
       const cancelPoint = mapPicker.getByRole("button", { name: t("取消", "Cancel"), exact: true });
       const mapPoint = page.frameLocator('iframe[title="3D Viewer"]').getByRole("button", { name: "Pick point" });
       const pickMapPoint = async () => {
@@ -283,6 +339,8 @@ try {
       await pick.click(); await mapPicker.waitFor();
       assert.equal(await applyPoint.isDisabled(), true, "each pick starts without a stale candidate");
       const overlayBefore = await mapPicker.boundingBox();
+      assert.equal(overlayBefore.height, 44, "map confirmation is a compact fixed-height horizontal bar");
+      assert.ok(await mapPicker.evaluate(el => el.scrollWidth <= el.clientWidth));
       const applyBefore = await applyPoint.boundingBox();
       if (width >= 996) assert.deepEqual(await geometry(), beforePick, "starting a pick leaves the sidebar in place");
       await pickMapPoint();
@@ -347,6 +405,7 @@ try {
     assert.ok(await iframe.evaluate((node) => node.isConnected));
     assert.deepEqual(await iframe.boundingBox(), mapBounds, "inspector, creation and picker keep the map stable");
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains("dark")), theme === "dark", "theme persists throughout the flow");
     if (capture) await page.screenshot({ path: `${capture}/${language}-${theme}-${width}-${writable}.png`, animations: "disabled" });
     assert.deepEqual(errors, []);
     page.on("dialog", (dialog) => dialog.accept());

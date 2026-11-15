@@ -1,10 +1,12 @@
 "use client";
 
-import { Box, FileText, Link2, Video, type LucideIcon } from "lucide-react";
+import { Box, Clapperboard, FileText, Link2, Video, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AssetThumbnail } from "../components/AssetManager/AssetThumbnail";
 import type { ContentAssetType } from "./types";
 
-const ICON_TYPES: Partial<Record<ContentAssetType, LucideIcon>> = {
+const ICON_TYPES: Partial<Record<ContentAssetType | "scene", LucideIcon>> = {
+  scene: Clapperboard,
   model: Box,
   video: Video,
   link: Link2,
@@ -12,10 +14,11 @@ const ICON_TYPES: Partial<Record<ContentAssetType, LucideIcon>> = {
 };
 
 export interface ContentThumbnailProps {
-  type: ContentAssetType;
+  type: ContentAssetType | "scene";
   name: string;
   thumbnailUrl?: string | null;
   textExcerpt?: string | null;
+  className?: string;
 }
 
 /**
@@ -23,11 +26,11 @@ export interface ContentThumbnailProps {
  * matching icon tile for types it does not draw. A supplied poster or model
  * snapshot always wins over the icon.
  */
-export function ContentThumbnail({ type, name, thumbnailUrl, textExcerpt }: ContentThumbnailProps) {
+export function ContentThumbnail({ type, name, thumbnailUrl, textExcerpt, className }: ContentThumbnailProps) {
   const Icon = ICON_TYPES[type];
   if (Icon && !thumbnailUrl) {
     return (
-      <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted" aria-hidden>
+      <div className={cn("flex size-16 shrink-0 items-center justify-center rounded-md bg-muted", className)} aria-hidden>
         <Icon className="size-7 text-muted-foreground" />
       </div>
     );
@@ -38,6 +41,7 @@ export function ContentThumbnail({ type, name, thumbnailUrl, textExcerpt }: Cont
       fileUrl={thumbnailUrl}
       textContent={textExcerpt}
       fileName={name}
+      className={className}
     />
   );
 }

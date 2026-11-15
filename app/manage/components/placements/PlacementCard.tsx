@@ -9,9 +9,11 @@ import { Focus, MapPin } from "lucide-react";
 import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlacementStore } from "../../lib/placement-store";
-import { isMappable, placementDisplayName, placementFileType, placementScopeKey, resolvedContentOf } from "../../lib/placement-to-viewer";
+import { isMappable, placementDisplayName, placementFileType, placementScopeKey, placementContentOf } from "../../lib/placement-to-viewer";
+import { contentType } from "../../lib/content-mappers";
 import type { Tag } from "../../types";
-import { AssetThumbnail } from "../AssetManager/AssetThumbnail";
+import { ContentThumbnail } from "../../content/ContentThumbnail";
+import { placementThumbnailOf } from "./placement-utils";
 import { usePlacementMap } from "./PlacementMapContext";
 
 interface PlacementCardProps {
@@ -29,7 +31,7 @@ export function PlacementCard({ placement, tags, selected, selectMode, checked, 
   const { tx, focusPlacement, organizationId, workspaceId } = usePlacementMap();
   const contents = usePlacementStore((state) => state.placementContents);
   const hasDraft = usePlacementStore((state) => !!state.placementDrafts[placement.id]);
-  const content = resolvedContentOf(placement, contents, placementScopeKey(organizationId, workspaceId));
+  const content = placementContentOf(placement, contents, placementScopeKey(organizationId, workspaceId));
   const name = placementDisplayName(placement);
   const type = placementFileType(placement);
   const mappable = isMappable(placement);
@@ -53,14 +55,14 @@ export function PlacementCard({ placement, tags, selected, selectMode, checked, 
         }
       }}
       className={cn(
-        "flex cursor-pointer items-center gap-3 border-l px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        "flex cursor-pointer items-center gap-2 border-l px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
         selected ? "border-l-primary bg-primary/10" : "border-l-transparent hover:bg-muted/50",
       )}
     >
       {selectMode && <Checkbox checked={checked} tabIndex={-1} aria-hidden className="shrink-0" />}
-      <AssetThumbnail fileType={type} fileUrl={content.url} textContent={content.text} fileName={name} />
+      <ContentThumbnail type={type === "scene" ? "scene" : contentType(type)} thumbnailUrl={placementThumbnailOf(content)} textExcerpt={content?.kind === "asset" && content.payload.kind === "text" ? content.payload.text : null} name={name} className="size-12 [&_svg]:size-5" />
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="truncate text-sm font-medium leading-tight" title={name}>{name}</p>
+        <p className="truncate text-xs font-medium leading-tight" title={name}>{name}</p>
         <div className="flex flex-wrap items-center gap-1">
           <Badge variant="secondary" className="px-1.5 py-0 text-xs">{tx(`contentModel.integration.map.type.${type}`)}</Badge>
           {hasDraft && <Badge variant="outline" className="text-warning">{tx("contentModel.integration.map.editor.unsaved")}</Badge>}

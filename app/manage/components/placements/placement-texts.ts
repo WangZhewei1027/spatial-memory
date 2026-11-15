@@ -12,6 +12,8 @@ const P = "contentModel.integration.map";
  */
 export const MAP_TEXTS: IntegrationTexts = {
   ...ERROR_TEXTS,
+  [`${P}.layout.resize.list`]: ["拖动调整投放列表宽度，双击恢复默认", "Drag to resize the placement list; double-click to reset"],
+  [`${P}.layout.resize.sidebar`]: ["拖动调整详情宽度，双击恢复默认", "Drag to resize the inspector; double-click to reset"],
   [`${P}.action.cancel`]: ["取消", "Cancel"],
   [`${P}.action.close`]: ["关闭", "Close"],
   [`${P}.action.discard`]: ["放弃修改", "Discard changes"],
@@ -125,7 +127,7 @@ export const MAP_TEXTS: IntegrationTexts = {
   [`${P}.field.longitude`]: ["经度", "Longitude"],
   [`${P}.field.latitude`]: ["纬度", "Latitude"],
   [`${P}.field.altitude`]: ["高度 (m)", "Height (m)"],
-  [`${P}.field.useClicked`]: ["使用此位置", "Use this location"],
+  [`${P}.field.useClicked`]: ["确认位置", "Confirm"],
   [`${P}.field.usePhotoGps`]: ["使用照片 GPS", "Use photo GPS"],
   [`${P}.field.anchor`]: ["识别目标", "Recognition target"],
   [`${P}.field.anchorNone`]: ["不使用识别目标", "No recognition target"],
@@ -155,8 +157,8 @@ export const MAP_TEXTS: IntegrationTexts = {
   [`${P}.create.noContent`]: ["没有符合条件的内容，试试其他关键词或类别。", "No matching content. Try another search or category."],
   [`${P}.create.noAssets`]: ["没有可放置的素材", "No assets to place"],
   [`${P}.create.noScenes`]: ["没有可用的场景", "No available scenes"],
-  [`${P}.create.pickSource`]: ["请选择投放内容", "Choose content to place."],
-  [`${P}.create.locationRequired`]: ["请设置位置", "Set a location."],
+  [`${P}.create.pickSource`]: ["待选内容", "Choose content"],
+  [`${P}.create.locationRequired`]: ["待设位置", "Set location"],
   [`${P}.create.fileRequired`]: ["请选择文件。", "Choose a file."],
   [`${P}.create.textRequired`]: ["请输入文字内容。", "Enter the text."],
   [`${P}.create.linkRequired`]: ["请输入链接。", "Enter a link."],
@@ -195,7 +197,7 @@ export const MAP_TEXTS: IntegrationTexts = {
   [`${P}.create.locationStep`]: ["2. 设置位置", "2. Set location"],
   [`${P}.create.optionalName`]: ["投放名称（可选）", "Placement name (optional)"],
   [`${P}.create.activeHint`]: ["创建后默认启用，识别目标、显示和标签可在详情中调整。", "New placements are active. Adjust recognition, display and tags in the inspector."],
-  [`${P}.create.ready`]: ["内容和位置已就绪", "Content and location are ready"],
+  [`${P}.create.ready`]: ["就绪", "Ready"],
 
 };
 

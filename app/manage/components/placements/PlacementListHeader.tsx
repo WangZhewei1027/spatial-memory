@@ -31,7 +31,7 @@ export function PlacementListHeader({ shownCount, totalCount, fileTypes, selectM
   const store = usePlacementStore.getState;
 
   return (
-    <div className="space-y-2 border-b p-3">
+    <div className="space-y-2 border-b p-2">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <Text as="h2" variant="bodySm" fontWeight="semibold" truncate>{tx("contentModel.integration.map.list.title")}</Text>
@@ -67,7 +67,7 @@ export function PlacementListHeader({ shownCount, totalCount, fileTypes, selectM
           <Plus className="size-4" aria-hidden />{tx("contentModel.integration.map.create.title")}
         </Button>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1">
         <label htmlFor={statusId} className="sr-only">{tx("contentModel.integration.map.filter.status")}</label>
         <Select value={statusFilter} onValueChange={(value) => store().setStatusFilter(value as PlacementStatusFilter)}>
           <SelectTrigger id={statusId} className="h-8 w-auto min-w-28 text-sm">

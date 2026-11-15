@@ -40,18 +40,18 @@ export function personOf(user: UserRefDto | null | undefined): ContentPerson | n
   return { id: user.user_id, name: user.name || user.email || user.user_id.slice(0, 8) };
 }
 
-export function primaryResource(content: AssetContentDto | null | undefined) {
+export function primaryResource(content: Pick<AssetContentDto, "resources"> | null | undefined) {
   return content?.resources.find((resource) => resource.role === "primary")
     ?? content?.resources.find((resource) => resource.role === "reference")
     ?? null;
 }
 
-export function thumbnailOf(content: AssetContentDto | null | undefined): string | null {
+export function thumbnailOf(content: Pick<AssetContentDto, "payload" | "resources"> | null | undefined): string | null {
   if (!content) return null;
   const thumbnail = content.resources.find((resource) => resource.role === "thumbnail");
   if (thumbnail) return thumbnail.url;
   const primary = primaryResource(content);
-  return primary && content.payload.kind === "image" ? primary.url : null;
+  return primary && (content.payload.kind === "image" || content.payload.kind === "anchor") ? primary.url : null;
 }
 
 export function excerptOf(content: AssetContentDto | null | undefined): string | null {

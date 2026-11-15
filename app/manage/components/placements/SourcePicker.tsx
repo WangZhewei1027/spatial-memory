@@ -71,7 +71,7 @@ export function SourcePicker({ value, onChange }: { value: PickedSource | null; 
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-2 px-5 pb-3 pt-1" data-source-toolbar>
         <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" aria-hidden />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("contentModel.integration.map.create.searchContent")} aria-label={tx("contentModel.integration.map.create.searchContent")} className="ps-8" />
         </div>
         <Select value={category} onValueChange={(next) => setCategory(next as Category)}>

@@ -82,13 +82,13 @@ function AnchorRow({ name, url, selected, placement, onSelect }: { name: string 
         }
       }}
       className={cn(
-        "flex cursor-pointer items-center gap-3 border-l-4 px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        "flex cursor-pointer items-center gap-2 border-l px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
         selected ? "border-l-primary bg-primary/10" : "border-l-transparent hover:bg-muted/50",
       )}
     >
-      <AssetThumbnail fileType="anchor" fileUrl={url} fileName={label} />
+      <AssetThumbnail fileType="anchor" fileUrl={url} fileName={label} className="size-12 [&_svg]:size-5" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium" title={label}>{label}</p>
+        <p className="truncate text-xs font-medium" title={label}>{label}</p>
         <p className="text-xs text-muted-foreground">
           {placement && isMappable(placement) ? tx("contentModel.integration.map.anchors.onMap") : tx("contentModel.integration.map.anchors.notOnMap")}
         </p>
