@@ -29,6 +29,8 @@ export interface PlacementMapContextValue {
   focusPlacement: (placement: PlacementDto) => void;
   setViewerSelection: (ids: string[]) => void;
   clearViewerSelection: () => void;
+  /** Shared overlay host; its contents never affect grid or iframe geometry. */
+  mapOverlay: HTMLDivElement | null;
   workspaceName: (id: string | null | undefined) => string;
 }
 

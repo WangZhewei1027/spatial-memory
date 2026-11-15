@@ -3,7 +3,7 @@
 import type { PlacementDto } from "@/lib/content-model/contracts";
 import { DEFAULT_UPLOAD_TYPES, type UploadType } from "@/lib/upload/types";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePlacementViewer } from "../../hooks/usePlacementViewer";
 import { usePlacementStore } from "../../lib/placement-store";
 import { placementScopeKey, toActivityViewerItems, toViewerItems } from "../../lib/placement-to-viewer";
@@ -45,6 +45,7 @@ export interface PlacementMapScope {
 export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
   const tx = usePlacementText();
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [mapOverlay, setMapOverlay] = useState<HTMLDivElement | null>(null);
   const { organizationId, workspaceId, organization, workspaces } = scope;
   const workspaceCanEdit = scope.canEdit;
 
@@ -126,6 +127,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
     focusPlacement: viewer.focusPlacement,
     setViewerSelection: viewer.setViewerSelection,
     clearViewerSelection: viewer.clearViewerSelection,
+    mapOverlay,
     workspaceName,
   };
 
@@ -145,6 +147,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
           <>
             <PlacementSelectionBar />
             <ViewerFrame iframeRef={iframeRef} organizationId={organizationId} />
+            <div ref={setMapOverlay} className="pointer-events-none absolute inset-0 z-20" />
           </>
         }
         sidebar={<PlacementSidebar />}

@@ -33,6 +33,7 @@ const tests = [
   "test-scene-spatial-reference.ts",
   "test-scene-camera-inset.ts",
   "test-viewer-resources.mjs",
+  "test-viewer-location-picking.mjs",
   "test-map-scan-model.mjs",
   "test-sms-auth.cjs",
   "test-google-relay-function.mjs",

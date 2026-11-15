@@ -41,6 +41,7 @@ export function usePlacementViewer({ iframeRef, items, mapCenter, canWrite, tx }
   const latest = useRef({ items, mapCenter, canWrite, tx });
   latest.current = { items, mapCenter, canWrite, tx };
   const pendingFocus = useRef<ReturnType<typeof focusPayload>>(null);
+  const locationPicking = usePlacementStore((state) => state.locationPickOwner !== null);
 
   const sendAssets = useCallback(() => post(iframeRef.current, "SET_ASSETS", latest.current.items), [iframeRef]);
   const syncViewer = useCallback(() => {
@@ -48,6 +49,7 @@ export function usePlacementViewer({ iframeRef, items, mapCenter, canWrite, tx }
     const center = latest.current.mapCenter;
     if (center) post(iframe, "SET_ORIGIN", center);
     post(iframe, "SET_ASSETS", latest.current.items);
+    post(iframe, "SET_LOCATION_PICKING", { enabled: usePlacementStore.getState().locationPickOwner !== null });
     if (pendingFocus.current) post(iframe, "FOCUS_ASSET", pendingFocus.current);
   }, [iframeRef]);
 
@@ -67,6 +69,10 @@ export function usePlacementViewer({ iframeRef, items, mapCenter, canWrite, tx }
   useEffect(() => {
     sendAssets();
   }, [items, sendAssets]);
+
+  useEffect(() => {
+    post(iframeRef.current, "SET_LOCATION_PICKING", { enabled: locationPicking });
+  }, [iframeRef, locationPicking]);
 
   useEffect(() => {
     const snapBack = () => post(iframeRef.current, "SET_ASSETS", latest.current.items);

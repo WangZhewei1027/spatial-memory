@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Clapperboard, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
-import { cn } from "@/lib/utils";
 import { SPECIAL_ASSET_FILE_TYPES, type AssetDto, type SceneSummaryDto } from "@/lib/content-model/contracts";
-import { ContentThumbnail } from "../../content/ContentThumbnail";
 import { organizationApi } from "../../lib/content-api";
 import { errorMessage } from "../../lib/content-errors";
 import { contentType, excerptOf, thumbnailOf } from "../../lib/content-mappers";
 import { usePlacementMap } from "./PlacementMapContext";
+import { PlacementContentCard } from "./PlacementContentCard";
 export type PickedSource = { kind: "asset"; asset: AssetDto } | { kind: "scene"; scene: SceneSummaryDto };
 
 const SEARCH_DELAY_MS = 300;
@@ -89,43 +88,16 @@ export function SourcePicker({ value, onChange }: { value: PickedSource | null; 
               if (source.kind === "asset") {
                 const { asset } = source;
                 const name = asset.name || asset.id.slice(0, 8);
-                return <Row key={`asset:${asset.id}`} selected={value?.kind === "asset" && value.asset.id === asset.id} onSelect={() => onChange(source)}>
-                  <ContentThumbnail type={contentType(asset.file_type)} thumbnailUrl={thumbnailOf(asset)} textExcerpt={excerptOf(asset)} name={name} />
-                  <RowText title={name} meta={tx(`contentModel.integration.map.type.${asset.file_type}`)} />
-                </Row>;
+                return <PlacementContentCard key={`asset:${asset.id}`} selected={value?.kind === "asset" && value.asset.id === asset.id} onClick={() => onChange(source)}
+                  name={name} contentType={contentType(asset.file_type)} typeLabel={tx(`contentModel.integration.map.type.${asset.file_type}`)} thumbnailUrl={thumbnailOf(asset)} textExcerpt={excerptOf(asset)} />;
               }
               const { scene } = source;
-              return <Row key={`scene:${scene.id}`} selected={value?.kind === "scene" && value.scene.id === scene.id} onSelect={() => onChange(source)}>
-                <span className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted"><Clapperboard className="size-6 text-muted-foreground" aria-hidden /></span>
-                <RowText title={scene.name} meta={tx("contentModel.integration.map.type.scene")} />
-              </Row>;
+              return <PlacementContentCard key={`scene:${scene.id}`} selected={value?.kind === "scene" && value.scene.id === scene.id} onClick={() => onChange(source)}
+                name={scene.name} contentType="scene" typeLabel={tx("contentModel.integration.map.type.scene")} />;
             })}
           </div>
         </>}
       </div>
     </div>
-  );
-}
-
-function Row({ selected, onSelect, children }: { selected: boolean; onSelect: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onSelect}
-      className={cn("flex min-w-0 w-full items-center gap-3 rounded-md border px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", selected ? "border-primary bg-primary/10" : "hover:bg-muted/50")}
-    >
-      {children}
-      {selected && <Check className="size-4 shrink-0 text-primary" aria-hidden />}
-    </button>
-  );
-}
-
-function RowText({ title, meta }: { title: string; meta: string }) {
-  return (
-    <span className="min-w-0 flex-1">
-      <span className="block truncate text-sm font-medium" title={title}>{title}</span>
-      <span className="block truncate text-xs text-muted-foreground">{meta}</span>
-    </span>
   );
 }

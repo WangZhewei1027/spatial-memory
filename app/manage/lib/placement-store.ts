@@ -45,6 +45,8 @@ interface PlacementStore {
   selectedPlacementIds: string[];
   selectedAnchorId: string | null;
   clickedLocation: MapPoint | null;
+  /** Mounted location field that owns the explicitly started map pick. */
+  locationPickOwner: string | null;
   notice: PlacementMapNotice | null;
 
   /** Resolved playable content by scope, placement and target. */
@@ -74,6 +76,8 @@ interface PlacementStore {
   setSelectedPlacementIds: (ids: string[]) => void;
   selectAnchor: (id: string | null) => void;
   setClickedLocation: (point: MapPoint | null) => void;
+  beginLocationPick: (owner: string) => void;
+  endLocationPick: (owner: string, returnToInspector?: boolean) => void;
   setNotice: (notice: PlacementMapNotice | null) => void;
 
   putPlacementContents: (scopeKey: string, contents: PlacementContentDto[]) => void;
@@ -95,6 +99,7 @@ const SCOPE_RESET = {
   placementDrafts: {} as Record<string, PlacementDraft>,
   createHasDraft: false,
   clickedLocation: null,
+  locationPickOwner: null,
   selectedPlacementIds: [] as string[],
   selectedAnchorId: null,
   notice: null,
@@ -146,10 +151,10 @@ export const usePlacementStore = create<PlacementStore>()((set) => ({
   setFileTypeFilter: (fileTypeFilter) => set({ fileTypeFilter }),
   setTagFilter: (tagFilter) => set({ tagFilter }),
   setTab: (tab) => set({ tab }),
-  setActivitiesOpen: (activitiesOpen) => set({ activitiesOpen, selectedActivityPlacementId: null }),
-  startCreate: () => set({ sidebarMode: "create", mobilePanel: "sidebar" }),
-  closeCreate: () => set((state) => ({ sidebarMode: "inspect", mobilePanel: state.selectedPlacementId || state.selectedAnchorId ? "sidebar" : null })),
-  setMobilePanel: (mobilePanel) => set({ mobilePanel }),
+  setActivitiesOpen: (activitiesOpen) => set({ activitiesOpen, selectedActivityPlacementId: null, locationPickOwner: null }),
+  startCreate: () => set({ sidebarMode: "create", mobilePanel: "sidebar", locationPickOwner: null }),
+  closeCreate: () => set((state) => ({ sidebarMode: "inspect", mobilePanel: state.selectedPlacementId || state.selectedAnchorId ? "sidebar" : null, locationPickOwner: null })),
+  setMobilePanel: (mobilePanel) => set({ mobilePanel, ...(mobilePanel ? { locationPickOwner: null, clickedLocation: null } : {}) }),
   setCreateHasDraft: (createHasDraft) => set({ createHasDraft }),
   setPlacementDraft: (scopeKey, id, draft) => set((state) => {
     if (state.scopeKey !== scopeKey) return {};
@@ -159,11 +164,15 @@ export const usePlacementStore = create<PlacementStore>()((set) => ({
     return { placementDrafts };
   }),
 
-  selectPlacement: (selectedPlacementId) => set({ selectedPlacementId, selectedAnchorId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedPlacementId ? "sidebar" : null }),
+  selectPlacement: (selectedPlacementId) => set({ selectedPlacementId, selectedAnchorId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedPlacementId ? "sidebar" : null, locationPickOwner: null }),
   setSelectedPlacementIds: (selectedPlacementIds) => set({ selectedPlacementIds }),
-  selectAnchor: (selectedAnchorId) => set({ selectedAnchorId, selectedPlacementId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedAnchorId ? "sidebar" : null }),
-  selectActivityPlacement: (selectedActivityPlacementId) => set({ selectedActivityPlacementId, ...(selectedActivityPlacementId ? { activitiesOpen: true } : {}) }),
-  setClickedLocation: (clickedLocation) => set((state) => ({ clickedLocation, ...(clickedLocation && (state.sidebarMode === "create" || state.selectedPlacementId) ? { mobilePanel: "sidebar" as const } : {}) })),
+  selectAnchor: (selectedAnchorId) => set({ selectedAnchorId, selectedPlacementId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedAnchorId ? "sidebar" : null, locationPickOwner: null }),
+  selectActivityPlacement: (selectedActivityPlacementId) => set({ selectedActivityPlacementId, locationPickOwner: null, ...(selectedActivityPlacementId ? { activitiesOpen: true } : {}) }),
+  setClickedLocation: (clickedLocation) => set({ clickedLocation }),
+  beginLocationPick: (locationPickOwner) => set({ locationPickOwner, clickedLocation: null, mobilePanel: null }),
+  endLocationPick: (owner, returnToInspector = false) => set((state) => state.locationPickOwner === owner
+    ? { locationPickOwner: null, clickedLocation: null, ...(returnToInspector ? { mobilePanel: "sidebar" as const } : {}) }
+    : {}),
   setNotice: (notice) => set({ notice }),
 
   putPlacementContents: (scopeKey, contents) =>

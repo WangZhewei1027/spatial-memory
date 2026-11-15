@@ -6,7 +6,7 @@ import { CLICK_MARKER_CONFIG } from "../utils/config.js";
 import { getViewer } from "./viewerManager.js";
 import { cartesianToLonLat } from "../utils/coordinateUtils.js";
 import { sendLocationClicked, sendAssetClicked } from "./messageHandler.js";
-import { getMode } from "./interactionManager.js";
+import { getMode, isLocationPicking } from "./interactionManager.js";
 
 let clickedPointEntity = null; // 存储点击位置的标记
 
@@ -42,7 +42,7 @@ function handleMapClick(movement) {
 
   // 优先检查是否点击了 asset 实体（billboard）
   const picked = viewer.scene.pick(movement.position);
-  if (picked && picked.id) {
+  if (!isLocationPicking() && picked && picked.id) {
     const assetId = picked.id.properties?.assetId?.getValue
       ? picked.id.properties.assetId.getValue()
       : picked.id.properties?.assetId;

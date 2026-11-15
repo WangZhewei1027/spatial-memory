@@ -105,13 +105,14 @@ try {
     if (!writable) {
       assert.equal(await name.isDisabled(), true); assert.equal(await save.count(), 0);
       assert.equal(await page.getByRole("button", { name: t("新增投放", "New placement"), exact: true }).count(), 0);
+      assert.equal(await editor.getByLabel(t("经度", "Longitude"), { exact: true }).isDisabled(), true);
+      assert.equal(await editor.getByRole("button", { name: t("地图选点", "Pick on map"), exact: true }).isDisabled(), true);
     } else {
       await name.fill("Retained draft"); await select("placement-text"); await select("placement-image");
       assert.equal(await name.inputValue(), "Retained draft", "switching objects retains unsaved edits");
       await editor.getByRole("button", { name: t("关闭", "Close"), exact: true }).click(); await select("placement-image");
       assert.equal(await name.inputValue(), "Retained draft", "closing retains edits");
       const actionBefore = await editor.locator("[data-inspector-actions]").boundingBox();
-      await editor.getByText(t("精确坐标与高度", "Coordinates and height"), { exact: true }).click();
       await editor.locator("[data-inspector-scroll]").evaluate((el) => { el.scrollTop = el.scrollHeight; });
       assert.deepEqual(await editor.locator("[data-inspector-actions]").boundingBox(), actionBefore, "save stays anchored while fields scroll");
       if (width === 1440) {
@@ -199,10 +200,20 @@ try {
       if (capture) await page.screenshot({ path: `${capture}/picker-${language}-${theme}-${width}.png`, animations: "disabled" });
       await dialog.getByRole("button", { name: /Source 2/ }).click();
       assert.ok(await create.getByText("Source 2", { exact: true }).isVisible(), "a model thumbnail remains a selectable model source");
-      await create.getByRole("button", { name: t("更换内容", "Change content"), exact: true }).click();
+      const changeContent = create.getByRole("button", { name: t("更换内容", "Change content") });
+      assert.equal(await changeContent.getByRole("img").getAttribute("src"), `${origin}/fixtures/source-2-thumbnail.png`, "selected source keeps the same stored thumbnail as its picker card");
+      assert.ok(await changeContent.getByText(t("模型", "Model"), { exact: true }).isVisible());
+      await page.waitForFunction(() => document.activeElement?.hasAttribute('data-content-picker-trigger'));
+      if (capture) await page.screenshot({ path: `${capture}/selected-${language}-${theme}-${width}.png`, animations: "disabled" });
+      await changeContent.press("Enter");
+      dialog = page.getByRole("dialog"); await dialog.getByRole("button", { name: /Scene match/ }).click();
+      await page.waitForFunction(() => document.activeElement?.hasAttribute('data-content-picker-trigger'));
+      assert.ok(await changeContent.getByText("Scene match", { exact: true }).isVisible(), "scene selection uses the same content card");
+      assert.ok(await changeContent.getByText(t("场景", "Scene"), { exact: true }).isVisible());
+      await changeContent.click();
       dialog = page.getByRole("dialog"); await dialog.getByRole("button", { name: /Source 0/ }).click();
       await page.waitForFunction(() => document.activeElement?.hasAttribute('data-content-picker-trigger'));
-      await create.getByRole("button", { name: t("更换内容", "Change content"), exact: true }).click();
+      await changeContent.click();
       await page.getByRole("dialog").getByRole("tab", { name: t("上传新素材", "New content"), exact: true }).click();
       await page.keyboard.press("Escape");
       await page.waitForFunction(() => document.activeElement?.hasAttribute('data-content-picker-trigger'));
@@ -213,10 +224,109 @@ try {
       assert.ok(await create.getByText("Source 0", { exact: true }).isVisible());
       const submit = create.getByRole("button", { name: t("放到地图上", "Place on map"), exact: true });
       assert.equal(await submit.isDisabled(), true, "source alone must not create a placement");
-      await create.getByRole("button", { name: t("在地图上选点", "Pick on map"), exact: true }).click();
-      await page.frameLocator('iframe[title="3D Viewer"]').getByRole("button", { name: "Pick point" }).click();
-      await create.waitFor(); assert.equal(await submit.isDisabled(), true, "map click is only a candidate");
-      await create.getByRole("button", { name: t("使用地图点选位置", "Use clicked map location"), exact: true }).click();
+      // Fields never unmount, including while the mobile inspector is hidden.
+      const createPanel = page.locator("[data-placement-create]");
+      const location = createPanel.locator("[data-location-fields]");
+      const longitude = location.getByLabel(t("经度", "Longitude"), { exact: true });
+      const latitude = location.getByLabel(t("纬度", "Latitude"), { exact: true });
+      const altitude = location.getByLabel(t("高度 (m)", "Height (m)"), { exact: true });
+      const pick = location.getByRole("button", { name: t("地图选点", "Pick on map"), exact: true });
+      const mapPicker = page.locator('[data-map-panel="viewer"] [data-location-picker]');
+      const applyPoint = mapPicker.getByRole("button", { name: t("使用此位置", "Use this location"), exact: true });
+      const cancelPoint = mapPicker.getByRole("button", { name: t("取消", "Cancel"), exact: true });
+      const mapPoint = page.frameLocator('iframe[title="3D Viewer"]').getByRole("button", { name: "Pick point" });
+      const pickMapPoint = async () => {
+        await mapPoint.click();
+        await page.waitForFunction(() => document.querySelector('[data-location-picker] button:last-child')?.disabled === false);
+      };
+      assert.equal(await longitude.isVisible(), true, "coordinates are always present");
+      await longitude.fill("181"); await latitude.fill("32");
+      assert.equal(await submit.isDisabled(), true, "out-of-range coordinates cannot create a placement");
+      await longitude.fill("0"); await latitude.fill("0"); await altitude.fill("-2.5");
+      assert.equal(await submit.isEnabled(), true, "zero coordinates and negative height remain valid");
+      // Ensure the trigger is visible before taking the fixed layout baseline.
+      await pick.scrollIntoViewIfNeeded();
+      const geometry = async () => location.evaluate((el) => {
+        const rect = (node) => { const { x, y, width, height } = node.getBoundingClientRect(); return { x, y, width, height }; };
+        return [el, ...el.querySelectorAll("input,button"), el.closest("[data-placement-create]").querySelector("[data-inspector-actions]")].map(rect);
+      });
+      const startTracking = () => page.evaluate(() => {
+        window.locationFrames = [];
+        const rect = node => { const { x, y, width, height } = node.getBoundingClientRect(); return { x, y, width, height }; };
+        const sample = () => {
+          const panel = document.querySelector('[data-placement-create]');
+          const fields = panel.querySelector('[data-location-fields]');
+          const overlay = document.querySelector('[data-location-picker]');
+          window.locationFrames.push({
+            map: rect(document.querySelector('iframe[title="3D Viewer"]')),
+            fields: fields.offsetWidth ? [fields, ...fields.querySelectorAll('input,button'), panel.querySelector('[data-inspector-actions]')].map(rect) : null,
+            overlay: overlay ? [overlay, ...overlay.querySelectorAll('button')].map(rect) : null,
+          });
+          window.locationFrameRequest = requestAnimationFrame(sample);
+        };
+        sample();
+      });
+      const checkTracking = async (expected) => {
+        const frames = await page.evaluate(() => { cancelAnimationFrame(window.locationFrameRequest); return window.locationFrames; });
+        assert.ok(frames.length > 2);
+        const firstOverlay = frames.find(frame => frame.overlay)?.overlay;
+        for (const frame of frames) {
+          assert.deepEqual(frame.map, frames[0].map, "map geometry is stable in every frame");
+          if (frame.fields) assert.deepEqual(frame.fields, expected, "visible field and footer geometry is stable in every frame");
+          if (frame.overlay) assert.deepEqual(frame.overlay, firstOverlay, "map confirmation controls are stable in every frame");
+        }
+      };
+      const beforePick = await geometry();
+      const scrollBefore = await createPanel.locator("[data-inspector-scroll]").evaluate(el => el.scrollTop);
+      if (capture) await page.screenshot({ path: `${capture}/location-before-${language}-${theme}-${width}.png`, animations: "disabled" });
+      await startTracking();
+      await pick.click(); await mapPicker.waitFor();
+      assert.equal(await applyPoint.isDisabled(), true, "each pick starts without a stale candidate");
+      const overlayBefore = await mapPicker.boundingBox();
+      const applyBefore = await applyPoint.boundingBox();
+      if (width >= 996) assert.deepEqual(await geometry(), beforePick, "starting a pick leaves the sidebar in place");
+      await pickMapPoint();
+      assert.equal(await longitude.inputValue(), "0", "candidate does not overwrite manual coordinates");
+      assert.equal(await altitude.inputValue(), "-2.5");
+      assert.deepEqual(await mapPicker.boundingBox(), overlayBefore, "candidate does not resize the map toolbar");
+      assert.deepEqual(await applyPoint.boundingBox(), applyBefore, "confirmation button does not move when a point is picked");
+      if (width < 996) assert.equal(await create.isVisible(), false, "map clicks must not reopen the mobile inspector");
+      else assert.deepEqual(await geometry(), beforePick, "candidate does not move fields or footer");
+      if (capture) await page.screenshot({ path: `${capture}/location-picking-${language}-${theme}-${width}.png`, animations: "disabled" });
+      await cancelPoint.click(); await create.waitFor();
+      await page.waitForFunction(() => document.activeElement?.hasAttribute("data-location-pick-trigger"));
+      assert.equal(await longitude.inputValue(), "0", "cancel retains manual coordinates");
+      assert.equal(await altitude.inputValue(), "-2.5");
+      assert.deepEqual(await geometry(), beforePick, "cancel restores the exact field and footer positions");
+      assert.equal(await createPanel.locator("[data-inspector-scroll]").evaluate(el => el.scrollTop), scrollBefore);
+      await checkTracking(beforePick);
+      await longitude.fill(""); await latitude.fill(""); await altitude.fill("");
+      await pick.scrollIntoViewIfNeeded();
+      const emptyGeometry = await geometry();
+      await startTracking();
+      await pick.click(); await mapPicker.waitFor();
+      assert.equal(await applyPoint.isDisabled(), true);
+      await pickMapPoint();
+      assert.equal(await createPanel.getByRole("button", { name: t("放到地图上", "Place on map"), exact: true, includeHidden: true }).isDisabled(), true, "map click is only a candidate");
+      assert.equal(await longitude.inputValue(), "");
+      await applyPoint.click(); await create.waitFor();
+      await page.waitForFunction(() => document.activeElement?.hasAttribute("data-location-pick-trigger"));
+      assert.equal(await longitude.inputValue(), "122"); assert.equal(await altitude.inputValue(), "2");
+      assert.deepEqual(await geometry(), emptyGeometry, "confirm changes only values, not layout");
+      await checkTracking(emptyGeometry);
+      if (capture) await page.screenshot({ path: `${capture}/location-confirmed-${language}-${theme}-${width}.png`, animations: "disabled" });
+      // Leaving a pick must never apply it to a different task or placement.
+      await pick.click(); await mapPicker.waitFor(); await pickMapPoint();
+      if (width < 996) {
+        await showList();
+        assert.equal(await mapPicker.count(), 0, "opening a mobile panel exits picking so the toolbar cannot cover its controls");
+      }
+      await select("placement-text");
+      assert.equal(await mapPicker.count(), 0);
+      assert.equal(await editor.getByLabel(t("经度", "Longitude"), { exact: true }).inputValue(), "121.123456");
+      await startCreate();
+      assert.equal(await mapPicker.count(), 0, "returning to a draft does not resume a stale pick");
+      assert.equal(await longitude.inputValue(), "122");
       assert.equal(await submit.isEnabled(), true); await submit.click(); await editor.getByRole("heading", { name: "Created placement", exact: true }).waitFor();
       assert.equal(writes.at(-1).input.target.assetId, assets[0].id);
       if (width === 1440) {
@@ -227,8 +337,10 @@ try {
         await dialog.getByLabel(t("文字内容", "Text"), { exact: true }).fill("New text content");
         const writeCount = writes.length;
         await dialog.getByRole("button", { name: t("使用此内容", "Use this content"), exact: true }).click();
+        await page.waitForFunction(() => document.activeElement?.hasAttribute('data-content-picker-trigger'));
         assert.equal(writes.length, writeCount, "choosing new content must not write an orphan asset");
-        await create.getByRole("button", { name: t("使用地图点选位置", "Use clicked map location"), exact: true }).click();
+        assert.ok(await changeContent.getByText(t("文字", "Text"), { exact: true }).isVisible(), "prepared uploads use the same selected-content card");
+        await pick.click(); await mapPicker.waitFor(); await pickMapPoint(); await applyPoint.click(); await create.waitFor();
         await submit.click(); await editor.getByRole("heading", { name: "New text content", exact: true }).waitFor();
       }
     }
