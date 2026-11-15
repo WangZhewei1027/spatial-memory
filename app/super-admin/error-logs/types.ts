@@ -1,4 +1,4 @@
-export type ErrorScope = "client" | "api" | "unknown";
+export type ErrorScope = "client" | "api" | "server" | "unknown";
 export type StatusClass = "zero" | "4xx" | "5xx";
 
 export interface ErrorLogRow {
@@ -32,7 +32,7 @@ export interface ErrorLogResponse {
 }
 
 export interface ErrorLogFilters {
-  scope: "all" | "client" | "api";
+  scope: "all" | "client" | "api" | "server";
   statusClass: "all" | StatusClass;
   q: string;
   from: string; // yyyy-mm-dd or ""

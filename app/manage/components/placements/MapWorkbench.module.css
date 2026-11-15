@@ -1,0 +1,34 @@
+/* Match scene-native-stage: 12px chrome, 28px controls, 8px gutters. */
+.workspace {
+  --navigation-gutter: 8px;
+  --navigation-row-height: 40px;
+}
+
+.controls { --map-control: 28px; }
+.controls :is(input:not([type="checkbox"]):not([type="range"]), [role="combobox"]),
+.controls button:not([data-content-card]):not([data-thumbnail-preview]):not([role="checkbox"]):not([role="switch"]),
+.controls a:has(> svg:only-child),
+.workspace > header :is(button, a) {
+  height: var(--map-control, 28px);
+  padding-block: 0;
+  font-size: .75rem;
+  gap: 4px;
+  box-shadow: none;
+}
+.controls button:not([data-content-card]):not([data-thumbnail-preview]):not([role="checkbox"]):not([role="switch"]),
+.controls a:has(> svg:only-child),
+.workspace > header :is(button, a) { padding-inline: 8px; }
+.controls :is(button, a)[aria-label]:has(> svg:only-child) {
+  width: var(--map-control);
+  padding: 0;
+}
+.controls :is(button:not([data-content-card]), a) > svg { width: 14px; height: 14px; }
+.controls [role="tablist"] { height: 32px; }
+.controls [data-inspector-scroll] { scrollbar-color: hsl(var(--input)) transparent; }
+.controls button[data-thumbnail-preview] { width: 40px; height: 40px; padding: 0; }
+
+@media (pointer: coarse), (max-width: 639px) {
+  .controls { --map-control: 32px; }
+  .controls input:not([type="checkbox"]):not([type="range"]) { font-size: 1rem; }
+  .controls [role="tablist"] { height: 36px; }
+}

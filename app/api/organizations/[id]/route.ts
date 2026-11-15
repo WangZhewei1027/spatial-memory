@@ -133,7 +133,7 @@ export async function PUT(
       method: "PUT",
       path: `/api/organizations/${id}`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "更新组织失败" }, { status: 500 });
   }
@@ -210,7 +210,7 @@ export async function DELETE(
       method: "DELETE",
       path: `/api/organizations/${id}`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "删除组织失败" }, { status: 500 });
   }

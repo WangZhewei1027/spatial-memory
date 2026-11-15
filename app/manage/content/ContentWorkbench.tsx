@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Clapperboard, FileJson, MoreHorizontal, Upload } from "lucide-react";
+import { Clapperboard, FileJson, MoreHorizontal, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LibraryLayout, type LibraryPagination } from "./LibraryLayout";
@@ -62,7 +62,7 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
   const [archiving, setArchiving] = useState<SceneRef | null>(null);
   const [restoring, setRestoring] = useState<string | null>(null);
   const [failure, setFailure] = useState<ContentActionFailure | null>(null);
-  const canUpload = kind === "asset" && canWrite && props.canUpload !== false;
+  const canUpload = kind !== "scene" && canWrite && props.canUpload !== false;
 
   const restore = async (item: WorkbenchItem) => {
     setRestoring(item.id);
@@ -78,7 +78,7 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
   };
 
   const uploadButton = (variant: "default" | "outline") => (
-    <Button variant={variant} onClick={props.onUpload}><Upload aria-hidden />{t("contentModel.workbench.upload")}</Button>
+    <Button variant={variant} onClick={props.onUpload}>{kind === "anchor" ? <Plus aria-hidden /> : <Upload aria-hidden />}{t(kind === "anchor" ? "contentModel.library.anchor.create" : "contentModel.workbench.upload")}</Button>
   );
   const sceneButton = (variant: "default" | "outline") => (
     <Button variant={variant} onClick={() => setCreateOpen(true)}><Clapperboard aria-hidden />{t("contentModel.workbench.createScene")}</Button>

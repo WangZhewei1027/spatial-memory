@@ -12,6 +12,8 @@ export function ManageLayoutSkeleton({ fill }: { fill?: boolean } = {}) {
   return (
     <ManageGridLayout
       fill={fill}
+      mapEditor
+      controls={<Skeleton className="h-8 w-48" />}
       list={
         <Card className="h-full space-y-3 p-3" aria-busy>
           <Skeleton className="h-8 w-2/3" />

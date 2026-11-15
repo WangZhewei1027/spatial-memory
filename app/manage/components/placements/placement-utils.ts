@@ -1,6 +1,16 @@
-import type { PayloadScalar, PlacementDto, PlacementRenderConfig, UpdatePlacementRequest } from "@/lib/content-model/contracts";
+import type { PayloadScalar, PlacementContentDto, PlacementDto, PlacementRenderConfig, UpdatePlacementRequest } from "@/lib/content-model/contracts";
+import { thumbnailOf } from "../../lib/content-mappers";
 import type { PlacementListTab, PlacementStatusFilter } from "../../lib/placement-store";
 import { placementFileType } from "../../lib/placement-to-viewer";
+
+/** Scene rows use a referenced asset's saved preview, never a playable media URL. */
+export function placementThumbnailOf(content: PlacementContentDto | null): string | null {
+  if (!content) return null;
+  if (content.kind === "asset") return thumbnailOf(content);
+  return content.resources.find(resource => resource.thumbnail_url)?.thumbnail_url
+    ?? content.resources.find(resource => resource.file_type === "image" || resource.file_type === "anchor")?.url
+    ?? null;
+}
 
 /** Activity placements are loaded independently; content anchors keep their group. */
 export function listTabOf(placement: PlacementDto): PlacementListTab {

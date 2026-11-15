@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { reportClientError } from "@/lib/errors/client-report";
 
 // 统一把登录/注册/重置密码流程中的各种错误翻译成用户可读的 i18n 文案。
 // 覆盖三类来源：
@@ -94,23 +95,8 @@ export function authErrorKey(error: unknown): string {
 
 /** 未识别的错误静默上报到 error_log（复用公开的 /api/errors 通道），不打扰用户 */
 function reportUnknownAuthError(raw: string): void {
-  if (typeof window === "undefined" || !raw) return;
-  try {
-    fetch("/api/errors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        method: "auth.unknown",
-        path: window.location.pathname,
-        status: 0,
-        message: raw.slice(0, 2000),
-        context: { ua: navigator.userAgent },
-      }),
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // 上报失败直接忽略
-  }
+  if (!raw) return;
+  reportClientError({ method: "auth.unknown", message: raw });
 }
 
 function rawMessage(error: unknown): string {

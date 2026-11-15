@@ -3,14 +3,13 @@
 import { ContentFailureNotice, ContentNotice } from "@/app/manage/content/ContentFeedback";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Text } from "@/components/ui/typography";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { PlacementDto } from "@/lib/content-model/contracts";
-import { Archive, Copy, Loader2, X } from "lucide-react";
+import { Archive, Copy, Loader2, MoreHorizontal, X } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { usePlacementStore } from "../../lib/placement-store";
-import { placementDisplayName } from "../../lib/placement-to-viewer";
 import { PlacementArchiveDialog } from "./PlacementArchiveDialog";
+import { PlacementActionBar } from "./PlacementActionBar";
 import { PlacementFieldsForm } from "./PlacementFieldsForm";
 import { usePlacementMap } from "./PlacementMapContext";
 import { PlacementSourceSection } from "./PlacementSourceSection";
@@ -23,7 +22,6 @@ import { usePlacementForm } from "./usePlacementForm";
  * Every control is gated by `capabilities`, never by the org role.
  */
 export function PlacementEditor({ placement }: { placement: PlacementDto }) {
-  const { t } = useTranslation();
   const { tx, isAll, workspaceId, canWrite, canCopy } = usePlacementMap();
   const form = usePlacementForm(placement);
   const actions = usePlacementActions();
@@ -43,20 +41,23 @@ export function PlacementEditor({ placement }: { placement: PlacementDto }) {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 p-4">
-        <div className="min-w-0 flex-1">
-          <Text as="h3" variant="bodySm" fontWeight="semibold" truncate>{tx("contentModel.integration.map.editor.title")}</Text>
-          <Text as="p" variant="bodyXs" tone="subdued" truncate>
-            {placementDisplayName(placement)} · {t(`contentModel.placement.status.${placement.status}`)}
-          </Text>
-        </div>
+    <Card className="flex h-full min-h-0 flex-col overflow-hidden" data-placement-editor>
+      <PlacementSourceSection placement={placement} actions={<>
+        {(copyable || (editable && placement.status !== "archived")) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={tx("contentModel.integration.map.editor.more")}><MoreHorizontal className="size-4" aria-hidden /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {copyable && <DropdownMenuItem onSelect={() => void copy()} disabled={copying}><Copy className="mr-2 size-4" aria-hidden />{tx("contentModel.integration.map.editor.copy")}</DropdownMenuItem>}
+              {editable && placement.status !== "archived" && <DropdownMenuItem onSelect={() => setArchiveOpen(true)} disabled={form.saving}><Archive className="mr-2 size-4" aria-hidden />{tx("contentModel.integration.map.editor.archive")}</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button variant="ghost" size="sm" onClick={() => usePlacementStore.getState().selectPlacement(null)} aria-label={tx("contentModel.integration.map.action.close")}>
           <X className="size-4" aria-hidden />
         </Button>
-      </div>
+      </>} />
 
-      <div className="space-y-3 p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-2.5" data-inspector-scroll>
         {!editable ? (
           <ContentNotice title={tx(isAll ? "contentModel.integration.map.editor.readOnlyAll" : "contentModel.integration.map.editor.readOnly")} />
         ) : null}
@@ -71,39 +72,14 @@ export function PlacementEditor({ placement }: { placement: PlacementDto }) {
         )}
         {form.failure && <ContentFailureNotice failure={form.failure} />}
 
-        {editable && (
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={form.save} disabled={!form.dirty || form.saving}>
-              {form.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />}
-              {tx("contentModel.integration.map.action.save")}
-            </Button>
-            <Button size="sm" variant="outline" onClick={form.discard} disabled={!form.dirty || form.saving}>
-              {tx("contentModel.integration.map.action.discard")}
-            </Button>
-          </div>
-        )}
-
-        <PlacementSourceSection placement={placement} editable={editable} formDirty={form.dirty} />
-        <PlacementFieldsForm placement={placement} values={form.values} editable={editable} problem={form.problem} onChange={form.update} />
-
-        {(copyable || (editable && placement.status !== "archived")) && (
-          <div className="flex flex-wrap gap-2 border-t pt-3">
-            {copyable && (
-              <Button size="sm" variant="outline" onClick={copy} disabled={copying}>
-                {copying ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-                {tx("contentModel.integration.map.editor.copy")}
-              </Button>
-            )}
-            {editable && placement.status !== "archived" && (
-              <Button size="sm" variant="outline" onClick={() => setArchiveOpen(true)} disabled={form.saving}>
-                <Archive className="size-4" aria-hidden />
-                {tx("contentModel.integration.map.editor.archive")}
-              </Button>
-            )}
-          </div>
-        )}
+        <PlacementFieldsForm placement={placement} values={form.values} editable={editable && !form.saving} problem={form.problem} onChange={form.update} />
       </div>
-
+      {editable && <PlacementActionBar tone={form.dirty ? "warning" : "subdued"} status={tx(form.saving ? "contentModel.integration.map.editor.saving" : form.dirty ? "contentModel.integration.map.editor.draftKept" : "contentModel.integration.map.editor.saved")}>
+          <Button size="sm" variant="outline" onClick={form.discard} disabled={!form.dirty || form.saving}>{tx("contentModel.integration.map.action.discard")}</Button>
+          <Button size="sm" onClick={form.save} disabled={!form.dirty || form.saving}>
+            {form.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />}{tx("contentModel.integration.map.action.save")}
+          </Button>
+      </PlacementActionBar>}
       <PlacementArchiveDialog open={archiveOpen} onOpenChange={setArchiveOpen} placements={[placement]} onConfirm={() => actions.archive([placement])} />
     </Card>
   );

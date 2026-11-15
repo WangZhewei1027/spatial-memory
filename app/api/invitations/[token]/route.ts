@@ -135,7 +135,7 @@ export async function POST(
       method: "POST",
       path: `/api/invitations/${token}`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "接受邀请失败" }, { status: 500 });
   }

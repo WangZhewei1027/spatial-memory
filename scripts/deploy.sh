@@ -34,6 +34,7 @@ if [ -z "${SKIP_BUILD:-}" ]; then
     --build-arg NEXT_PUBLIC_SITE_URL="$(env_value NEXT_PUBLIC_SITE_URL)" \
     --build-arg NEXT_PUBLIC_MEDIA_BASE_URL="$(env_value NEXT_PUBLIC_MEDIA_BASE_URL)" \
     --build-arg NEXT_PUBLIC_TIANDITU_KEY="$(env_value NEXT_PUBLIC_TIANDITU_KEY)" \
+    --build-arg APP_RELEASE="$TAG" \
     -t "$IMAGE:$TAG" -t "$IMAGE:latest" .
 else
   docker tag "$IMAGE:latest" "$IMAGE:$TAG"

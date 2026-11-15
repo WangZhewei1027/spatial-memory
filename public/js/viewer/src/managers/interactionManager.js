@@ -23,6 +23,7 @@ import {
 } from "./selectionManager.js";
 
 let mode = "pan";
+let locationPicking = false;
 let handler = null;
 
 // 拖动状态
@@ -102,7 +103,7 @@ function applyCursor(cursor) {
   const viewer = getViewer();
   if (!viewer) return;
   viewer.scene.canvas.style.cursor =
-    cursor !== undefined ? cursor : MODE_CURSOR[mode] ?? "";
+    locationPicking ? "crosshair" : cursor !== undefined ? cursor : MODE_CURSOR[mode] ?? "";
 }
 
 // ---------------- 拖动 ----------------
@@ -277,6 +278,7 @@ function collectAssetsInRect(minX, minY, maxX, maxY) {
 // ---------------- 事件分派 ----------------
 
 function onLeftDown(event) {
+  if (locationPicking) return;
   if (mode === "move") {
     const hit = pickAsset(event.position);
     if (hit) beginDrag(hit, event.position);
@@ -286,6 +288,7 @@ function onLeftDown(event) {
 }
 
 function onMouseMove(event) {
+  if (locationPicking) return;
   if (mode === "move" && dragging) {
     updateDrag(event.endPosition);
   } else if (mode === "box" && boxing) {
@@ -294,6 +297,7 @@ function onMouseMove(event) {
 }
 
 function onLeftUp(event) {
+  if (locationPicking) return;
   if (mode === "move" && dragging) {
     endDrag();
   } else if (mode === "box" && boxing) {
@@ -327,7 +331,28 @@ export function setupInteraction() {
  * 获取当前模式。
  */
 export function getMode() {
-  return mode;
+  return locationPicking ? "pan" : mode;
+}
+
+/** A temporary point-pick overrides move/box without changing the user's tool. */
+export function setLocationPicking(enabled) {
+  if (enabled && dragging) {
+    draggedAssets.forEach((asset) => setEntityPositionDegrees(asset.entity, asset.startLon, asset.startLat, asset.height));
+    dragMoved = false;
+    endDrag();
+  }
+  if (enabled && boxing) {
+    setCameraInputs(true);
+    if (rectEl) rectEl.style.display = "none";
+    boxing = false;
+    boxStart = null;
+  }
+  locationPicking = enabled;
+  applyCursor();
+}
+
+export function isLocationPicking() {
+  return locationPicking;
 }
 
 /**

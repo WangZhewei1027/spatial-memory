@@ -20,6 +20,6 @@ export async function GET(request: Request) {
     const rows = await query.orderBy("w.name").orderBy("w.id").execute();
     return json(rows.map(({ miniapp_config, ...row }) => ({ ...row, config: parseCollectionMiniappConfig(miniapp_config) })));
   } catch (error) {
-    return errorResponse(error);
+    return errorResponse(error, request);
   }
 }

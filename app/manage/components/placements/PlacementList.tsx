@@ -2,12 +2,14 @@
 
 import { ContentEmptyState, ContentErrorState, ContentListSkeleton } from "@/app/manage/content/ContentFeedback";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { teamHref } from "../../lib/content-context";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PlacementDto } from "@/lib/content-model/contracts";
 import { useEffect, useMemo, useState } from "react";
 import { usePlacementStore, type PlacementListTab } from "../../lib/placement-store";
 import { placementFileType } from "../../lib/placement-to-viewer";
-import { AnchorList } from "./AnchorList";
 import { PlacementCard } from "./PlacementCard";
 import { PlacementListHeader } from "./PlacementListHeader";
 import { usePlacementMap } from "./PlacementMapContext";
@@ -19,7 +21,7 @@ const TABS: PlacementListTab[] = ["placements", "anchors"];
  * Map content and recognition targets. Activities open from the map header.
  */
 export function PlacementList({ visible }: { visible: PlacementDto[] }) {
-  const { tx, tags, setViewerSelection } = usePlacementMap();
+  const { tx, organizationId, tags, setViewerSelection } = usePlacementMap();
   const placements = usePlacementStore((state) => state.placements);
   const status = usePlacementStore((state) => state.status);
   const error = usePlacementStore((state) => state.error);
@@ -43,7 +45,7 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
     const next = listTabOf(placement);
     if (usePlacementStore.getState().tab !== next) usePlacementStore.getState().setTab(next);
     const frame = requestAnimationFrame(() => {
-      const element = document.getElementById(next === "anchors" && placement.target.kind === "asset" ? `anchor-card-${placement.target.asset_id}` : `placement-card-${selectedId}`);
+      const element = document.getElementById(`placement-card-${selectedId}`);
       element?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     return () => cancelAnimationFrame(frame);
@@ -72,27 +74,26 @@ export function PlacementList({ visible }: { visible: PlacementDto[] }) {
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <PlacementListHeader shownCount={visible.length} totalCount={placements.length} fileTypes={fileTypes} selectMode={selectMode} onToggleSelectMode={toggleSelectMode} />
-      <Tabs value={tab} onValueChange={(value) => usePlacementStore.getState().setTab(value as PlacementListTab)} className="px-3 pt-2">
+      <Tabs value={tab} onValueChange={(value) => usePlacementStore.getState().setTab(value as PlacementListTab)} className="px-2 pt-1.5">
         <TabsList className="w-full">
           {TABS.map((key) => (
             <TabsTrigger key={key} value={key} className="flex-1 text-xs">
               {tx(`contentModel.integration.map.tab.${key}`)}
-              {key === "placements" && <span className="ms-1 tabular-nums text-muted-foreground">{groups[key].length}</span>}
+              <span className="ms-1 tabular-nums text-muted-foreground">{groups[key].length}</span>
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {tab === "anchors" ? (
-          <AnchorList anchorPlacements={groups.anchors} />
-        ) : status === "loading" && !placements.length ? (
+        {status === "loading" && !placements.length ? (
           <ContentListSkeleton label={tx("contentModel.integration.map.list.loading")} rows={4} />
         ) : status === "error" ? (
           <ContentErrorState message={error ?? undefined} onRetry={() => usePlacementStore.getState().requestReload()} />
         ) : rows.length === 0 ? (
           <ContentEmptyState
-            title={tx(placements.length ? "contentModel.integration.map.list.noMatch" : `contentModel.integration.map.list.empty.${tab}`)}
-            description={tx(placements.length ? "contentModel.integration.map.list.noMatchHint" : "contentModel.integration.map.list.emptyHint")}
+            title={tx(tab === "anchors" ? "contentModel.integration.map.anchors.empty" : placements.length ? "contentModel.integration.map.list.noMatch" : "contentModel.integration.map.list.empty.placements")}
+            description={tx(tab === "anchors" ? "contentModel.integration.map.anchors.emptyHint" : placements.length ? "contentModel.integration.map.list.noMatchHint" : "contentModel.integration.map.list.emptyHint")}
+            actions={tab === "anchors" && <Button variant="outline" size="sm" asChild><Link href={teamHref("/manage/anchors", organizationId)} target="_blank" rel="noopener noreferrer">{tx("contentModel.integration.map.anchors.openLibrary")}</Link></Button>}
           />
         ) : (
           <div className="divide-y">

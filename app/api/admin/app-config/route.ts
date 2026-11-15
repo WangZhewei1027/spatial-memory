@@ -56,7 +56,7 @@ export async function GET() {
       method: "GET",
       path: "/api/admin/app-config",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取应用配置失败" }, { status: 500 });
   }
@@ -107,7 +107,7 @@ export async function PUT(request: Request) {
       method: "PUT",
       path: "/api/admin/app-config",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "更新应用配置失败" }, { status: 500 });
   }

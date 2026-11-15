@@ -242,8 +242,3 @@ export function parseRenderConfig(value: unknown, targetFileType: AssetFileType 
   if (raw.display !== undefined) out.display = parseScalarMap(raw.display, "renderConfig.display");
   return out;
 }
-
-/** Normalize a URL under our media host to its object key (null for any other URL). */
-export function managedKeyFromUrl(url: string | null | undefined): string | null {
-  return url ? mediaKeyFromUrl(url) : null;
-}

@@ -16,6 +16,6 @@ export async function POST(request: Request) {
 
     return json(await hugePlacements({ workspaceId, organizationId }));
   } catch (error) {
-    return errorResponse(error);
+    return errorResponse(error, request);
   }
 }

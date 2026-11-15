@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/log-error";
 
 // Helpers shared by the public /api/miniapp/* routes. These endpoints are
 // called anonymously by the WeChat mini-program (no session), so every input
@@ -99,11 +100,13 @@ export function json(data: unknown, status = 200): NextResponse {
   });
 }
 
-/** Uniform error mapping for the miniapp routes. */
-export function errorResponse(error: unknown, fallback = "服务暂不可用"): NextResponse {
+/** Uniform error mapping for the miniapp routes; unexpected failures are logged. */
+export async function errorResponse(error: unknown, request: Request, fallback = "服务暂不可用"): Promise<NextResponse> {
   if (error instanceof MiniappError) {
     return json({ error: error.message }, error.status);
   }
-  console.error("[miniapp]", error);
+  const path = new URL(request.url).pathname;
+  console.error(`[miniapp ${request.method} ${path}]`, error);
+  await logError({ method: request.method, path, status: 503, error });
   return json({ error: fallback }, 503);
 }

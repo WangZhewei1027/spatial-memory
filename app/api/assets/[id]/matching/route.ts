@@ -3,12 +3,12 @@ import { getMatchingAnchor } from "@/lib/anchor/access.server";
 import { NextResponse } from "next/server";
 type Context = { params: Promise<{ id: string }> };
 
-/** OSD consumes reference images directly; no cloud feature-generation request. */
+/** On-device recognition reads reference images directly; no cloud feature generation. */
 export async function GET(_request: Request, { params }: Context) {
   try {
     const { id } = await params;
     const asset = await getMatchingAnchor(id);
-    return NextResponse.json({ data: { status: asset.file_url ? "ready" : "missing_image", engine: "osd" } },
+    return NextResponse.json({ data: { status: asset.file_url ? "ready" : "missing_image", engine: "on_device" } },
       { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof MatchingError ? error.message : "无法读取参考图状态" },

@@ -24,12 +24,12 @@ export function TeamShell({ children }: { children: ReactNode }) {
   const organizationId = useManageStore((state) => state.selectedOrganizationId);
   const showSettings = useCanSeeTeamSettings();
   const teamName = useManageStore((state) => state.organizations.find((team) => team.id === organizationId)?.name);
-  // Map and scene editors keep their existing full-window workspace.
+  // Map, scene and activity editors keep their existing full-window workspace.
   if (isFullWindowEditorPath(pathname)) return children;
-  const library = /^\/manage(?:\/(assets|scenes|collections|activities))?\/?$/.test(pathname);
+  const library = /^\/manage(?:\/(assets|anchors|scenes|collections|activities))?\/?$/.test(pathname);
   return (
     <TeamFrame organizationId={organizationId} teamName={teamName} showSettings={showSettings} library={library}
-      inspector={/^\/manage\/assets\/?$/.test(pathname) ? <Suspense fallback={null}><AssetInspector /></Suspense> : undefined}>
+      inspector={/^\/manage\/(assets|anchors)\/?$/.test(pathname) ? <Suspense fallback={null}><AssetInspector library={pathname.includes("/anchors") ? "anchor" : "asset"} /></Suspense> : undefined}>
       {children}
     </TeamFrame>
   );

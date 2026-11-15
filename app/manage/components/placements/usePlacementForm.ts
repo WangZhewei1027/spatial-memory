@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { PayloadScalar, PlacementDto, PlacementRenderConfig, PlacementStatus, UpdatePlacementRequest } from "@/lib/content-model/contracts";
+import type { PayloadScalar, PlacementDto, PlacementRenderConfig, UpdatePlacementRequest } from "@/lib/content-model/contracts";
 import type { ContentActionFailure } from "@/app/manage/content/useContentAction";
 import { isLockConflict, placementApi } from "../../lib/content-api";
 import { toActionResult } from "../../lib/content-errors";
@@ -9,20 +9,8 @@ import { placementFileType } from "../../lib/placement-to-viewer";
 import { usePlacementStore } from "../../lib/placement-store";
 import { usePlacementMap } from "./PlacementMapContext";
 import { parseNumber, scalarEntries } from "./placement-utils";
-
-export interface PlacementFormValues {
-  name: string;
-  status: PlacementStatus;
-  longitude: string;
-  latitude: string;
-  altitude: string;
-  anchorId: string | null;
-  isHuge: boolean;
-  scale: string;
-  textColor: string;
-  textSize: string;
-  tagIds: string[];
-}
+import type { PlacementFormValues } from "../../lib/placement-draft";
+export type { PlacementFormValues } from "../../lib/placement-draft";
 
 const text = (value: PayloadScalar | undefined) => (value === undefined || value === null ? "" : String(value));
 
@@ -105,32 +93,38 @@ export function buildChanges(base: PlacementDto, values: PlacementFormValues): {
  */
 export function usePlacementForm(placement: PlacementDto) {
   const { tx } = usePlacementMap();
-  const [base, setBase] = useState(placement);
-  const [values, setValues] = useState(() => formValuesOf(placement));
+  const scopeKey = usePlacementStore((state) => state.scopeKey);
+  const draft = usePlacementStore((state) => state.placementDrafts[placement.id]);
+  const base = draft?.base ?? placement;
+  const values = draft?.values ?? formValuesOf(placement);
   const [saving, setSaving] = useState(false);
-  const [conflict, setConflict] = useState(false);
+  const [saveConflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<ContentActionFailure | null>(null);
   const [problem, setProblem] = useState<FormProblem | null>(null);
   const [rebaseAfter, setRebaseAfter] = useState<number | null>(null);
   const loadedCount = usePlacementStore((state) => state.loadedCount);
   const dirty = !sameValues(values, formValuesOf(base));
+  const conflict = saveConflict || (dirty && base.lock_version !== placement.lock_version);
 
-  // A newer server row (own move, version switch, reload) rebases a clean form.
+  // Only an explicit conflict reload replaces the retained version and draft.
   useEffect(() => {
-    if (placement === base) return;
-    if (!dirty || (rebaseAfter !== null && loadedCount > rebaseAfter)) {
-      setBase(placement);
-      setValues(formValuesOf(placement));
+    if (scopeKey && rebaseAfter !== null && loadedCount > rebaseAfter) {
+      usePlacementStore.getState().setPlacementDraft(scopeKey, placement.id, null);
       setConflict(false);
       setFailure(null);
       setRebaseAfter(null);
     }
-  }, [placement, base, dirty, rebaseAfter, loadedCount]);
+  }, [placement.id, scopeKey, rebaseAfter, loadedCount]);
 
   const update = useCallback((patch: Partial<PlacementFormValues>) => {
-    setValues((current) => ({ ...current, ...patch }));
+    if (!scopeKey) return;
+    const store = usePlacementStore.getState();
+    const current = store.placementDrafts[placement.id];
+    const original = current?.base ?? placement;
+    const next = { ...(current?.values ?? formValuesOf(original)), ...patch };
+    store.setPlacementDraft(scopeKey, placement.id, sameValues(next, formValuesOf(original)) ? null : { base: original, values: next });
     setProblem(null);
-  }, []);
+  }, [placement, scopeKey]);
 
   const save = useCallback(async () => {
     const { changes, problem: invalid } = buildChanges(base, values);
@@ -140,9 +134,17 @@ export function usePlacementForm(placement: PlacementDto) {
     setFailure(null);
     try {
       const updated = await placementApi.update(base.id, { expectedLockVersion: base.lock_version, ...changes });
-      usePlacementStore.getState().upsertPlacements([updated]);
-      setBase(updated);
-      setValues(formValuesOf(updated));
+      const store = usePlacementStore.getState();
+      if (store.scopeKey !== scopeKey) return;
+      store.upsertPlacements([updated]);
+      // A later draft must survive an in-flight save from an unmounted editor.
+      // It was edited on top of the values just saved, so it moves to the saved
+      // version instead of reporting this save as someone else's conflict.
+      const later = store.placementDrafts[base.id];
+      if (scopeKey && later === draft) store.setPlacementDraft(scopeKey, base.id, null);
+      else if (scopeKey && later && later.base.lock_version === base.lock_version) {
+        store.setPlacementDraft(scopeKey, base.id, sameValues(later.values, formValuesOf(updated)) ? null : { base: updated, values: later.values });
+      }
       setConflict(false);
     } catch (error) {
       if (isLockConflict(error)) setConflict(true);
@@ -150,13 +152,14 @@ export function usePlacementForm(placement: PlacementDto) {
     } finally {
       setSaving(false);
     }
-  }, [base, values, tx]);
+  }, [base, values, tx, scopeKey, draft]);
 
   const discard = useCallback(() => {
-    setValues(formValuesOf(base));
+    if (scopeKey) usePlacementStore.getState().setPlacementDraft(scopeKey, placement.id, null);
+    setConflict(false);
     setProblem(null);
     setFailure(null);
-  }, [base]);
+  }, [placement.id, scopeKey]);
 
   /** Explicit reload after a conflict: re-fetch the list, then take the server row. */
   const reload = useCallback(() => {

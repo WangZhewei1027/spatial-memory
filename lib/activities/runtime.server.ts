@@ -6,6 +6,7 @@ import { audit, contentTransaction, lockKeys, requestHash, toIsoRequired, type E
 import { db, sql } from "@/lib/db";
 import type { ActivityLocation, ActivityType, PublicActivityDto } from "./contracts";
 import { distanceMeters, effectiveConfig, parseLocation } from "./input";
+import { DEFAULT_DANMAKU_MAX_LENGTH } from "./defaults";
 import { locationOf, locationSql } from "./service.server";
 
 export interface ActivityScope { workspaceId: string | null; organizationId: string | null }
@@ -124,7 +125,7 @@ export async function submitActivityRecord(input: Submission) {
     const config = effectiveConfig(type, placement.config);
     const center = locationOf(placement);
     if (center && placement.radius_meters !== null && (!input.location || distanceMeters(center, input.location) > placement.radius_meters)) throw invalid("不在活动范围内");
-    if (input.kind === "danmaku" && (!input.content || input.content.length > (config.maxLength ?? 500))) throw invalid(`留言最多 ${config.maxLength ?? 500} 字`);
+    if (input.kind === "danmaku" && (!input.content || input.content.length > (config.maxLength ?? DEFAULT_DANMAKU_MAX_LENGTH))) throw invalid(`留言最多 ${config.maxLength ?? DEFAULT_DANMAKU_MAX_LENGTH} 字`);
     const fingerprint = requestHash(input);
     if (input.participantId) {
       await lockKeys(trx, [`activity-record:${placement.id}:${input.participantId}`]);

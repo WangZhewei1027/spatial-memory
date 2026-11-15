@@ -37,10 +37,6 @@ export function acceptFor(type: UploadType) {
   return FILE_TYPE_CONFIGS[type]?.accept;
 }
 
-export function maxSizeFor(type: UploadType) {
-  return getEffectiveMaxSizeMB(type);
-}
-
 /** Validate originals and inspect capture/animation metadata before upload. */
 export async function prepareFile(file: File, type?: UploadType): Promise<PreparedFile> {
   if (type === "model") {

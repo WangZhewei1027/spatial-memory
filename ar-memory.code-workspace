@@ -11,15 +11,6 @@
 		"i18n-ally.localesPaths": [
 			"locales",
 			"lib/i18n"
-		],
-		"mcp": {
-			"servers": {
-				"supabase": {
-					"type": "http",
-					"url": "https://mcp.supabase.com/mcp?project_ref=mkdfezaufjhrfjkfqlbj"
-				}
-			},
-			"inputs": []
-		}
+		]
 	}
 }

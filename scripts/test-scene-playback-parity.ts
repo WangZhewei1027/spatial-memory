@@ -12,7 +12,7 @@ import type { ThreeViewportProps } from '../app/manage/scenes/components/three-e
 
 const require = createRequire(import.meta.url);
 const miniRoot = resolve('../spatial-memory-mini-program/miniprogram');
-const { createFixtureGLB } = require(`${miniRoot}/labs/xr-three/runtime`);
+const { createFixtureGLB } = require(`${miniRoot}/../ignore/labs/xr-three/runtime`);
 const { THREE } = require(`${miniRoot}/lib/three-runtime/runtime`);
 const { ModelCache } = require(`${miniRoot}/lib/three-runtime/resources`);
 const { createCompositionPlayer } = require(`${miniRoot}/lib/scene-runtime/composition`);

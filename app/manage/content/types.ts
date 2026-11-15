@@ -9,7 +9,7 @@ export type ContentAssetType =
   | "text"
   | "link"
   | "document"
-  /** Recognition target; shown in the map's asset panel, not the library. */
+  /** Special asset with its own recognition-target library. */
   | "anchor";
 
 export type ContentLifecycle = "active" | "archived";
@@ -23,7 +23,7 @@ export interface ContentPerson {
 
 // ───────────────────────── workbench ─────────────────────────
 
-export type ContentLibraryKind = "asset" | "scene";
+export type ContentLibraryKind = "asset" | "anchor" | "scene";
 
 /** Content tile shared by the separate asset and scene libraries. */
 export type WorkbenchType = "scene" | ContentAssetType;

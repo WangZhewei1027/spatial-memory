@@ -40,7 +40,7 @@ export default function ErrorLogsPage() {
           <p className="text-sm text-muted-foreground">
             {t(
               "superAdmin.errorLogs.description",
-              "Analyze and filter client & API errors",
+              "Analyze and filter client, API and server errors",
             )}
           </p>
         </div>

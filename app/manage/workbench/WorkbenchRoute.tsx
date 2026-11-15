@@ -39,6 +39,7 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const pathname = usePathname();
   const params = useSearchParams();
   const organizationId = team.organizationId as string;
+  const assetLibraryPath = kind === "anchor" ? "/manage/anchors" : "/manage/assets";
   // The type filter lives in the URL (direct links and back/forward);
   // search text and lifecycle are page-local.
   const type = kind === "asset" ? readType(params.get("type")) : "all";
@@ -53,8 +54,8 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const teamName = team.organization?.name ?? tx("contentModel.integration.assets.unknownOrganization");
   const types = useMemo(() => {
     const allowed = (team.organization?.allowed_file_types ?? DEFAULT_UPLOAD_TYPES) as readonly string[];
-    return CREATABLE_TYPES.filter((type) => allowed.includes(type));
-  }, [team.organization]);
+    return CREATABLE_TYPES.filter((type) => allowed.includes(type) && (kind === "anchor" ? type === "anchor" : type !== "anchor"));
+  }, [team.organization, kind]);
 
   const changeFilters = (next: WorkbenchFilters) => {
     setLocal({ query: next.query, state: next.state });
@@ -66,15 +67,15 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   };
 
   const itemHref = useCallback(
-    (item: WorkbenchItem) => teamHref(item.kind === "scene" ? `/manage/scenes/${item.id}` : `/manage/assets/${item.id}`, organizationId),
-    [organizationId],
+    (item: WorkbenchItem) => teamHref(item.kind === "scene" ? `/manage/scenes/${item.id}` : `${assetLibraryPath}/${item.id}`, organizationId),
+    [organizationId, assetLibraryPath],
   );
   const created = (asset: AssetDto) => {
     data.reload();
     toast.success(tx("contentModel.integration.assets.created", { name: asset.name ?? "" }), {
       action: { label: tx("contentModel.integration.assets.open"), onClick: () => {
-        if (window.location.pathname === "/manage/assets") openAssetInspector(asset.id);
-        else router.push(teamHref("/manage/assets", organizationId, { [ASSET_INSPECTOR_PARAM]: asset.id }));
+        if (window.location.pathname === assetLibraryPath) openAssetInspector(asset.id);
+        else router.push(teamHref(assetLibraryPath, organizationId, { [ASSET_INSPECTOR_PARAM]: asset.id }));
       } },
     });
   };
@@ -94,8 +95,8 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
         items={data.items}
         pagination={{ ...data, moreError: data.moreError ? errorMessage(data.moreError, tx) : null }}
         getItemHref={itemHref}
-        onOpenItem={kind === "asset" ? (item) => openAssetInspector(item.id) : undefined}
-        selectedItemId={kind === "asset" ? params.get(ASSET_INSPECTOR_PARAM) : null}
+        onOpenItem={kind !== "scene" ? (item) => openAssetInspector(item.id) : undefined}
+        selectedItemId={kind !== "scene" ? params.get(ASSET_INSPECTOR_PARAM) : null}
         canWrite={canWrite}
         readOnlyReason={readOnlyReason}
         canUpload={types.length > 0}

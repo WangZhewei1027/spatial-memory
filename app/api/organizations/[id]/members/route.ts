@@ -54,7 +54,7 @@ export async function GET(
       method: "GET",
       path: "/api/organizations/[id]/members",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取组织成员失败" }, { status: 500 });
   }
@@ -146,7 +146,7 @@ export async function POST(
       method: "POST",
       path: "/api/organizations/[id]/members",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "添加组织成员失败" }, { status: 500 });
   }
@@ -250,7 +250,7 @@ export async function PATCH(
       method: "PATCH",
       path: "/api/organizations/[id]/members",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "更新成员角色失败" }, { status: 500 });
   }
@@ -356,7 +356,7 @@ export async function DELETE(
       method: "DELETE",
       path: "/api/organizations/[id]/members",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "移除组织成员失败" }, { status: 500 });
   }

@@ -88,7 +88,25 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 地图首屏布局运行 `node scripts/test-map-layout.mjs`，需要本地服务，API 与 viewer 使用隔离 fixture。逐帧比较加载占位到正式内容的三栏位置、尺寸与顶栏，覆盖直接进入、刷新和从地图列表打开、中英文、明暗主题、桌面/平板/手机及矮视口；不只检查加载完成后的截图。设置 `MAP_LAYOUT_SCREENSHOTS` 可保存截图。
 
-地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
+同一脚本检查地图两侧三点拖柄的鼠标与键盘调宽、最小/最大限制、双击/Enter恢复默认、缩窄窗口后恢复宽度，以及拖拽期间地图不重挂载；窄屏不显示桌面拖柄。
+
+地图投放检视器运行 `node scripts/test-placement-inspector.mjs`，使用隔离 API 和 viewer fixture。覆盖详情/新增互斥、来源预览、固定保存栏、切换/关闭后的草稿恢复、保存失败与锁冲突、已有素材及新文本的原子创建、显式应用地图候选点、只读、中英文、明暗主题与1440/1100/820/390/320px。`PLACEMENT_INSPECTOR_SCREENSHOTS` 可保存截图；fixture 不访问真实业务数据或地图服务。
+
+该回归也覆盖内容选择器的素材/场景混排、类别与搜索组合、已存模型/视频缩略图、缺图回退及搜索条件保留，并逐帧检查加载、空结果、类别和上传模式/类型切换时弹窗与标题不跳变。关闭只保留右上角入口，上传确认在表单内完成。
+
+位置字段常驻回归比较开始取点、候选点、确认与取消时的输入、按钮和保存栏几何，确认地图浮条只更新值、不移动按钮；窄屏点击地图不自动打开侧栏，确认/取消后恢复滚动位置。还检查取消不覆盖手动值、候选点不跨投放或任务复用。默认离线测试 `test-viewer-location-picking.mjs` 通过实际 viewer 模块验证临时取点覆盖拖动/框选、点击已有素材只产生坐标、结束清理标记及恢复工具。
+
+检视器回归同时验证28px桌面/32px手机输入、单行操作栏高度与按钮不溢出，以及左栏模型、视频、场景的已存缩略图实际解码和无图回退。`test-content-model-services.ts` 的内容读取场景验证场景投放返回引用素材的缩略图，同时保持播放URL与权限隔离。
+
+地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。还验证地图内“新建活动”复用活动库表单、仅改变标题、取消返回与失败重试、成功创建暂停关联，以及活动库通过同一表单创建不关联地图的活动。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
+
+活动详情关联运行 `node scripts/test-activity-map-links.mjs`，使用上述本地服务与隔离 fixture，覆盖已有关联时禁用新增、仅开启/暂停、取消后关联新地图、恢复原地图的关联 ID、只读、中英文与明暗/窄屏。单地图迁移回归 `node --import tsx --conditions react-server scripts/test-activity-map-migration.ts` 使用本机 55439 的唯一临时数据库，验证多地图冲突中止、旧草稿转暂停、唯一约束、来源记录保留、回滚和重复迁移；CI 运行同一脚本。
+
+活动独立编辑器运行 `node scripts/test-activity-editor.mjs`，需要上述本地 Next 服务（同样支持 `MANAGE_TEST_ORIGIN`），API 与 viewer 均使用隔离 fixture。六组语言、主题、宽度与权限组合分别运行弹幕和店铺打卡，共十二个场景，覆盖中英文、明暗主题、1440/1100/390/320px、只读与归档。验证活动卡片打开新标签页且原列表保留、共享顶栏保存与三栏/窄屏布局、切换页签及隐藏记录时保留草稿和地图、冲突保留输入与显式重载；弹幕验证默认 50 字、地图坐标和范围保存，店铺验证列表/地图选点打开检视器、点位与奖励图片、打卡距离、点位新增/移除/归档/恢复、隐藏检视器中的无效输入，以及从空活动添加首个点位。设置 `ACTIVITY_EDITOR_SCREENSHOTS` 保存截图；截图中的地图为 fixture，不能作为真实 Cesium 影像验收。该脚本不属于无需运行服务的默认测试组。
+
+`scripts/test-activities.ts` 使用上述专用测试库验证活动与暂停关联的原子创建、并发幂等重试、变更目标地图的幂等冲突、只读/跨团队/归档拒绝且不遗留活动，以及重放创建请求不恢复已取消的关联。
+
+留言规则回归由默认测试中的 `scripts/test-activity-input.ts` 验证缺省值为 50、显式配置保留及 1–500 的配置边界；`scripts/test-activities.ts` 使用上述专用测试库验证新活动和公开接口返回默认值 50，并验证默认规则接受 50 字、拒绝 51 字。
 
 地图设置弹窗运行 `node scripts/test-map-settings.mjs`，使用上述本地服务及隔离 API/viewer fixture，覆盖保存/重新打开、放弃草稿、失败重试、并发冲突重载、只读/归档、中英文、明暗主题与 320px 窄屏，并检查地图不重挂载或改变尺寸。设置 `MAP_SETTINGS_SCREENSHOTS` 保存截图。迁移回归 `scripts/test-collection-config-migration.ts` 只允许本机 55439 的专用 PostgreSQL 实例，以唯一临时数据库验证旧团队值复制、地图隔离、新地图默认值、约束、回滚及迁移幂等；CI 运行同一脚本。
 
@@ -99,3 +117,5 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 这是仓库内的检查配置；GitHub 分支保护是否将检查设为必需项，由仓库设置决定。生产迁移、发布和外部服务操作按 [部署说明](docs/production-deployment.md) 执行。
 
 Scene 选择与灯光的浏览器回归运行 `node scripts/test-scene-editor-selection.mjs`，需要本地 Next 服务，使用隔离 API fixture，覆盖舞台/轨道全选、多选、复制删除撤销、灯光保存重开、中英文、窄屏和只读。`SCENE_EDITOR_SCREENSHOTS` 可保存截图。`test:cross-runtime` 额外运行实际两端 Three renderer 的 GPU 灯光与环境像素对比，需要浏览器和兄弟小程序的已构建 runtime。
+
+识别目标独立管理运行 `node scripts/test-anchor-library.mjs`，同样需要本地 Next 服务，全部 API 使用隔离 fixture。验证目标专属目录、无地图创建和参考图增删、重命名与锁冲突、只读/归档、旧素材链接转向独立详情、列表原位同步以及中英文/明暗/桌面和窄屏。`ANCHOR_LIBRARY_SCREENSHOTS` 可保存截图。`test-placement-inspector.mjs` 同时验证地图仅显示已投放目标、只保留位置/状态和挂载关系、来源编辑在新标签页进入目标库，以及内容选择器可以选择已有目标。

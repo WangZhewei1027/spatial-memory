@@ -5,6 +5,8 @@
 import { displayAssets, focusOnAsset } from "./assetManager.js";
 import { setOrigin } from "../utils/config.js";
 import { flyToOrigin } from "./viewerManager.js";
+import { setLocationPicking } from "./interactionManager.js";
+import { clearClickMarker } from "./clickHandler.js";
 import {
   setSelection,
   clearSelection,
@@ -28,6 +30,10 @@ function handleMessage(event) {
     const { type, payload } = event.data;
 
     switch (type) {
+      case "SET_LOCATION_PICKING":
+        setLocationPicking(payload?.enabled === true);
+        clearClickMarker();
+        break;
       case "SET_ASSETS":
         displayAssets(payload);
         // 重建 billboard 后重新套用已有选中高亮

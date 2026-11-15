@@ -11,6 +11,7 @@ export interface BreadcrumbCrumb {
 const PATH_LABELS: Record<string, string> = {
   "/manage": "contentModel.integration.nav.assets",
   "/manage/assets": "contentModel.integration.nav.assets",
+  "/manage/anchors": "contentModel.integration.nav.anchors",
   "/manage/activities": "contentModel.integration.nav.activities",
   "/manage/scenes": "contentModel.integration.nav.scenes",
   "/manage/collections": "contentModel.integration.nav.collections",

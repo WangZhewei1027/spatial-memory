@@ -83,6 +83,9 @@ export function ErrorLogFiltersBar({
           <SelectItem value="api">
             {t("superAdmin.errorLogs.scope.api", "API")}
           </SelectItem>
+          <SelectItem value="server">
+            {t("superAdmin.errorLogs.scope.server", "Server")}
+          </SelectItem>
         </SelectContent>
       </Select>
 

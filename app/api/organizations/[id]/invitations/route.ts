@@ -77,7 +77,7 @@ export async function GET(
       method: "GET",
       path: `/api/organizations/${id}/invitations`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取邀请列表失败" }, { status: 500 });
   }
@@ -144,7 +144,7 @@ export async function POST(
       method: "POST",
       path: `/api/organizations/${id}/invitations`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "创建邀请失败" }, { status: 500 });
   }
@@ -183,7 +183,7 @@ export async function DELETE(
       method: "DELETE",
       path: `/api/organizations/${id}/invitations`,
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "撤销邀请失败" }, { status: 500 });
   }

@@ -17,6 +17,7 @@ import { usePlacementStore } from "../../lib/placement-store";
 import { useActivityQuery } from "./useActivityQuery";
 import { ActivityPlacementForm } from "./ActivityPlacementForm";
 import { ActivityFailure } from "./ActivityFeedback";
+import { ActivityCreateDialog } from "./ActivityCreateDialog";
 
 export interface MapActivitiesProps {
   workspaceId: string;
@@ -37,7 +38,7 @@ export function MapActivities({ workspaceId, workspaceName, organizationId, canE
   // Retired map links keep their identity and participation history for relinking.
   const linkedPlacements = (placements.data ?? []).filter((placement) => placement.status !== "archived");
   const linkedActivityIds = new Set(linkedPlacements.map((placement) => placement.activity_id));
-  const availableActivities = (activities.data ?? []).filter((activity) => activity.state === "active" && activity.capabilities.can_edit && !linkedActivityIds.has(activity.id));
+  const availableActivities = (activities.data ?? []).filter((activity) => activity.state === "active" && activity.capabilities.can_edit && activity.has_map_link === false && !linkedActivityIds.has(activity.id));
   const choicesReady = !activities.loading && !activities.error && !placements.loading && !placements.error;
   const selected = availableActivities.find((activity) => activity.id === selectedId);
   const previousLink = placements.data?.find((placement) => placement.activity_id === selectedId && placement.status === "archived");
@@ -70,8 +71,14 @@ export function MapActivities({ workspaceId, workspaceName, organizationId, canE
             <MapActivityRow key={placement.id} placement={placement} activity={activities.data?.find((activity) => activity.id === placement.activity_id)} canEdit={canEdit} highlighted={highlightedId === placement.id} onReload={placements.reload} />
           ))}</ul>}
       </div>
-      {canEdit && <div className="flex shrink-0 justify-end border-t px-5 py-3 sm:px-6">
-        <Button className="min-h-10" disabled={!choicesReady || !availableActivities.length} onClick={() => setCreating(true)}><Plus aria-hidden />{t("activities.placeExisting")}</Button>
+      {canEdit && <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t px-5 py-3 sm:px-6">
+        <ActivityCreateDialog organizationId={organizationId} workspaceId={workspaceId} onCreated={() => { placements.reload(); activities.reload(); }}>
+          <Button variant="outline" className="min-h-10"><Plus aria-hidden />{t("activities.newActivity")}</Button>
+        </ActivityCreateDialog>
+        <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
+          {choicesReady && !availableActivities.length && <Text as="p" variant="bodySm" tone="subdued">{t("activities.noAvailableActivities")}</Text>}
+          <Button className="min-h-10" disabled={!choicesReady || !availableActivities.length} onClick={() => setCreating(true)}><Plus aria-hidden />{t("activities.placeExisting")}</Button>
+        </div>
       </div>}
     </div>
   );
@@ -122,7 +129,7 @@ function MapActivityRow({ placement, activity, canEdit, highlighted, onReload }:
           </SelectTrigger>
           <SelectContent>{["active", "paused"].map((status) => <SelectItem key={status} value={status}>{t(`activities.mapStates.${status}`)}</SelectItem>)}</SelectContent>
         </Select>
-        <Button variant="outline" asChild className="min-h-10"><Link href={teamHref(`/manage/activities/${placement.activity_id}`, placement.organization_id)} aria-label={`${t(activity?.capabilities.can_edit ? "activities.editContent" : "activities.viewContent")} · ${placement.activity_name}`}>{t(activity?.capabilities.can_edit ? "common.edit" : "activities.view")}</Link></Button>
+        <Button variant="outline" asChild className="min-h-10"><Link href={teamHref(`/manage/activities/${placement.activity_id}`, placement.organization_id)} target="_blank" rel="noopener noreferrer" aria-label={`${t(activity?.capabilities.can_edit ? "activities.editContent" : "activities.viewContent")} · ${placement.activity_name}`}>{t(activity?.capabilities.can_edit ? "common.edit" : "activities.view")}</Link></Button>
         {canEdit && <Button variant="ghost" className="col-span-2 min-h-10 sm:col-span-1" disabled={disabled} onClick={() => void save({ status: "archived", expectedLockVersion: current.lock_version })}>{t(pending && unlinking ? "activities.unlinking" : "activities.unlink")}</Button>}
       </div>
       {error != null && <div className="mt-3 space-y-2">

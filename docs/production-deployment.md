@@ -31,7 +31,6 @@ flowchart TB
         CADDY -->|"db 子域名"| PGADMIN
         PGADMIN -->|"内部连接"| DB
         APP -->|"读写数据"| DB
-        APP -->|"图片特征提取"| SAGE
         CADDY -->|"/_sage 路由"| SAGE
         DB -.->|"pg_dump"| BACKUP
     end
@@ -75,11 +74,11 @@ Web 主机是阿里云**轻量应用服务器**，地域 `cn-shanghai`，部署�
 | 服务 | 用途 | 部署方式与位置 | 核对时状态 |
 | --- | --- | --- | --- |
 | Caddy | HTTPS、域名跳转、反向代理、证书自动续期 | Compose 的 `caddy`；容器 `spatial-memory-caddy-1`，镜像 `caddy:2-alpine`；挂载 `/opt/spatial-memory/Caddyfile`，证书保存在 `spatial-memory_caddy-data` 卷 | 运行中 |
-| Next.js | Web 页面、管理 API、小程序 API、Better Auth 登录鉴权、上传与识别编排 | Compose 的 `app`；容器 `spatial-memory-app-1`，镜像 `spatial-memory:latest`；Node.js 22 + Next standalone，`linux/amd64` | 运行且健康 |
+| Next.js | Web 页面、管理 API、小程序 API、Better Auth 登录鉴权、上传、识别候选与内容接口 | Compose 的 `app`；容器 `spatial-memory-app-1`，镜像 `spatial-memory:latest`；Node.js 22 + Next standalone，`linux/amd64` | 运行且健康 |
 | PostgreSQL + PostGIS | 账号会话、团队、地图合集、素材、Scene、投放和空间查询 | Compose 的 `db`；容器 `spatial-memory-db-1`，镜像 `postgis/postgis:17-3.5`；数据库 `spatial_memory`，数据卷 `spatial-memory_db-data` | 运行且健康；唯一生产业务数据库 |
 | pgAdmin 4 | 浏览表格、JSON、执行 SQL 和维护数据 | Compose 的 `pgadmin`；镜像 `dpage/pgadmin4:9.18`，独立配置卷 `spatial-memory_pgadmin-data`，512 MiB 内存上限；Caddy 提供 `db.spatialmemory.online` HTTPS | 2026-10-19 新增；登录与运维见 [pgAdmin 说明](pgadmin.md) |
-| SAGE 网关 | 管理 GPU 生命周期、选择合格候选、预热校验和转发图片向量请求 | 主机 Python 虚拟环境 + `sage-fallback.service`，代码位于 `/opt/spatial-memory/sage-fallback`；独立于 Docker Compose | 运行中；控制器因空闲处于 `off` |
-| SAGE 推理 | 将参考图、相机图片转为特征向量，供后端匹配；AR 渲染仍在手机端完成 | 阿里云 PAI-EAS 上海服务，GPU 由网关按需启动；详情见下节 | 所有候选 `Stopped`，运行实例数为 0 |
+| SAGE 网关 | 管理 GPU 生命周期、选择合格候选、预热校验和转发图片向量请求；Web 已不再调用，待单独退役 | 主机 Python 虚拟环境 + `sage-fallback.service`，代码位于 `/opt/spatial-memory/sage-fallback`；独立于 Docker Compose | 运行中；控制器因空闲处于 `off` |
+| SAGE 推理 | 原用于将参考图、相机图片转为特征向量；识别已改为小程序本机执行，待单独退役 | 阿里云 PAI-EAS 上海服务，GPU 由网关按需启动；详情见下节 | 所有候选 `Stopped`，运行实例数为 0 |
 | OSS 素材桶 | 保存媒体、3D 模型、二维码和部分静态资源 | 上海桶 `spatial-memory-media`；应用经 OSS SDK 上传，客户端经公开 HTTPS 地址读取 | 已接入；使用 OSS 原始域名，未配置独立媒体 CDN |
 | 数据库备份任务 | 导出生产数据库并上传到主机外的存储 | 主机 cron 执行 `/opt/spatial-memory/backup.sh`；`/etc/cron.d/spatial-memory-backup` 配置每天 03:30，服务器时区 `Asia/Shanghai` | 2026-11-01 迁移后手动执行与离机恢复验证成功 |
 | OSS 备份桶 | 保存用于恢复的数据库 dump | 私有桶 `spatial-memory-backups`，对象前缀 `db/`；由备份脚本上传 | 已接入；不是运行中的数据库或热备副本 |
@@ -104,7 +103,7 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 | `app:3000` | Docker 内部网络 | Caddy 转发到 Next.js；未映射为主机公网端口 |
 | `pgadmin:80` | Docker 内部网络 | Caddy 转发到数据库管理页面；未映射主机端口 |
 | `db:5432` / `127.0.0.1:5432` | 应用容器 / 主机回环 | 应用数据库访问；外部运维通过 SSH 隧道进入 |
-| `172.18.0.1:18080` | 主机 Docker 网桥 | SAGE 网关；应用的 `SAGE_EAS_ENDPOINT` 指向此地址 |
+| `172.18.0.1:18080` | 主机 Docker 网桥 | SAGE 网关；原 `SAGE_EAS_ENDPOINT` 指向此地址，Web 已不再读取 |
 | `/_sage/*` | 经 Caddy 的 HTTPS 入口 | 去掉前缀后转发至网关；`/health`、`/embed`、`/status` 仍需网关 Token |
 | `spatialth-relay-vsuiocyxbq.cn-hongkong.fcapp.run` | 公网 HTTPS 入口，函数校验独立调用密钥 | 香港 Google 中转，仅支持 `POST /token` 和 `GET /jwks`；调用密钥只在服务端配置 |
 
@@ -113,10 +112,12 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 - 管理与扫码：客户端 → Caddy → Next.js → PostgreSQL。素材和 Scene 保存即生效，引用通过 ID 读取当前内容。
 - 文件：浏览器上传原文件 → Next.js `/api/upload` 授权并压缩/转码 → OSS；浏览器和小程序按最终媒体 URL 加载文件，网页部分图片也经过 Next.js 图片优化接口。Docker runner 包含 FFmpeg/ffprobe，sharp 随服务端依赖打包；缺少转码运行时会拒绝音频上传，不保存未转换文件。
 - 视频原文件最大 512 MiB / 5 分钟，图片/匹配图/音频最大 32 MiB。视频最终大小按 512 kbps 视频 + 32 kbps 音频控制，不再限制 5 MiB；其他素材最终对象仍最大 5 MiB。multipart 上限 513 MiB；上传端点绕过 Next proxy 请求体复制并流式落盘，路由继续校验会话和团队权限。主/备用 Caddy 仅对 `/api/upload` 开放 540 MB（十进制），其他请求仍为 35 MB。生产启动预加载 `scripts/standalone-http.cjs`，将 Node 接收请求期限从 5 分钟提高至 15 分钟，保留请求头 60 秒期限；视频编码最多 300 秒。发布需要重建镜像并加载配套 Caddy 配置，不能仅替换客户端资源。
-- 识别：小程序 → Next.js 识别接口 → SAGE 网关 → PAI-EAS 返回向量 → 后端匹配并返回结果。
+- 识别：小程序 → Next.js 候选接口读取附近参考图 → 手机端比对 → Next.js 内容接口返回关联投放；相机图片不上传，Web 不调用 SAGE。
 - Google 登录：浏览器访问 Google 授权页 → 浏览器回调 Caddy / Next.js → 香港 FC → Google 令牌与公钥接口 → Next.js 验签并在 PostgreSQL 中创建或关联账号、保存会话。
 
 ## SAGE 独立部署与运行策略
+
+识别已改为小程序本机执行，Web 不再调用 SAGE；本节记录待退役服务的现状，停止实例和计费需单独处理。
 
 网关与模型源码位于兄弟项目 `ai-location`，主要说明在 `ai-location/deploy/sage/fallback/README.md`。**Web 的 GitHub Actions 和 `npm run deploy` 不会更新这两项服务。**
 
@@ -142,6 +143,10 @@ SMTP 邮件发送是可选功能，核对时未配置 `SMTP_HOST` / `SMTP_FROM`�
 部署配置索引：[`Dockerfile`](../Dockerfile)、[`docker-compose.yml`](../deploy/docker-compose.yml)、[`Caddyfile`](../deploy/Caddyfile)、[`env.example`](../deploy/env.example)。密钥、服务器 `.env`、SAGE 私有注册表和数据库 dump 均不提交 Git。
 
 pgAdmin 的首次 secret 和数据库角色需按 [部署说明](pgadmin.md) 初始化；后续 Web 部署同步其公开配置与镜像，保留账号配置卷和私有凭据。
+
+### 错误日志的版本与堆栈还原
+
+镜像构建参数 `APP_RELEASE` 为提交号（CI 用 `github.sha`，手工脚本用镜像标签），写入每条 `error_log` 的 `context.release`；未提供时本地构建读取 Git，Docker 构建记为 `dev`。生产构建生成不带 `sourceMappingURL` 的客户端 source map，`scripts/extract-client-sourcemaps.mjs` 将其从公开的 `.next/static` 移到 `.next/client-sourcemaps`，镜像单独复制该目录。`/api/errors` 只用当前版本的 map 把浏览器堆栈还原到 `context.stack_original`；旧版本页面上报的堆栈保持原样。
 
 ### 服务端素材缩略图（2026-11-04）
 

@@ -807,7 +807,7 @@ async function main(): Promise<void> {
     });
 
     await check("T12 anchor edits update every collection and invalidate in-flight descriptors", async () => {
-      const { findNearbyAnchors } = await import("../lib/anchor/recognize.server");
+      const { findNearbyAnchors } = await import("../lib/anchor/nearby.server");
       const { getMatchingAnchor } = await import("../lib/anchor/access.server");
       const anchor = await assetService.createAssetForCollection(actors.editor, f.workspaces.a, {
         name: "live anchor", fileType: "anchor", payload: { kind: "anchor" },
@@ -861,7 +861,7 @@ async function main(): Promise<void> {
       const ids = await seedRuntimeProjectionFixture(client, f, { kind: "model", payload: { kind: "model", attributes: { label: "fixed-v1" } },
         resources: [{ role: "primary", url: "https://external-fixture.invalid/fixed-preview-v1.glb" }] });
       const newest = await assetService.updateAsset(actors.maintainer, ids.asset, {
-        payload: { kind: "model", attributes: { label: "private-v2" } }, resources: [{ role: "primary", externalUrl: "https://external-fixture.invalid/private-preview-v2.glb" }],
+        payload: { kind: "model", attributes: { label: "private-v2" } }, resources: [{ role: "primary", externalUrl: "https://external-fixture.invalid/private-preview-v2.glb" }, { role: "thumbnail", externalUrl: "https://external-fixture.invalid/model-preview.png" }],
         expectedLockVersion: 1,
       });
       const fixed = await placementService.getPlacementContent(actors.editor, ids.placement, f.workspaces.a);
@@ -872,6 +872,7 @@ async function main(): Promise<void> {
       assert.equal(fixed.asset_id, ids.asset);
       assert.equal(fixed.asset_lock_version, newest.lock_version);
       assert.equal(fixed.resources[0].url, "https://external-fixture.invalid/private-preview-v2.glb");
+      assert.equal(fixed.resources.find(resource => resource.role === "thumbnail")?.url, "https://external-fixture.invalid/model-preview.png");
       assert.equal(fixed.payload.attributes?.label, "private-v2");
       for (const forbidden of ["migration_legacy", "current_version_id", "versions", "grants"]) assert.equal(JSON.stringify(fixed).includes(forbidden), false, forbidden);
       assert.equal((await placementService.getPlacementContent(actors.viewer, ids.placement, f.workspaces.a)).kind, "asset", "viewers preview the shared placement");
@@ -911,7 +912,7 @@ async function main(): Promise<void> {
       })).placement;
       const publicId = placed.id;
       const newest = await assetService.updateAsset(actors.maintainer, asset.asset.id, {
-        payload: { kind: "model" }, resources: [{ role: "primary", externalUrl: "https://external-fixture.invalid/private-scene-model-new.glb" }], expectedLockVersion: asset.asset.lock_version,
+        payload: { kind: "model" }, resources: [{ role: "primary", externalUrl: "https://external-fixture.invalid/private-scene-model-new.glb" }, { role: "thumbnail", externalUrl: "https://external-fixture.invalid/scene-model-preview.png" }], expectedLockVersion: asset.asset.lock_version,
       });
       await sceneService.saveScene(actors.maintainer, scene.id, { expectedLockVersion: scene.lock_version, name: "saved scene name", document: assetDocument(asset.asset.id) });
       const fixed = await placementService.getPlacementContent(actors.editor, placed.id, f.workspaces.a);
@@ -923,11 +924,13 @@ async function main(): Promise<void> {
       assert.equal(fixed.document.content.assets.model.assetId, asset.asset.id);
       assert.equal(fixed.resources[0].asset_id, asset.asset.id);
       assert.equal(fixed.resources[0].url, "https://external-fixture.invalid/private-scene-model-new.glb");
+      assert.equal(fixed.resources[0].thumbnail_url, "https://external-fixture.invalid/scene-model-preview.png", "scene placements expose saved thumbnails without downloading models");
       assert.equal(JSON.stringify(fixed).includes("saved scene name"), true, "placement content follows saved changes");
       assert.equal(JSON.stringify(fixed).includes(newest.id), true);
       const draft = await sceneService.getScene(actors.editor, scene.id);
       assert.equal(draft.name, "saved scene name", "team members read the draft itself");
       assert.equal(draft.referenced_resources[0].asset_id, newest.id);
+      assert.equal(draft.referenced_resources[0].thumbnail_url, fixed.resources[0].thumbnail_url);
       const copied = await sceneService.copyScene(actors.editor, scene.id, { targetWorkspaceId: f.workspaces.b, idempotencyKey: `${f.run}-scene-copy-b` });
       assert.equal(copied.workspace_id, f.workspaces.b);
       const teamCopy = await sceneService.copyScene(actors.editor, scene.id, { idempotencyKey: `${f.run}-scene-copy-team` });

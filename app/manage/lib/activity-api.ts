@@ -1,15 +1,15 @@
-import type { ActivityConfig, ActivityDto, ActivityLocation, ActivityPlacementDto, ActivityPointInput, ActivityRecordDto, ActivityType } from "@/lib/activities/contracts";
+import type { ActivityConfig, ActivityDto, ActivityLocation, ActivityPlacementDto, ActivityPlacementStatus, ActivityPointInput, ActivityRecordDto, ActivityType } from "@/lib/activities/contracts";
 import { contentRequest } from "./content-api";
 
 type Data<T> = { data: T };
-export interface ActivityInput { name: string; description?: string | null; type: ActivityType; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; idempotencyKey: string }
+export interface ActivityInput { name: string; description?: string | null; type: ActivityType; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; workspaceId?: string; idempotencyKey: string }
 export interface ActivityUpdate { expectedLockVersion: number; name?: string; description?: string | null; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; state?: "active" | "archived"; points?: ActivityPointInput[] }
 export interface ActivityPlacementInput {
   workspaceId: string;
-  status: "draft" | "active" | "paused" | "archived";
+  status: "active" | "paused";
   idempotencyKey: string;
 }
-export type ActivityPlacementUpdate = Omit<ActivityPlacementInput, "workspaceId" | "idempotencyKey"> & { expectedLockVersion: number };
+export type ActivityPlacementUpdate = { status: ActivityPlacementStatus; expectedLockVersion: number };
 const id = encodeURIComponent;
 export const activityApi = {
   list: (organizationId: string, signal?: AbortSignal) => contentRequest<Data<ActivityDto[]>>(`/api/organizations/${id(organizationId)}/activities`, { signal }).then((body) => body.data),

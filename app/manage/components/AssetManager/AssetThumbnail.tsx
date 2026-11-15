@@ -1,11 +1,13 @@
 import { File, Anchor, Music } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface AssetThumbnailProps {
   fileType: string;
   fileUrl?: string | null;
   textContent?: string | null;
   fileName: string;
+  className?: string;
 }
 
 export function AssetThumbnail({
@@ -13,9 +15,10 @@ export function AssetThumbnail({
   fileUrl,
   textContent,
   fileName,
+  className,
 }: AssetThumbnailProps) {
   return (
-    <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+    <div className={cn("w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted flex items-center justify-center", className)}>
       {(fileType === "image" || fileType === "anchor") && fileUrl ? (
         <Image
           src={fileUrl}

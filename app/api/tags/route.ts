@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       method: "GET",
       path: "/api/tags",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       method: "POST",
       path: "/api/tags",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }

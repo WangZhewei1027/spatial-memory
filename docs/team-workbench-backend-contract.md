@@ -58,17 +58,23 @@ Focused checks: `test-single-content-model-migration.ts`, `test-mutable-assets-m
 
 ## Activities
 
-Teams own independent `shop_checkin` and `danmaku` activities. A shop check-in activity contains multiple points with fixed locations. Activity rules and geographic scope are shared by all map associations. Placements contain only map association and status; they do not own point locations, rule overrides or point enablement. Point images and reward images reference ordinary image Assets, appear in asset usage, and keep existing storage retention semantics.
+Teams own independent `shop_checkin` and `danmaku` activities. A shop check-in activity contains multiple points with fixed locations. An activity has at most one non-archived map association. Active and paused links both occupy that slot; only unlinking (`archived`) releases it. New links default to paused; draft is no longer accepted. Legacy multi-map associations remain readable so owners can resolve migration conflicts; old drafts display as paused, while writes reject draft. Activity DTOs include `has_map_link` (false when unlinked). Placements contain only map association and status; they do not own point locations, rule overrides or point enablement. Point images and reward images reference ordinary image Assets, appear in asset usage, and keep existing storage retention semantics.
+
+Danmaku `config.maxLength` defaults to 50 for new activities and configurations without an explicit valid limit. The editor, effective configuration and public submission validation share `DEFAULT_DANMAKU_MAX_LENGTH` from `lib/activities/defaults.ts`. Explicit integer limits from 1 through 500 remain valid and are preserved; 500 is the configuration ceiling, not the default. Public activity responses expose the effective limit, and submission validation enforces that activity's limit.
 
 | Route | Behavior |
 | --- | --- |
-| `GET/POST /api/organizations/[id]/activities` | List/create team activities without selecting a map |
+| `GET/POST /api/organizations/[id]/activities` | List/create team activities; POST optionally accepts `workspaceId` to create an initial paused map association atomically |
 | `GET/PATCH /api/activities/[id]` | Edit shared rules, name, state, geographic scope (`location`, `radiusMeters`) and points including fixed `location`; points omitted from a submitted complete list are archived |
 | `GET/POST /api/activities/[id]/placements` | List/create map associations with map, status and idempotency key |
 | `GET/PATCH /api/activity-placements/[id]` | Read/update association status; activity and map identity cannot be changed; location, radius, config and point fields are rejected |
 | `GET /api/collections/[id]/activity-placements` | Map activity placements, separate from content placements |
 | `GET /api/activities/[id]/records` | Paginated records, optionally filtered by `placementId`; `limit` ≤ 200 |
 | `PATCH /api/activity-records/[id]` | Hide or restore a record with optimistic locking |
+
+Activity creation without `workspaceId` remains independent of maps. With `workspaceId`, `lib/activities/service.server.ts` checks team write permission and an editable, unarchived map in the same organization, then creates the activity and paused association in one transaction. Failure leaves neither new row. The existing creation `idempotencyKey` covers the whole request, including the map: matching retries reuse the activity, changed requests conflict, and replay does not restore a subsequently removed association. This uses the existing schema; no migration is required.
+
+Creating a link or restoring an archived link while another map is linked returns `DEPENDENCY_CONFLICT` (409). Writes serialize on an activity-wide lock, backed by a partial unique index on non-archived placements. The activity/map pair remains unique so relinking restores its original placement ID and history. Activity and map must belong to the same team; associations cannot move between teams.
 
 Responses and errors use the shared envelopes. Activity, placement and record writes require `expectedLockVersion`; creates accept `idempotencyKey`. The client-safe contracts are in `lib/activities/contracts.ts`. Team writers manage activities and records, viewers read only. Activity placement writes also require an open map; archived teams block all writes. Archiving an activity stops public discovery and participation in all its placements. Archiving points and hiding records preserve history.
 

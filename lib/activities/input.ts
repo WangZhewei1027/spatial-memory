@@ -1,6 +1,7 @@
 import { invalid } from "@/lib/content-model/errors";
 import { optionalString, optionalUuid, rejectUnknown, requireEnum, requireInt, requireNumber, requireRecord, requireString, requireUuid } from "@/lib/content-model/input";
 import type { ActivityConfig, ActivityLocation, ActivityPointInput, ActivityType } from "./contracts";
+import { DEFAULT_DANMAKU_MAX_LENGTH } from "./defaults";
 
 export function parseActivityConfig(value: unknown, type: ActivityType): ActivityConfig {
   const body = requireRecord(value, "config");
@@ -21,7 +22,7 @@ export function effectiveConfig(type: ActivityType, base: unknown): ActivityConf
     const n = object.maxLength;
     return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 500 ? { maxLength: n } : {};
   };
-  return { ...(type === "shop_checkin" ? { checkinRadiusMeters: 50 } : { maxLength: 500 }), ...read(base) };
+  return { ...(type === "shop_checkin" ? { checkinRadiusMeters: 50 } : { maxLength: DEFAULT_DANMAKU_MAX_LENGTH }), ...read(base) };
 }
 
 export function parseLocation(value: unknown, field = "location"): ActivityLocation | null {

@@ -28,7 +28,7 @@ export const TEAM_ROUTES = ["/manage", "/upload-onsite", "/admin"];
 
 /** These editors own their header and fill the viewport instead of the console. */
 export function isFullWindowEditorPath(pathname: string): boolean {
-  return /^\/manage\/(collections|scenes)\/[^/]+\/?$/.test(pathname);
+  return /^\/manage\/(collections|scenes|activities)\/[^/]+\/?$/.test(pathname);
 }
 
 /**

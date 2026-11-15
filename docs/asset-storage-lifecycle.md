@@ -54,6 +54,5 @@ Asset 属于团队，当前内容在 `asset.payload`，当前文件清单在 `as
 | `lib/storage/retention.server.ts` | 全局保留、对象锁、删除开关、候选报告 |
 | `lib/upload/receipts.server.ts` | 回执、团队内去重、提交身份校验 |
 | `lib/assets/content.server.ts` | 直接更新当前内容与资源清单 |
-| `lib/storage-cleanup.server.ts` | 文件清理调用入口 |
 | `app/api/admin/clean/route.ts` | 管理员检查和清扫 |
 | `lib/user-deletion.server.ts` | 用户/团队删除预览与执行 |

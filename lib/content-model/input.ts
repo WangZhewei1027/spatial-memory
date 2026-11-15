@@ -36,12 +36,6 @@ export function optionalUuid(value: unknown, field: string): string | null | und
   return requireUuid(value, field);
 }
 
-export function requireUuidList(value: unknown, field: string, max = 100): string[] {
-  if (!Array.isArray(value)) throw invalid(`${field} 必须是数组`);
-  if (value.length > max) throw invalid(`${field} 最多 ${max} 项`);
-  return [...new Set(value.map((item) => requireUuid(item, field)))];
-}
-
 export function requireString(value: unknown, field: string, opts: { max?: number; min?: number; trim?: boolean } = {}): string {
   if (typeof value !== "string") throw invalid(`${field} 必须是字符串`);
   const text = opts.trim === false ? value : value.trim();

@@ -82,8 +82,8 @@ async function main(): Promise<void> {
     organizations: await import("../app/api/organizations/route"),
     organization: await import("../app/api/organizations/[id]/route"),
     tags: await import("../app/api/tags/route"),
-    osdCandidates: await import("../app/api/miniapp/anchors/candidates/route"),
-    osdContent: await import("../app/api/miniapp/anchors/content/route"),
+    recognitionCandidates: await import("../app/api/miniapp/anchors/candidates/route"),
+    recognitionContent: await import("../app/api/miniapp/anchors/content/route"),
     retiredRecognition: await import("../app/api/miniapp/anchors/recognize/route"),
     matchingStatus: await import("../app/api/assets/[id]/matching/route"),
     miniNearby: await import("../app/api/miniapp/assets/nearby/route"),
@@ -407,26 +407,26 @@ async function main(): Promise<void> {
       assert.deepEqual(removed.resources.map(({ url }) => url), [added.resources[0].url, added.resources[2].url]);
     });
 
-    await check("R09d OSD reference discovery/content: GPS scope, versions, archives and no inference", async () => {
+    await check("R09d Recognition reference discovery/content: GPS scope, versions, archives and no inference", async () => {
       // assertServicesDatabase forbids all external fetches, including model inference.
       const anchor = await seedRuntimeProjectionFixture(client, f, { kind: "anchor", payload: { kind: "anchor" },
-        resources: [{ role: "reference", url: "https://fixture.invalid/osd-reference.png" }] });
-      const attached = await seedRuntimeProjectionFixture(client, f, { kind: "text", payload: { kind: "text", text: "OSD content" }, anchorId: anchor.asset });
+        resources: [{ role: "reference", url: "https://fixture.invalid/recognition-reference.png" }] });
+      const attached = await seedRuntimeProjectionFixture(client, f, { kind: "text", payload: { kind: "text", text: "Recognition content" }, anchorId: anchor.asset });
       const input = () => ({ workspace_id: f.workspaces.a, latitude: 31.2, longitude: 121.5, accuracy: 10,
         gps_timestamp: Date.now(), coordinate_system: "wgs84" });
-      const discover = (body: unknown = input()) => call(routes.osdCandidates.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/candidates", body });
+      const discover = (body: unknown = input()) => call(routes.recognitionCandidates.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/candidates", body });
       const result = expect(await discover(), 200);
       const candidate = result.candidates.find((row: Body) => row.id === anchor.asset);
       assert.ok(candidate, "a reference without an embedding must be discoverable");
-      assert.equal(candidate.image_url, "https://fixture.invalid/osd-reference.png");
+      assert.equal(candidate.image_url, "https://fixture.invalid/recognition-reference.png");
       assert.deepEqual(candidate.image_urls, [candidate.image_url]);
       assert.match(candidate.reference_version, /^[a-f0-9]{64}$/);
       assert.deepEqual(Object.keys(candidate).sort(), ["distance_meters", "id", "image_url", "image_urls", "name", "reference_version"]);
-      const content = (extra: Body = {}) => call(routes.osdContent.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/content",
+      const content = (extra: Body = {}) => call(routes.recognitionContent.POST, { user: null, method: "POST", url: "/api/miniapp/anchors/content",
         body: { ...input(), anchor_id: anchor.asset, reference_version: candidate.reference_version, ...extra } });
       assert.ok(expect(await content(), 200).assets.some((row: Body) => row.id === attached.placement));
       assert.equal(expect(await call(routes.matchingStatus.GET, { user: null, url: `/api/assets/${anchor.asset}/matching`, params: { id: anchor.asset } }), 200).data.status, "ready");
-      assert.equal(expect(await call(routes.matchingStatus.POST, { user: null, method: "POST", url: `/api/assets/${anchor.asset}/matching`, params: { id: anchor.asset } }), 200).data.engine, "osd");
+      assert.equal(expect(await call(routes.matchingStatus.POST, { user: null, method: "POST", url: `/api/assets/${anchor.asset}/matching`, params: { id: anchor.asset } }), 200).data.engine, "on_device");
       expect(await content({ workspace_id: f.workspaces.foreign }), 404);
       expect(await content({ longitude: 120 }), 404);
       expect(await content({ reference_version: "0".repeat(64) }), 409);

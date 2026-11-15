@@ -14,6 +14,7 @@ export interface ActivityCollectionOption { id: string; name: string; capabiliti
 interface ActivityPlacementFormProps {
   activity: ActivityDto;
   placement?: ActivityPlacementDto;
+  previousPlacements?: ActivityPlacementDto[];
   collections: ActivityCollectionOption[];
   workspaceId?: string;
   showHeading?: boolean;
@@ -22,10 +23,10 @@ interface ActivityPlacementFormProps {
 }
 
 /** A placement only associates shared activity content with a map. */
-export function ActivityPlacementForm({ activity, placement, collections, workspaceId, showHeading = true, onSaved, onCancel }: ActivityPlacementFormProps) {
+export function ActivityPlacementForm({ activity, placement, previousPlacements = [], collections, workspaceId, showHeading = true, onSaved, onCancel }: ActivityPlacementFormProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState(() => placement?.workspace_id ?? workspaceId ?? (collections.filter((entry) => entry.capabilities?.can_edit !== false).length === 1 ? collections.find((entry) => entry.capabilities?.can_edit !== false)!.id : ""));
-  const [status, setStatus] = useState<ActivityPlacementDto["status"]>(() => workspaceId ? (placement?.status === "active" ? "active" : "paused") : placement?.status ?? "draft");
+  const [status, setStatus] = useState<"active" | "paused">(() => placement?.status === "active" ? "active" : "paused");
   const [expectedLockVersion] = useState(placement?.lock_version);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -38,8 +39,11 @@ export function ActivityPlacementForm({ activity, placement, collections, worksp
     if (disabled || !workspace) return;
     setError(null); setPending(true);
     try {
+      const previous = previousPlacements.find((entry) => entry.workspace_id === workspace && entry.status === "archived");
       if (placement && expectedLockVersion !== undefined) await activityApi.updatePlacement(placement.id, { status, expectedLockVersion });
-      else {
+      else if (previous) {
+        await activityApi.updatePlacement(previous.id, { status, expectedLockVersion: previous.lock_version });
+      } else {
         intent.current ??= crypto.randomUUID();
         await activityApi.place(activity.id, { workspaceId: workspace, status, idempotencyKey: intent.current });
       }
@@ -58,7 +62,7 @@ export function ActivityPlacementForm({ activity, placement, collections, worksp
       </div>}
       {!workspaceId && <Text as="p" variant="bodySm" tone="subdued">{t("activities.placementRelationHint")}</Text>}
       {!workspaceId && <div className="space-y-2"><Label htmlFor="activity-placement-map">{t("activities.map")}</Label><Select value={workspace} disabled={pending || !canEdit || !!placement} onValueChange={(value) => { setWorkspace(value); intent.current = null; }}><SelectTrigger id="activity-placement-map" className="w-full"><SelectValue placeholder={t("activities.chooseMap")} /></SelectTrigger><SelectContent>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id} disabled={collection.capabilities?.can_edit === false && collection.id !== workspace}>{collection.name}</SelectItem>)}</SelectContent></Select></div>}
-      <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as ActivityPlacementDto["status"]); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{(workspaceId ? ["active", "paused"] : ["draft", "active", "paused", "archived"]).map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.${workspaceId ? "mapStates" : "placementStates"}.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-2"><Label htmlFor="activity-placement-status">{t("activities.placementStatus")}</Label><Select value={status} disabled={disabled} onValueChange={(value) => { setStatus(value as "active" | "paused"); intent.current = null; }}><SelectTrigger id="activity-placement-status" className="w-full"><SelectValue /></SelectTrigger><SelectContent>{["active", "paused"].map((entry) => <SelectItem key={entry} value={entry}>{t(`activities.mapStates.${entry}`)}</SelectItem>)}</SelectContent></Select></div>
       <ActivityFailure error={error} onReload={onCancel} />
     </div>
     <div className={workspaceId ? "flex shrink-0 justify-end gap-2 border-t px-5 py-4 sm:px-6" : "flex flex-wrap gap-2"}>

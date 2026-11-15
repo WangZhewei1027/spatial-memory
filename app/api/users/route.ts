@@ -50,7 +50,7 @@ export async function GET() {
       method: "GET",
       path: "/api/users",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "获取用户列表失败" }, { status: 500 });
   }
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       method: "POST",
       path: "/api/users",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "创建用户失败" }, { status: 500 });
   }

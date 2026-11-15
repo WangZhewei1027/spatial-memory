@@ -8,12 +8,11 @@ import { errorMessage } from "@/app/manage/lib/content-errors";
 import { toDetailData, toUsageSummary, usageByKind } from "@/app/manage/lib/content-mappers";
 import { acceptFor } from "@/app/manage/lib/content-upload";
 import { useIntegrationText, type IntegrationT } from "@/app/manage/lib/integration-text";
-import type { ContentActionResult } from "@/app/manage/content/types";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useState, type ReactNode } from "react";
+import { use, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { isFileType, type CreatableType } from "./AssetContentField";
 import { AssetDetailNotices } from "./AssetDetailNotices";
@@ -23,7 +22,7 @@ import { AssetPreview, hasPreview } from "./AssetPreview";
 import { ASSET_TEXTS } from "./texts";
 import { useAssetDetail } from "./useAssetDetail";
 import { useAssetWrites } from "./useAssetWrites";
-import { openAssetInspector } from "../../lib/asset-inspector";
+import { ASSET_INSPECTOR_PARAM, openAssetInspector } from "../../lib/asset-inspector";
 import { AnchorReferenceImages } from "../../components/AssetEditor/AnchorReferenceImages";
 
 function loadErrorText(error: unknown, tx: IntegrationT) {
@@ -34,27 +33,19 @@ function loadErrorText(error: unknown, tx: IntegrationT) {
 }
 
 /** /manage/assets/[id]: identity, content, usage and lifecycle of one team asset. */
-export function AssetDetailRoute({ params }: { params: Promise<{ id: string }> }) {
+export function AssetDetailRoute({ params, library = "asset" }: { params: Promise<{ id: string }>; library?: "asset" | "anchor" }) {
   const { id } = use(params);
   // Keyed by id so selection, stale and archive notices never leak into another asset.
-  return <AssetDetailView key={id} id={id} />;
+  return <AssetDetailView key={id} id={id} library={library} />;
 }
 
 interface AssetDetailViewProps {
   id: string;
   inspector?: boolean;
-  /**
-   * Hosted inside another page (the collection map): the host owns the URL and
-   * team, so no team routing, and library-only navigation is hidden.
-   */
-  embedded?: boolean;
-  /** Called after a successful content, name or lifecycle write. */
-  onChanged?: () => void;
-  /** Type-specific section shown first in the panel body. */
-  children?: ReactNode;
+  library?: "asset" | "anchor";
 }
 
-export function AssetDetailView({ id, inspector = false, embedded = false, onChanged, children }: AssetDetailViewProps) {
+export function AssetDetailView({ id, inspector = false, library = "asset" }: AssetDetailViewProps) {
   const { t } = useTranslation();
   const tx = useIntegrationText(ASSET_TEXTS);
   const router = useRouter();
@@ -63,21 +54,22 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
   const asset = detail.asset;
   const organizationId = asset?.organization_id ?? team.organizationId;
   const writes = useAssetWrites(detail, tx);
+  const libraryPath = library === "anchor" ? "/manage/anchors" : "/manage/assets";
   // The asset's team drives the URL and header; a later header switch leaves for that team's assets.
-  const routed = useResourceTeam(embedded ? null : asset?.organization_id, "/manage/assets");
-  const settled = embedded || routed.settled;
-  const notify = <A extends unknown[]>(write: (...args: A) => Promise<ContentActionResult>) => async (...args: A) => {
-    const result = await write(...args);
-    if (result.ok) onChanged?.();
-    return result;
-  };
+  const { settled } = useResourceTeam(asset?.organization_id, libraryPath);
+  const wrongLibrary = !!asset && (asset.file_type === "anchor") !== (library === "anchor");
+  useEffect(() => {
+    if (!asset || !wrongLibrary) return;
+    const path = asset.file_type === "anchor" ? "/manage/anchors" : "/manage/assets";
+    router.replace(teamHref(inspector ? path : `${path}/${asset.id}`, asset.organization_id, inspector ? { [ASSET_INSPECTOR_PARAM]: asset.id } : undefined), { scroll: false });
+  }, [asset, wrongLibrary, inspector, router]);
   const [renameOpen, setRenameOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
 
-  const workbenchHref = teamHref("/manage/assets", organizationId);
+  const workbenchHref = teamHref(libraryPath, organizationId);
   const backLink = (
     <Button variant="ghost" size="sm" asChild>
-      <Link href={workbenchHref}><ArrowLeft aria-hidden />{tx("contentModel.integration.assetDetail.back")}</Link>
+      <Link href={workbenchHref}><ArrowLeft aria-hidden />{library === "anchor" ? t("contentModel.library.anchor.back") : tx("contentModel.integration.assetDetail.back")}</Link>
     </Button>
   );
   const content = (body: ReactNode, actions?: ReactNode) => (
@@ -94,7 +86,7 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
       inspector ? undefined : backLink,
     );
   }
-  if (!settled) return content(<TeamPageLoading label={t("contentModel.state.loading")} />);
+  if (!settled || wrongLibrary) return content(<TeamPageLoading label={t("contentModel.state.loading")} />);
 
   const archived = asset.state === "archived";
   // Capabilities are computed by the server from the team role; every editing member may maintain.
@@ -118,7 +110,7 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
       <AssetDetail
         inspector={inspector}
         asset={data}
-        preview={hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} fullWidth={inspector} /> : undefined}
+        preview={!anchor && hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} fullWidth={inspector} /> : undefined}
         canMaintain={canMaintain}
         canEditContent={!anchor}
         stale={writes.stale}
@@ -126,16 +118,15 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
         initialText={asset.payload.kind === "text" ? asset.payload.text : asset.payload.kind === "link" ? asset.payload.url : undefined}
         uploadAccept={isFileType(type) ? acceptFor(type) || undefined : undefined}
         uploadProgress={null}
-        onEditContent={notify(writes.editContent)}
+        onEditContent={writes.editContent}
         usage={toUsageSummary(detail.usage?.impact, asset.organization_id)}
         usageByKind={usageByKind(detail.usage?.impact)}
         usageStatus={detail.usageStatus}
         onRetryUsage={detail.retryUsage}
-        onArchive={notify(writes.archive)}
-        onRestore={notify(writes.restore)}
+        onArchive={writes.archive}
+        onRestore={writes.restore}
       >
-        {anchor && <AnchorReferenceImages asset={asset} canEdit={canMaintain && !archived} onChange={notify(writes.editResources)} />}
-        {children}
+        {anchor && <AnchorReferenceImages asset={asset} canEdit={canMaintain && !archived} onChange={writes.editResources} />}
       </AssetDetail>
       <AssetNameDialog
         open={renameOpen}
@@ -146,14 +137,14 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
         submitLabel={tx("contentModel.integration.assetDetail.save")}
         cancelLabel={tx("contentModel.integration.assetDetail.cancel")}
         initialName={asset.name ?? ""}
-        onSubmit={notify(writes.rename)}
+        onSubmit={writes.rename}
       />
       <AssetDuplicateDialog
         open={copyOpen}
         onOpenChange={setCopyOpen}
         assetId={asset.id}
         assetName={data.name}
-        onDuplicated={(result) => inspector ? openAssetInspector(result.asset.id) : router.push(teamHref(`/manage/assets/${result.asset.id}`, asset.organization_id))}
+        onDuplicated={(result) => inspector ? openAssetInspector(result.asset.id) : router.push(teamHref(`${libraryPath}/${result.asset.id}`, asset.organization_id))}
         tx={tx}
       />
     </>,
@@ -162,7 +153,7 @@ export function AssetDetailView({ id, inspector = false, embedded = false, onCha
       {!archived && canMaintain && (
         <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}><PencilLine aria-hidden />{tx("contentModel.integration.assetDetail.rename")}</Button>
       )}
-      {!archived && canCopy && !embedded && (
+      {!archived && canCopy && (
         <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}><Copy aria-hidden />{tx("contentModel.integration.assetDetail.duplicate")}</Button>
       )}
     </>,

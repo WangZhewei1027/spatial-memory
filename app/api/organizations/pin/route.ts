@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       method: "POST",
       path: "/api/organizations/pin",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "操作失败" }, { status: 500 });
   }

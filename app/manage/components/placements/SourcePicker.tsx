@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Clapperboard, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
-import { cn } from "@/lib/utils";
-import { SPECIAL_ASSET_FILE_TYPES, type AssetDto, type SceneSummaryDto } from "@/lib/content-model/contracts";
-import { AssetThumbnail } from "../AssetManager/AssetThumbnail";
+import { type AssetDto, type SceneSummaryDto } from "@/lib/content-model/contracts";
 import { organizationApi } from "../../lib/content-api";
 import { errorMessage } from "../../lib/content-errors";
-import { excerptOf, thumbnailOf } from "../../lib/content-mappers";
+import { contentType, excerptOf, thumbnailOf } from "../../lib/content-mappers";
 import { usePlacementMap } from "./PlacementMapContext";
-import type { PickedSource } from "./PlaceExistingForm";
+import { PlacementContentCard } from "./PlacementContentCard";
+export type PickedSource = { kind: "asset"; asset: AssetDto } | { kind: "scene"; scene: SceneSummaryDto };
 
 const SEARCH_DELAY_MS = 300;
+const CATEGORIES = ["all", "model", "image", "video", "audio", "text", "link", "document", "scene", "anchor"] as const;
+type Category = (typeof CATEGORIES)[number];
 
 type Loaded<T> = { key: string; items: T[]; error: string | null };
 
@@ -24,7 +25,7 @@ type Loaded<T> = { key: string; items: T[]; error: string | null };
  */
 export function SourcePicker({ value, onChange }: { value: PickedSource | null; onChange: (value: PickedSource | null) => void }) {
   const { tx, organizationId } = usePlacementMap();
-  const [kind, setKind] = useState<"asset" | "scene">("asset");
+  const [category, setCategory] = useState<Category>("all");
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [assets, setAssets] = useState<Loaded<AssetDto> | null>(null);
@@ -35,109 +36,68 @@ export function SourcePicker({ value, onChange }: { value: PickedSource | null; 
     return () => clearTimeout(timer);
   }, [query]);
 
-  const assetKey = `${organizationId}|${debounced}`;
+  const assetKey = `${organizationId}|${category}|${debounced}`;
   useEffect(() => {
-    if (kind !== "asset") return;
+    if (category === "scene") return;
     const abort = new AbortController();
     organizationApi
-      .assets(organizationId, { view: "all", q: debounced || undefined, limit: 20, state: "active" }, abort.signal)
-      .then((page) => setAssets({ key: assetKey, items: (page.data ?? []).filter((asset) => !SPECIAL_ASSET_FILE_TYPES.includes(asset.file_type)), error: null }))
+      .assets(organizationId, { view: "all", q: debounced || undefined, file_type: category === "all" ? undefined : category, limit: 20, state: "active" }, abort.signal)
+      .then((page) => !abort.signal.aborted && setAssets({ key: assetKey, items: page.data ?? [], error: null }))
       .catch((error) => !abort.signal.aborted && setAssets({ key: assetKey, items: [], error: errorMessage(error, tx) }));
     return () => abort.abort();
-  }, [organizationId, kind, debounced, assetKey, tx]);
+  }, [organizationId, category, debounced, assetKey, tx]);
 
   useEffect(() => {
-    if (kind !== "scene") return;
     const abort = new AbortController();
     organizationApi
       .scenes(organizationId, { state: "active" }, abort.signal)
-      .then((list) => setScenes({ key: organizationId, items: list.items, error: null }))
+      .then((list) => !abort.signal.aborted && setScenes({ key: organizationId, items: list.items, error: null }))
       .catch((error) => !abort.signal.aborted && setScenes({ key: organizationId, items: [], error: errorMessage(error, tx) }));
     return () => abort.abort();
-  }, [organizationId, kind, tx]);
+  }, [organizationId, tx]);
 
-  const current = kind === "asset" ? (assets?.key === assetKey ? assets : null) : scenes?.key === organizationId ? scenes : null;
-  const switchKind = (next: "asset" | "scene") => {
-    setKind(next);
-    onChange(null);
-  };
+  const includeAssets = category !== "scene", includeScenes = category === "all" || category === "scene";
+  const currentAssets = assets?.key === assetKey ? assets : null;
+  const currentScenes = scenes?.key === organizationId ? scenes : null;
+  const loading = (includeAssets && !currentAssets) || (includeScenes && !currentScenes);
+  const error = (includeAssets && currentAssets?.error) || (includeScenes && currentScenes?.error);
+  const sources: PickedSource[] = [
+    ...(includeAssets ? (currentAssets?.items ?? []).map((asset): PickedSource => ({ kind: "asset", asset })) : []),
+    ...(includeScenes ? (currentScenes?.items ?? []).filter((scene) => scene.name.toLocaleLowerCase().includes(debounced.toLocaleLowerCase())).map((scene): PickedSource => ({ kind: "scene", scene })) : []),
+  ];
+  sources.sort((a, b) => (b.kind === "asset" ? b.asset.updated_at : b.scene.updated_at).localeCompare(a.kind === "asset" ? a.asset.updated_at : a.scene.updated_at));
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2" role="group" aria-label={tx("contentModel.integration.map.create.sourceKind")}>
-        {(["asset", "scene"] as const).map((option) => (
-          <Button key={option} type="button" size="sm" variant={kind === option ? "secondary" : "ghost"} aria-pressed={kind === option} onClick={() => switchKind(option)}>
-            {tx(`contentModel.integration.map.create.kind.${option}`)}
-          </Button>
-        ))}
-      </div>
-      {kind === "asset" && (
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" aria-hidden />
-          <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("contentModel.integration.map.create.searchAssets")} aria-label={tx("contentModel.integration.map.create.searchAssets")} className="ps-8" />
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-2 px-5 pb-3 pt-1" data-source-toolbar>
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("contentModel.integration.map.create.searchContent")} aria-label={tx("contentModel.integration.map.create.searchContent")} className="ps-8" />
         </div>
-      )}
-      <div className="max-h-60 divide-y overflow-y-auto rounded-md border" role="listbox" aria-label={tx(`contentModel.integration.map.create.kind.${kind}`)}>
-        {!current ? (
-          <Text as="p" variant="bodySm" tone="subdued" className="p-3">{tx("contentModel.integration.map.list.loading")}</Text>
-        ) : current.error ? (
-          <Text as="p" variant="bodySm" tone="critical" className="p-3">{current.error}</Text>
-        ) : current.items.length === 0 ? (
-          <Text as="p" variant="bodySm" tone="subdued" className="p-3">{tx(kind === "asset" ? "contentModel.integration.map.create.noAssets" : "contentModel.integration.map.create.noScenes")}</Text>
-        ) : kind === "asset" ? (
-          (current.items as AssetDto[]).map((asset) => {
-            const selected = value?.kind === "asset" && value.asset.id === asset.id;
-            const name = asset.name || asset.id.slice(0, 8);
-            return (
-              <Row key={asset.id} selected={selected} onSelect={() => onChange({ kind: "asset", asset })}>
-                <AssetThumbnail fileType={asset.file_type} fileUrl={thumbnailOf(asset)} textContent={excerptOf(asset)} fileName={name} />
-                <RowText title={name} meta={tx(`contentModel.integration.map.type.${asset.file_type}`)} />
-              </Row>
-            );
-          })
-        ) : (
-          (current.items as SceneSummaryDto[]).map((scene) => {
-            const selected = value?.kind === "scene" && value.scene.id === scene.id;
-            return (
-              <Row key={scene.id} selected={selected} onSelect={() => onChange({ kind: "scene", scene })}>
-                <span className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted"><Clapperboard className="size-6 text-muted-foreground" aria-hidden /></span>
-                <RowText title={scene.name} meta={tx("contentModel.integration.map.source.liveScene")} />
-              </Row>
-            );
-          })
-        )}
+        <Select value={category} onValueChange={(next) => setCategory(next as Category)}>
+          <SelectTrigger className="w-28 shrink-0 sm:w-32" aria-label={tx("contentModel.integration.map.create.category")}><SelectValue /></SelectTrigger>
+          <SelectContent>{CATEGORIES.map((option) => <SelectItem key={option} value={option}>{tx(option === "all" ? "contentModel.integration.map.create.allCategories" : `contentModel.integration.map.type.${option}`)}</SelectItem>)}</SelectContent>
+        </Select>
       </div>
-      {value && (
-        <Text as="p" variant="bodyXs" tone="subdued">
-          {value.kind === "asset"
-            ? tx("contentModel.integration.map.source.liveAsset")
-            : tx("contentModel.integration.map.source.liveScene")}
-        </Text>
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 [scrollbar-gutter:stable]" data-source-results aria-busy={loading}>
+        {loading ? <Text as="p" variant="bodySm" tone="subdued" role="status" className="py-8" alignment="center">{tx("contentModel.integration.map.create.loadingContent")}</Text> : <>
+          {error && <Text as="p" variant="bodySm" tone="critical" role="alert" className="py-3">{error}</Text>}
+          {!error && sources.length === 0 && <Text as="p" variant="bodySm" tone="subdued" role="status" className="py-8" alignment="center">{tx("contentModel.integration.map.create.noContent")}</Text>}
+          <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label={tx("contentModel.integration.map.create.chooseContent")}>
+            {sources.map((source) => {
+              if (source.kind === "asset") {
+                const { asset } = source;
+                const name = asset.name || asset.id.slice(0, 8);
+                return <PlacementContentCard key={`asset:${asset.id}`} selected={value?.kind === "asset" && value.asset.id === asset.id} onClick={() => onChange(source)}
+                  name={name} contentType={contentType(asset.file_type)} typeLabel={tx(`contentModel.integration.map.type.${asset.file_type}`)} thumbnailUrl={thumbnailOf(asset)} textExcerpt={excerptOf(asset)} />;
+              }
+              const { scene } = source;
+              return <PlacementContentCard key={`scene:${scene.id}`} selected={value?.kind === "scene" && value.scene.id === scene.id} onClick={() => onChange(source)}
+                name={scene.name} contentType="scene" typeLabel={tx("contentModel.integration.map.type.scene")} />;
+            })}
+          </div>
+        </>}
+      </div>
     </div>
-  );
-}
-
-function Row({ selected, onSelect, children }: { selected: boolean; onSelect: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={selected}
-      onClick={onSelect}
-      className={cn("flex w-full items-center gap-3 px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring", selected ? "bg-primary/10" : "hover:bg-muted/50")}
-    >
-      {children}
-      {selected && <Check className="size-4 shrink-0 text-primary" aria-hidden />}
-    </button>
-  );
-}
-
-function RowText({ title, meta }: { title: string; meta: string }) {
-  return (
-    <span className="min-w-0 flex-1">
-      <span className="block truncate text-sm font-medium">{title}</span>
-      <span className="block truncate text-xs text-muted-foreground">{meta}</span>
-    </span>
   );
 }

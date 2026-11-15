@@ -68,7 +68,7 @@ export async function PUT(
       method: "PUT",
       path: "/api/users/[id]",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "更新用户角色失败" }, { status: 500 });
   }
@@ -158,7 +158,7 @@ export async function DELETE(
       method: "DELETE",
       path: "/api/users/[id]",
       status: 500,
-      message: error instanceof Error ? error.message : String(error),
+      error,
     });
     return NextResponse.json({ error: "删除用户失败" }, { status: 500 });
   }

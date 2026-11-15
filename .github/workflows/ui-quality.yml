@@ -52,6 +52,8 @@ jobs:
         run: node --import tsx scripts/test-activity-owned-locations-migration.ts
       - name: Verify per-map configuration upgrade and rollback
         run: node --import tsx scripts/test-collection-config-migration.ts
+      - name: Verify single-map activity links and status migration
+        run: node --import tsx --conditions react-server scripts/test-activity-map-migration.ts
       - name: Create isolated migration and service fixture databases
         run: |
           node --input-type=module <<'JS'

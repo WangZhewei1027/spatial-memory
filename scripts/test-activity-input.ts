@@ -6,6 +6,9 @@ test("activity configuration is type-specific and bounded", () => {
   assert.deepEqual(effectiveConfig("shop_checkin", { checkinRadiusMeters: 60 }), { checkinRadiusMeters: 60 });
   assert.deepEqual(effectiveConfig("shop_checkin", {}), { checkinRadiusMeters: 50 });
   assert.deepEqual(effectiveConfig("danmaku", { maxLength: 200 }), { maxLength: 200 });
+  assert.deepEqual(effectiveConfig("danmaku", {}), { maxLength: 50 });
+  assert.deepEqual(effectiveConfig("danmaku", null), { maxLength: 50 });
+  assert.deepEqual(effectiveConfig("danmaku", { maxLength: 500 }), { maxLength: 500 });
   for (const value of [0, 501, 1.5, "20", Number.NaN]) assert.throws(() => parseActivityConfig({ maxLength: value }, "danmaku"));
   assert.throws(() => parseActivityConfig({ maxLength: 200 }, "shop_checkin"));
   assert.throws(() => parseActivityConfig({ unknown: true }, "danmaku"));

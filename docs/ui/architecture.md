@@ -21,11 +21,21 @@ Do not import Radix directly outside `components/ui/`. Follow the typography and
 ## Navigation
 
 - `components/ui/navigation-island.tsx` owns only the shared navigation surface; its radius, shadow and row/gutter tokens live in `app/globals.css`.
-- `components/navbar.tsx` composes the global header, breadcrumbs and account controls. Collection and scene editors own their full-window headers and reuse the same surface.
+- `components/navbar.tsx` composes the global header, breadcrumbs and account controls. Collection, scene and activity editors own their full-window headers and reuse the same surface. `app/manage/content/EditorHeaderBar.tsx` composes the return link, document identity, status and actions for collection and activity headers; `CollectionHeaderBar` supplies the map-specific content.
 - `components/console-navigation.tsx` composes the desktop island and labeled mobile drawer for team, admin and super-admin routes. Callers supply links and permission filtering; the wrapper only handles drawer visibility.
 - Standard pages subtract `--app-navbar-height` when filling the remaining viewport. Editors use flex layout beneath their own headers so notices can grow without covering the workspace.
-- `app/manage/layout.tsx` owns the persistent `TeamShell` and right-side loading boundary. Library and asset/activity detail routes render only their content; they must not create another navigation frame. `TeamShell` and the global header share the full-window editor route predicate. Library sizing follows the active route, so cached, hidden pages cannot change the current work surface's padding.
+- `app/manage/layout.tsx` owns the persistent `TeamShell` and right-side loading boundary. Library and asset detail routes render only their content; they must not create another navigation frame. `TeamShell` and the global header share `isFullWindowEditorPath` from `app/manage/constants.ts`, covering collection, scene and activity detail routes. Library sizing follows the active route, so cached, hidden pages cannot change the current work surface's padding.
 - The asset library opens `AssetInspector` in `TeamFrame`'s optional right island. The `assetId` search parameter uses native history to preserve the mounted library and its local state; regular card navigation is intercepted while the existing detail href supports direct links and modified clicks. `AssetDetailView` owns the same detail reads, capabilities and writes in either presentation. Content-change events refresh the loaded library pages in place after writes.
+
+## Activity editing
+
+`ActivityDetailRoute` owns the full-window activity shell and team alignment. Activity cards, map-dialog edit links and activity references in `AssetUsagePanel` open this route in a new browser tab. Creating an activity refreshes the library in place and offers an edit action in the success toast. `ActivitiesRoute` and `MapActivities` share `ActivityCreateDialog`, including its name/type fields and cancel/create actions. The map caller supplies `workspaceId`; only the form title changes to “创建并关联活动”. The shared request creates the activity and its paused map association atomically, then the map caller refreshes its activity lists without replacing the underlying map. The library caller omits `workspaceId` and creates an unlinked activity.
+
+For both activity types, `ActivityEditor` owns the draft and exposes settings, map, save actions and optional point details through `renderWorkspace`. The route places these in the shared `EditorHeaderBar` and `ManageGridLayout`: settings on the left, an isolated `ActivityLocationMap` viewer in the center, and sidebar tabs on the right. Danmaku uses `ActivityPlacements` / `ActivityRecords` tabs. Shop check-in adds the point inspector, with activity settings, check-in radius and the point list on the left; selecting a point in the list or map opens its inspector. Point fields, images, reward images and archive/restore actions edit the same activity draft. The layout's container queries also own tablet and mobile stacking; settings and sidebar content scroll independently, including empty, read-only and archived activities.
+
+The top-bar save submits one activity form shared by the settings and point-inspector fields through explicit form ownership. The association form stays separate. Point validation reveals an invalid point's inspector even when another sidebar tab is active. The point inspector and association panel remain mounted across tab changes; record moderation and tab switching preserve the draft and map viewer. `ActivityImagePicker` keeps image selection and upload within the existing asset workflow, with wrapping controls that fit the narrow inspector.
+
+Activity detail reads do not subscribe to general content-change events: record moderation and association writes must not replace an unsaved activity draft. Explicit activity saves or conflict reloads refresh the editor's version; a failed save preserves the draft until the user reloads. `ActivityLocationMap` updates form coordinates through its isolated viewer messages, without writing saved placements. API calls, capabilities and optimistic-lock contracts remain in the existing activity components and client API.
 
 ## Protected boundaries
 
@@ -33,3 +43,9 @@ Do not import Radix directly outside `components/ui/`. Follow the typography and
 - Treat `package-lock.json` as npm-managed.
 - Keep `public/js/viewer/` changes separate: it is a standalone iframe runtime, not React UI.
 - Do not change auth, permission, API, database or route semantics as part of component-system work.
+
+## Recognition targets
+
+`/manage/anchors` is the library for special `anchor` Assets, between Activities and Scenes in the team navigation. `ContentLibraryPage` / `WorkbenchRoute` reuse the asset grid with a fixed server-side type filter and no type selector. `AssetInspector` and `AssetDetailView` accept the library identity so team switching, canonical links, duplication and return navigation stay in the target library. The shared asset writes own permissions, lock versions, references and lifecycle; the target editor has no collection context. Old asset links resolve to the canonical target route.
+
+The map uses ordinary placement cards for placed targets, including repeated placements of the same target. `AnchorPanel` manages only the current map’s attachments and links out to the target editor; it does not mount `AssetDetailView`. New map placements can select existing targets from the content picker but cannot create or edit target content.

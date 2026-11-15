@@ -14,6 +14,6 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof SceneAssetError) return json({ error: error.message }, error.status);
     if (error instanceof RuntimeNotFound) return json({ error: error.message }, 404);
-    return errorResponse(error);
+    return errorResponse(error, request);
   }
 }

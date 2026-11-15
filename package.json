@@ -5,7 +5,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack && node scripts/check-client-bundles.mjs",
+    "build": "next build --webpack && node scripts/extract-client-sourcemaps.mjs && node scripts/check-client-bundles.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "next typegen && tsc --noEmit",
@@ -28,6 +28,7 @@
     "@alicloud/dypnsapi20170525": "^2.0.0",
     "@alicloud/openapi-client": "^0.4.15",
     "@alicloud/tea-util": "^1.4.11",
+    "@jridgewell/trace-mapping": "0.3.31",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.6",

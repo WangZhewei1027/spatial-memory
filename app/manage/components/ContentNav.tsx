@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, Clapperboard, MapPinned, Settings2, Sparkles } from "lucide-react";
+import { Boxes, Clapperboard, MapPinned, ScanLine, Settings2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { teamHref } from "../lib/content-context";
 import { useIntegrationText, type IntegrationTexts } from "../lib/integration-text";
@@ -10,6 +10,7 @@ import { useIntegrationText, type IntegrationTexts } from "../lib/integration-te
 export const NAV_TEXTS: IntegrationTexts = {
   "contentModel.integration.nav.label": ["团队导航", "Team navigation"],
   "contentModel.integration.nav.assets": ["基础素材", "Assets"],
+  "contentModel.integration.nav.anchors": ["识别目标", "Recognition targets"],
   "contentModel.integration.nav.scenes": ["场景", "Scenes"],
   "contentModel.integration.nav.collections": ["地图合集", "Map collections"],
   "contentModel.integration.nav.settings": ["团队设置", "Team settings"],
@@ -18,6 +19,7 @@ export const NAV_TEXTS: IntegrationTexts = {
 const ITEMS = [
   { href: "/manage/collections", key: "collections", icon: MapPinned, active: (path: string) => path === "/manage/collections" || path.startsWith("/manage/collections/") },
   { href: "/manage/activities", key: "activities", icon: Sparkles, active: (path: string) => path === "/manage/activities" || path.startsWith("/manage/activities/") },
+  { href: "/manage/anchors", key: "anchors", icon: ScanLine, active: (path: string) => path === "/manage/anchors" || path.startsWith("/manage/anchors/") },
   { href: "/manage/scenes", key: "scenes", icon: Clapperboard, active: (path: string) => path === "/manage/scenes" || path.startsWith("/manage/scenes/") },
   { href: "/manage/assets", key: "assets", icon: Boxes, active: (path: string) => path === "/manage" || path === "/manage/assets" || path.startsWith("/manage/assets/") },
   { href: "/admin", key: "settings", icon: Settings2, active: (path: string) => path === "/admin" || path.startsWith("/admin/") },

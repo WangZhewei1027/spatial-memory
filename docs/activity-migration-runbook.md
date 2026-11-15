@@ -27,6 +27,22 @@ DATABASE_URL=... node --import tsx scripts/db/activity-location-preflight.ts --o
 
 空位置与唯一非空点位置合并时保留非空位置；已投放活动中所有关联均停用的点转为归档，未投放活动的点状态保持原样。所有涉及的旧活动、点、投放和点投放行完整保存于 `migration_archive.activity_location_source`，参与记录与普通素材不改写。`db:migrate` 按序执行两阶段，已完成第一阶段的数据库只执行待办的第二阶段；不得修改已执行的旧迁移。
 
+## 2026-11-15：单地图关联与两种启停状态
+
+`20261115000000_single_activity_map.sql` 将旧草稿转为暂停，并递增投放的并发版本。新关联默认暂停，关联后只提供开启、暂停；取消关联仍以内部 `archived` 状态保留原投放与参与记录。每个活动最多一条未取消的地图关联，暂停也占用名额。
+
+迁移前可只读检查尚未取消的重复关联：
+
+```sql
+select activity_id, array_agg(workspace_id order by workspace_id) as workspace_ids
+from activity_placement where status <> 'archived'
+group by activity_id having count(*) > 1;
+```
+
+有冲突时，迁移列出活动和地图 ID 并整体回滚本次迁移；先由活动负责人确定保留地图，通过原版本管理页取消其他关联，再重试。不能自动选择某张地图或删除历史记录。先在备份副本完成升级验证，再在停写窗口按生产部署流程执行迁移并发布 Web。公开活动接口字段不变，小程序无需为本次限制同步改码。
+
+记录中的 `organization_id` 与 `placement_id` 保留数据产生时的团队与地图来源；更换地图创建另一条投放，重新关联同一地图恢复原投放 ID 与打卡进度。同一地图多次关联不划分独立批次，也不保存组织或地图名称快照。当前活动不能跨团队关联地图。
+
 ## 迁移前审核
 
 在与生产相同版本的完整备份副本上进行演练，显式传入该副本的 `DATABASE_URL`。已有迁移先按账本完成；活动迁移若发现未审核文字会中止，不会提交活动表或转换结果。
