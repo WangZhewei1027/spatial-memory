@@ -58,7 +58,8 @@ export const MAP_TEXTS: IntegrationTexts = {
 
   [`${P}.anchors.projectRequired`]: ["打开具体合集后才能管理识别目标。", "Open a collection to manage its recognition targets."],
   [`${P}.anchors.empty`]: ["此合集还没有识别目标", "This collection has no recognition targets"],
-  [`${P}.anchors.emptyHint`]: ["识别目标在素材库中以“识别目标”类型维护。", "Recognition targets are maintained in the asset library as anchor assets."],
+  [`${P}.anchors.emptyHint`]: ["新增投放时选择“识别目标”类别，将已有目标放到地图。", "Choose the Recognition target category in a new placement to place an existing target."],
+  [`${P}.anchors.openLibrary`]: ["识别目标库", "Target library"],
   [`${P}.anchors.unnamed`]: ["未命名识别目标", "Unnamed anchor"],
   [`${P}.anchors.onMap`]: ["已在地图上", "On the map"],
   [`${P}.anchors.notOnMap`]: ["未放到地图上", "Not on the map"],
@@ -114,7 +115,7 @@ export const MAP_TEXTS: IntegrationTexts = {
   [`${P}.source.liveScene`]: ["跟随场景保存的最新内容", "Uses the latest saved scene"],
   [`${P}.source.openAsset`]: ["打开素材", "Open asset"],
   [`${P}.source.openScene`]: ["打开场景", "Open scene"],
-  [`${P}.source.openAnchor`]: ["识别目标设置", "Recognition target"],
+  [`${P}.source.openAnchor`]: ["管理挂载", "Manage attachments"],
   [`${P}.source.openDocument`]: ["打开文档", "Open document"],
   [`${P}.source.previewUnavailable`]: ["暂时无法读取素材内容预览。", "The content preview isn't available right now."],
 

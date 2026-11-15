@@ -37,7 +37,7 @@ export function PlacementSourceSection({ placement, actions }: PlacementSourceSe
   const type = placementFileType(placement);
   const sourceArchived = target.kind === "asset" ? target.asset_state === "archived" : target.scene_state === "archived";
   const href = target.kind === "asset"
-    ? teamHref(`/manage/assets/${target.asset_id}`, organizationId)
+    ? teamHref(`/manage/${type === "anchor" ? "anchors" : "assets"}/${target.asset_id}`, organizationId)
     : teamHref(`/manage/scenes/${target.scene_id}`, organizationId);
   const sourceName = (target.kind === "asset" ? target.asset_name : target.scene_name) || tx("contentModel.integration.map.source.unnamed");
   const name = placementDisplayName(placement);

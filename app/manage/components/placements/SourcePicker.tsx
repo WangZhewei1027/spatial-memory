@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
-import { SPECIAL_ASSET_FILE_TYPES, type AssetDto, type SceneSummaryDto } from "@/lib/content-model/contracts";
+import { type AssetDto, type SceneSummaryDto } from "@/lib/content-model/contracts";
 import { organizationApi } from "../../lib/content-api";
 import { errorMessage } from "../../lib/content-errors";
 import { contentType, excerptOf, thumbnailOf } from "../../lib/content-mappers";
@@ -14,7 +14,7 @@ import { PlacementContentCard } from "./PlacementContentCard";
 export type PickedSource = { kind: "asset"; asset: AssetDto } | { kind: "scene"; scene: SceneSummaryDto };
 
 const SEARCH_DELAY_MS = 300;
-const CATEGORIES = ["all", "model", "image", "video", "audio", "text", "link", "document", "scene"] as const;
+const CATEGORIES = ["all", "model", "image", "video", "audio", "text", "link", "document", "scene", "anchor"] as const;
 type Category = (typeof CATEGORIES)[number];
 
 type Loaded<T> = { key: string; items: T[]; error: string | null };
@@ -42,7 +42,7 @@ export function SourcePicker({ value, onChange }: { value: PickedSource | null; 
     const abort = new AbortController();
     organizationApi
       .assets(organizationId, { view: "all", q: debounced || undefined, file_type: category === "all" ? undefined : category, limit: 20, state: "active" }, abort.signal)
-      .then((page) => !abort.signal.aborted && setAssets({ key: assetKey, items: (page.data ?? []).filter((asset) => !SPECIAL_ASSET_FILE_TYPES.includes(asset.file_type)), error: null }))
+      .then((page) => !abort.signal.aborted && setAssets({ key: assetKey, items: page.data ?? [], error: null }))
       .catch((error) => !abort.signal.aborted && setAssets({ key: assetKey, items: [], error: errorMessage(error, tx) }));
     return () => abort.abort();
   }, [organizationId, category, debounced, assetKey, tx]);

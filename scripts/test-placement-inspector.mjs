@@ -34,6 +34,7 @@ try {
         resources: [resource("primary", fileType === "model" ? "glb" : "mp4"), ...(hasThumbnail ? [resource("thumbnail", "png")] : [])] });
     }
     const scenes = ["Scene match", "Another scene"].map((name, index) => ({ id: `scene-${index}`, name, state: "active", updated_at: "2026-11-15T01:00:00Z" }));
+    for (const index of [5, 6]) assets.push({ ...assets[0], id: `asset-${index}`, name: `Target ${index}`, file_type: "anchor", payload: { kind: "anchor" }, resources: [{ role: "reference", ordinal: 0, url: `${origin}/fixtures/source-${index}-thumbnail.png` }] });
     await context.route("**/fixtures/*-thumbnail.png", (route) => route.fulfill({ contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=", "base64") }));
     const makePlacement = (id, asset, name) => ({ id, organization_id: teamId, workspace_id: mapId, workspace_name: collection.name, name,
       target: { kind: "asset", asset_id: asset.id, asset_name: asset.name, file_type: asset.file_type, asset_state: "active", asset_lock_version: 1 },
@@ -43,6 +44,7 @@ try {
     const placements = [makePlacement("placement-image", assets[0], "Image placement"), makePlacement("placement-text", assets[1], "Text placement"),
       makePlacement("placement-model", assets[2], "Model placement"), makePlacement("placement-video", assets[3], "Video placement"), makePlacement("placement-no-thumbnail", assets[4], "No thumbnail"),
       { ...makePlacement("placement-scene", assets[2], "Scene placement"), target: { kind: "scene", scene_id: scenes[0].id, scene_name: scenes[0].name, scene_state: "active" } }];
+    placements.push(makePlacement("placement-anchor", assets[5], "Target placement"));
     const writes = [];
     let failure = 0;
     await context.route("**/api/**", async (route) => {
@@ -70,11 +72,12 @@ try {
       else if (path === `/api/organizations/${teamId}/collections`) body = { data: [collection] };
       else if (path === `/api/collections/${mapId}`) body = { data: collection };
       else if (path === `/api/collections/${mapId}/placements`) body = { data: placements };
+      else if (path === `/api/collections/${mapId}/assets`) body = { data: assets.filter(a => a.file_type === "anchor") };
       else if (path === `/api/organizations/${teamId}/assets`) {
         const query = new URL(req.url()).searchParams;
         // Keep the loading state observable when filters change.
         await new Promise((resolve) => setTimeout(resolve, 180));
-        body = { data: assets.filter((asset) => (!query.get("file_type") || asset.file_type === query.get("file_type")) && asset.name.toLowerCase().includes((query.get("q") || "").toLowerCase())) };
+        body = { data: assets.filter((asset) => (query.get("file_type") ? asset.file_type === query.get("file_type") : asset.file_type !== "anchor") && asset.name.toLowerCase().includes((query.get("q") || "").toLowerCase())) };
       }
       else if (path === `/api/organizations/${teamId}/scenes`) body = { data: scenes };
       else if (path.startsWith("/api/assets/")) body = { data: assets.find((item) => path === `/api/assets/${item.id}`) };
@@ -111,6 +114,24 @@ try {
     const showList = async () => { if (width < 996 && !await list.isVisible()) await page.getByRole("button", { name: t("投放", "Placements"), exact: true }).click(); };
     const select = async (id) => { await showList(); await page.locator(`#placement-card-${id}`).click(); await editor.waitFor(); };
     await showList();
+    await list.getByRole("tab", { name: /^(识别目标|Anchors)/ }).click();
+    await page.locator("#placement-card-placement-anchor").waitFor();
+    assert.equal(await list.getByText("Target 6", { exact: true }).count(), 0, "unplaced team targets do not appear as map placements");
+    await page.locator("#placement-card-placement-anchor").click();
+    await editor.waitFor();
+    await editor.locator('a[href*="/manage/anchors/asset-5"]').waitFor();
+    assert.equal(await editor.getByText(t("添加识别图", "Add reference images"), { exact: true }).count(), 0);
+    await editor.getByRole("button", { name: t("管理挂载", "Manage attachments"), exact: true }).click();
+    const associations = page.locator("[data-anchor-associations]");
+    await associations.waitFor();
+    assert.equal(await associations.locator('input[type="file"]').count(), 0, "map associations never embed the asset editor");
+    const editTarget = associations.getByRole("link", { name: t("编辑识别目标", "Edit recognition target"), exact: true });
+    assert.equal(await editTarget.getAttribute("target"), "_blank");
+    assert.ok((await editTarget.getAttribute("href")).includes("/manage/anchors/asset-5"));
+    await associations.getByRole("button", { name: t("编辑投放位置与状态", "Edit placement location and status"), exact: true }).click();
+    await editor.waitFor();
+    await showList();
+    await list.getByRole("tab", { name: /^(投放|Placements)/ }).click();
     for (const [id, index] of [["model", 2], ["video", 3], ["scene", 2]]) {
       const thumbnail = page.locator(`#placement-card-placement-${id} img`);
       await thumbnail.waitFor();
@@ -217,6 +238,10 @@ try {
       assert.ok(searchBounds.y - tabsBounds.y - tabsBounds.height >= 8, "tabs and search occupy separate rows without overlap");
       assert.equal(await dialog.getByRole("tablist").evaluate((el) => getComputedStyle(el).backgroundColor), "rgba(0, 0, 0, 0)", "mode tabs have no background block");
       const changeCategory = async (label) => { await category.click(); await page.getByRole("option", { name: label, exact: true }).click(); };
+      await changeCategory(t("识别目标", "Anchor"));
+      await dialog.getByRole("button", { name: /Target 6/ }).waitFor();
+      assert.equal(await dialog.getByRole("button", { name: /Source 0/ }).count(), 0);
+      await changeCategory(t("全部类别", "All categories"));
       await page.evaluate(() => {
         window.pickerGeometry = [];
         const sample = () => {

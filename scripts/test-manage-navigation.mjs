@@ -45,7 +45,10 @@ try {
     };
     window.navigationFrame = requestAnimationFrame(sample);
   });
-  for (const [name, path] of [["Scenes", "scenes"], ["Map collections", "collections"], ["Activities", "activities"], ["Assets", "assets"]]) {
+  const navLabels = await navigation.getByRole("link").allTextContents();
+  assert.equal(navLabels.indexOf("Recognition targets"), navLabels.indexOf("Activities") + 1);
+  assert.equal(navLabels.indexOf("Scenes"), navLabels.indexOf("Recognition targets") + 1);
+  for (const [name, path] of [["Recognition targets", "anchors"], ["Scenes", "scenes"], ["Map collections", "collections"], ["Activities", "activities"], ["Assets", "assets"]]) {
     await navigation.getByRole("link", { name, exact: true }).click();
     await page.waitForURL(`**/manage/${path}?organizationId=${teamId}`);
     await page.locator(".team-library:visible").waitFor();

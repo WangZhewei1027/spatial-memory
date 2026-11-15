@@ -54,6 +54,7 @@ export function usePlacementData({ organizationId, workspaceId, isAll, tx }: Pla
   const placements = usePlacementStore((state) => state.placements);
   const loadedScopeKey = usePlacementStore((state) => state.scopeKey);
   const selectedPlacementId = usePlacementStore((state) => state.selectedPlacementId);
+  const selectedAnchorId = usePlacementStore((state) => state.selectedAnchorId);
   const scopeKey = !isAll && !workspaceId ? null : placementScopeKey(organizationId, workspaceId);
   const wantArchived = statusFilter === "archived" || statusFilter === "all";
   const txRef = useRef(tx);
@@ -126,7 +127,7 @@ export function usePlacementData({ organizationId, workspaceId, isAll, tx }: Pla
   }, [placements, loadedScopeKey, scopeKey, workspaceId, reloadNonce]);
 
   const selected = loadedScopeKey === scopeKey ? placements.find((placement) => placement.id === selectedPlacementId) : undefined;
-  const sourceAssetId = selected?.target.kind === "asset" ? selected.target.asset_id : null;
+  const sourceAssetId = selected?.target.kind === "asset" ? selected.target.asset_id : selectedAnchorId;
   const sourceLockVersion = selected?.target.kind === "asset" ? selected.target.asset_lock_version : null;
   useEffect(() => {
     if (!scopeKey || !sourceAssetId || usePlacementStore.getState().scopeKey !== scopeKey) return;
@@ -165,7 +166,7 @@ function useTags(organizationId: string, workspaceId: string | null, isAll: bool
   return result && result.key === key ? result.tags : [];
 }
 
-/** anchors are asset rows of type "anchor" in the project; they keep their own panel. */
+/** Team target catalog used for placement associations; edits live in /manage/anchors. */
 function useAnchors(workspaceId: string | null, reloadNonce: number) {
   const [result, setResult] = useState<{ key: string; anchors: AssetDto[]; error: string | null } | null>(null);
   const [nonce, setNonce] = useState(0);

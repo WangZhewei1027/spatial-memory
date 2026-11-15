@@ -25,7 +25,7 @@ import { collectionHref, teamHref } from "./content-context";
 
 const CONTENT_TYPES: readonly ContentAssetType[] = ["image", "video", "audio", "model", "text", "link", "document"];
 
-/** Anchors are maintained from the collection map; the generic library contains media content. */
+/** Recognition targets have a dedicated library; the generic library contains media content. */
 export function isLibraryAsset(asset: Pick<AssetDto, "file_type">) {
   return (CONTENT_TYPES as readonly string[]).includes(asset.file_type);
 }

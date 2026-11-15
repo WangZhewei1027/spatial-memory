@@ -43,3 +43,9 @@ Activity detail reads do not subscribe to general content-change events: record 
 - Treat `package-lock.json` as npm-managed.
 - Keep `public/js/viewer/` changes separate: it is a standalone iframe runtime, not React UI.
 - Do not change auth, permission, API, database or route semantics as part of component-system work.
+
+## Recognition targets
+
+`/manage/anchors` is the library for special `anchor` Assets, between Activities and Scenes in the team navigation. `ContentLibraryPage` / `WorkbenchRoute` reuse the asset grid with a fixed server-side type filter and no type selector. `AssetInspector` and `AssetDetailView` accept the library identity so team switching, canonical links, duplication and return navigation stay in the target library. The shared asset writes own permissions, lock versions, references and lifecycle; the target editor has no collection context. Old asset links resolve to the canonical target route.
+
+The map uses ordinary placement cards for placed targets, including repeated placements of the same target. `AnchorPanel` manages only the current map’s attachments and links out to the target editor; it does not mount `AssetDetailView`. New map placements can select existing targets from the content picker but cannot create or edit target content.

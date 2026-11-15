@@ -11,7 +11,7 @@ import { usePlacementMap } from "./PlacementMapContext";
 import { EMPTY_LOCATION, locationFromCapture, parseLocation, useCreatePlacement, type LocationInput } from "./useCreatePlacement";
 import type { PickedSource } from "./SourcePicker";
 
-const PLACEABLE: UploadType[] = ["image", "video", "audio", "model", "document", "text", "link", "anchor"];
+const PLACEABLE: UploadType[] = ["image", "video", "audio", "model", "document", "text", "link"];
 
 /** One creation draft survives inspector switches; upload happens only on submit. */
 export function usePlacementCreation() {

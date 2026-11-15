@@ -697,7 +697,7 @@
     "document": "Document",
     "link": "Link",
     "text": "Text",
-    "anchor": "Matching Point",
+    "anchor": "Recognition target",
     "model": "3D Model",
     "scene": "Scene"
   },
@@ -1182,11 +1182,19 @@
         "scenes": "Scenes",
         "collections": "Map collections",
         "settings": "Team settings",
-        "activities": "Activities"
+        "activities": "Activities",
+        "anchors": "Recognition targets"
       },
       "map": {
         "tab": {
           "activities": "Activities"
+        },
+        "anchors": {
+          "emptyHint": "Choose the Recognition target category in a new placement to place an existing target.",
+          "openLibrary": "Target library"
+        },
+        "source": {
+          "openAnchor": "Manage attachments"
         }
       },
       "impact": {
@@ -1284,6 +1292,20 @@
         "title": "Scenes",
         "viewerBody": "Scenes appear here once team members create them.",
         "archivedBody": "Archived scenes appear here and can be restored at any time."
+      },
+      "anchor": {
+        "title": "Recognition targets",
+        "create": "New recognition target",
+        "detailTitle": "Recognition target details",
+        "name": "Target name",
+        "back": "Back to recognition targets",
+        "edit": "Edit recognition target",
+        "mapAssociations": "Attachments in this map",
+        "editPlacement": "Edit placement location and status",
+        "emptyTitle": "No recognition targets yet",
+        "emptyBody": "Upload a reference image, then place the target on a map.",
+        "viewerBody": "Recognition targets created by your team appear here.",
+        "archivedBody": "Archived recognition targets appear here."
       }
     }
   },
@@ -1333,7 +1355,11 @@
     "settings": "Activity content",
     "checkinRadius": "Check-in distance (m)",
     "pointDetails": "Point details",
-    "editorTabs": { "point": "Point", "map": "Map", "records": "Records" },
+    "editorTabs": {
+      "point": "Point",
+      "map": "Map",
+      "records": "Records"
+    },
     "maxLength": "Message length limit",
     "sharedSettings": "Manage activity locations, area and rules here. Saved changes take effect on the linked map.",
     "points": "Check-in points",

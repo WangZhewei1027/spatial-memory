@@ -4,10 +4,13 @@ import { ContentNotice } from "@/app/manage/content/ContentFeedback";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/typography";
-import { X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AssetDetailView } from "../../assets/components/AssetDetailRoute";
+import { ContentThumbnail } from "../../content/ContentThumbnail";
+import { teamHref } from "../../lib/content-context";
+import { thumbnailOf } from "../../lib/content-mappers";
 import { placementApi } from "../../lib/content-api";
 import { errorMessage } from "../../lib/content-errors";
 import { usePlacementStore } from "../../lib/placement-store";
@@ -17,16 +20,15 @@ import { usePlacementMap } from "./PlacementMapContext";
 import { anchorChangeRequest } from "./placement-utils";
 
 /**
- * A recognition target is an anchor asset, so the map shows the library's
- * asset panel for it. Its own section manages "attached content": placements
- * whose `anchor_id` is this anchor. Content edits reload the map so markers,
- * thumbnails and cached placement content follow the new reference image.
+ * Collection-only associations. The target's identity, reference photos and
+ * lifecycle are edited in its independent team library.
  */
 export function AnchorPanel({ anchorId }: { anchorId: string }) {
   const { t } = useTranslation();
-  const { tx, anchors, workspaceCanEdit, canWrite } = usePlacementMap();
+  const { tx, organizationId, anchors, workspaceCanEdit, canWrite } = usePlacementMap();
   const placements = usePlacementStore((state) => state.placements);
-  const anchor = anchors.find((item) => item.id === anchorId) ?? null;
+  const detail = usePlacementStore((state) => state.assetDetails[anchorId]);
+  const anchor = detail ?? anchors.find((item) => item.id === anchorId) ?? null;
   const [attaching, setAttaching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,16 +64,23 @@ export function AnchorPanel({ anchorId }: { anchorId: string }) {
   const label = (placement: (typeof placements)[number]) => ({ id: placement.id, name: placementDisplayName(placement) });
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 p-4">
-        <Text as="h3" variant="bodySm" fontWeight="semibold" truncate className="min-w-0 flex-1">{t("assetInspector.title")}</Text>
-        <Button variant="ghost" size="sm" onClick={() => usePlacementStore.getState().selectAnchor(null)} aria-label={tx("contentModel.integration.map.action.close")}>
+    <Card className="overflow-hidden" data-anchor-associations>
+      <div className="flex items-center gap-2 border-b p-2">
+        <ContentThumbnail type="anchor" name={anchor?.name || ""} thumbnailUrl={thumbnailOf(anchor)} className="size-10" />
+        <div className="min-w-0 flex-1">
+          <Text as="h2" variant="bodySm" fontWeight="semibold" truncate>{anchor?.name || tx("contentModel.integration.map.anchors.unnamed")}</Text>
+          <Text as="p" variant="bodyXs" tone="subdued">{t("contentModel.library.anchor.mapAssociations")}</Text>
+        </div>
+        <Button variant="ghost" size="icon" asChild><Link href={teamHref(`/manage/anchors/${anchorId}`, organizationId)} target="_blank" rel="noopener noreferrer" aria-label={t("contentModel.library.anchor.edit")} title={t("contentModel.library.anchor.edit")}><ExternalLink className="size-4" aria-hidden /></Link></Button>
+        <Button variant="ghost" size="icon" onClick={() => usePlacementStore.getState().selectAnchor(null)} aria-label={tx("contentModel.integration.map.action.close")}>
           <X className="size-4" aria-hidden />
         </Button>
       </div>
-      <div className="space-y-4 p-4">
+      <div className="space-y-3 p-2">
         {!anchor && <ContentNotice title={tx("contentModel.integration.map.anchors.missing")} />}
-        <AssetDetailView id={anchorId} inspector embedded onChanged={() => usePlacementStore.getState().requestReload()}>
+        {placements.filter((p) => p.target.kind === "asset" && p.target.asset_id === anchorId && p.status !== "archived").map((p) => (
+          <Button key={p.id} variant="outline" size="sm" className="w-full" onClick={() => usePlacementStore.getState().selectPlacement(p.id)}>{t("contentModel.library.anchor.editPlacement")}</Button>
+        ))}
           <MatchingPointAttachments
             canManage={workspaceCanEdit && !!anchor}
             childrenAssets={children.map(label)}
@@ -81,7 +90,6 @@ export function AnchorPanel({ anchorId }: { anchorId: string }) {
             onAttach={(id) => void attach(id, anchorId)}
             onDetach={(id) => void attach(id, null)}
           />
-        </AssetDetailView>
       </div>
     </Card>
   );

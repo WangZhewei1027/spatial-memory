@@ -28,6 +28,10 @@ export function WorkbenchEmpty({ kind, filters, canWrite, canUpload, onClear, on
       />
     );
   }
+  if (kind === "anchor") {
+    return <ContentEmptyState headingAs="h2" title={t("contentModel.library.anchor.emptyTitle")} description={t(`contentModel.library.anchor.${canUpload ? "emptyBody" : "viewerBody"}`)}
+      actions={canUpload && <Button size="sm" onClick={onUpload}>{t("contentModel.library.anchor.create")}</Button>} />;
+  }
   if (filters.type !== "all") {
     return (
       <ContentEmptyState

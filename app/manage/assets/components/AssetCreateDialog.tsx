@@ -47,6 +47,7 @@ export function AssetCreateDialog({ open, onOpenChange, organizationId, teamName
   const action = useContentAction();
   const intent = useRef<UploadIntent | null>(null);
   const activeType = types.includes(type) ? type : types[0] ?? "image";
+  const anchorOnly = types.length === 1 && types[0] === "anchor";
   const content = contentOf(activeType, draft);
 
   const reset = () => {
@@ -110,11 +111,11 @@ export function AssetCreateDialog({ open, onOpenChange, organizationId, teamName
       <DialogContent>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>{tx("contentModel.integration.assets.create.title")}</DialogTitle>
+            <DialogTitle>{anchorOnly ? t("contentModel.library.anchor.create") : tx("contentModel.integration.assets.create.title")}</DialogTitle>
             <DialogDescription>{tx("contentModel.integration.assets.create.body", { team: teamName })}</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-1.5">
+          {!anchorOnly && <div className="space-y-1.5">
             <Label htmlFor={ids.type}>{tx("contentModel.integration.assets.create.type")}</Label>
             <Select value={activeType} onValueChange={(value) => changeType(value as CreatableType)} disabled={action.pending}>
               <SelectTrigger id={ids.type} className="w-full"><SelectValue /></SelectTrigger>
@@ -122,12 +123,12 @@ export function AssetCreateDialog({ open, onOpenChange, organizationId, teamName
                 {types.map((value) => <SelectItem key={value} value={value}>{t(`fileTypes.${value}`)}</SelectItem>)}
               </SelectContent>
             </Select>
-          </div>
+          </div>}
 
           <AssetContentField type={activeType} draft={draft} onChange={changeDraft} disabled={action.pending} tx={tx} />
 
           <div className="space-y-1.5">
-            <Label htmlFor={ids.name}>{tx("contentModel.integration.assets.create.name")}</Label>
+            <Label htmlFor={ids.name}>{anchorOnly ? t("contentModel.library.anchor.name") : tx("contentModel.integration.assets.create.name")}</Label>
             <Input id={ids.name} value={name} onChange={(event) => setName(event.target.value)} maxLength={NAME_MAX} disabled={action.pending} required />
           </div>
 
@@ -140,7 +141,7 @@ export function AssetCreateDialog({ open, onOpenChange, organizationId, teamName
             <Button type="button" variant="outline" onClick={() => close(false)} disabled={action.pending}>{tx("contentModel.integration.assets.create.cancel")}</Button>
             <Button type="submit" disabled={!content || !name.trim() || action.pending}>
               {action.pending && <Loader2 className="animate-spin" aria-hidden />}
-              {stage ? stageText(stage) : tx(action.failure ? "contentModel.integration.assets.create.retry" : "contentModel.integration.assets.create.submit")}
+              {stage ? stageText(stage) : anchorOnly && !action.failure ? t("contentModel.library.anchor.create") : tx(action.failure ? "contentModel.integration.assets.create.retry" : "contentModel.integration.assets.create.submit")}
             </Button>
           </DialogFooter>
         </form>
