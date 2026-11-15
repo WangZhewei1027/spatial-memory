@@ -42,7 +42,7 @@ next-env.d.ts
 deploy/.env*
 /deploy/pgadmin/private/
 
-# one-shot migration exports (scripts/migrate/)
+# Supabase-era data export and backups (contains user data; never commit)
 .migration/
 
 # Local migration backups and temporary UI review evidence

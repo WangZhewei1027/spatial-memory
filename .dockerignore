@@ -6,7 +6,6 @@ out
 !.env.example
 deploy
 docs
-supabase
 *.md
 .DS_Store
 .impeccable
