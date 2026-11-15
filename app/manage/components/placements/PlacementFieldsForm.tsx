@@ -2,12 +2,12 @@
 
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Anchor, SlidersHorizontal } from "lucide-react";
+import { Anchor } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PlacementDto, PlacementStatus } from "@/lib/content-model/contracts";
 import { FieldLabel } from "../AssetEditor/FieldLabel";
-import { FieldSection } from "../AssetEditor/FieldSection";
+import { PlacementFieldGroup } from "./PlacementFieldGroup";
 import { AssetTagEditor } from "../AssetEditor/fields/AssetTagEditor";
 import { placementFileType } from "../../lib/placement-to-viewer";
 import { usePlacementMap } from "./PlacementMapContext";
@@ -29,7 +29,7 @@ interface PlacementFieldsFormProps {
 /** Fields that belong to the placement itself (not to the source content). */
 export function PlacementFieldsForm({ placement, values, editable, problem, onChange }: PlacementFieldsFormProps) {
   const { t } = useTranslation();
-  const { tx, anchors, workspaceId } = usePlacementMap();
+  const { tx, anchors, tags, workspaceId } = usePlacementMap();
   const id = useId();
   const type = placementFileType(placement);
   const showAnchor = type !== "anchor";
@@ -37,7 +37,8 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
   const anchorKnown = !values.anchorId || anchors.some((anchor) => anchor.id === values.anchorId);
 
   return (
-    <FieldSection title={tx("contentModel.integration.map.section.fields")} hint={tx("contentModel.integration.map.section.fieldsHint")} icon={SlidersHorizontal}>
+    <div className="space-y-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,7rem)] gap-3">
       <div className="space-y-1">
         <FieldLabel htmlFor={`${id}-name`}>{tx("contentModel.integration.map.field.name")}</FieldLabel>
         <Input id={`${id}-name`} value={values.name} disabled={!editable} placeholder={tx("contentModel.integration.map.field.namePlaceholder")} onChange={(event) => onChange({ name: event.target.value })} />
@@ -55,6 +56,7 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
         </Select>
         {placement.status === "archived" && <p className="text-xs text-muted-foreground">{tx("contentModel.integration.map.field.archivedHint")}</p>}
       </div>
+      </div>
 
       <PlacementLocationFields
         longitude={values.longitude}
@@ -62,10 +64,12 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
         altitude={values.altitude}
         disabled={!editable}
         onChange={onChange}
+        invalid={problem === "coordinates"}
       />
       {problem === "coordinates" && <p role="alert" className="text-xs text-destructive">{tx("contentModel.integration.map.problem.coordinates")}</p>}
 
       {showAnchor && (
+        <PlacementFieldGroup title={tx("contentModel.integration.map.field.anchor")} summary={values.anchorId ? anchors.find((anchor) => anchor.id === values.anchorId)?.name || tx("contentModel.integration.map.field.anchorOther") : tx("contentModel.integration.map.field.anchorNone")}>
         <div className="space-y-1">
           <FieldLabel htmlFor={`${id}-anchor`}>{tx("contentModel.integration.map.field.anchor")}</FieldLabel>
           <Select value={values.anchorId ?? NO_ANCHOR} disabled={!editable || !workspaceId} onValueChange={(value) => onChange({ anchorId: value === NO_ANCHOR ? null : value })}>
@@ -83,11 +87,16 @@ export function PlacementFieldsForm({ placement, values, editable, problem, onCh
           </Select>
           <p className="text-xs text-muted-foreground">{tx("contentModel.integration.map.field.anchorHint")}</p>
         </div>
+        </PlacementFieldGroup>
       )}
 
-      <PlacementRenderFields type={type} values={values} editable={editable} problem={problem} onChange={onChange} />
+      {(type === "model" || type === "text") && <PlacementFieldGroup title={tx("contentModel.integration.map.section.display")} invalid={problem === "scale" || problem === "textSize"} summary={type === "model" ? tx("contentModel.integration.map.section.scaleSummary", { scale: values.scale || "1" }) : `${values.textColor || tx("contentModel.integration.map.field.default")} · ${values.textSize || tx("contentModel.integration.map.field.default")}`}>
+        <PlacementRenderFields type={type} values={values} editable={editable} problem={problem} onChange={onChange} />
+      </PlacementFieldGroup>}
 
-      <AssetTagEditor tagIds={values.tagIds} workspaceId={placement.workspace_id} isEditing={editable} onTagIdsChange={(tagIds) => onChange({ tagIds: [...tagIds].sort() })} />
-    </FieldSection>
+      <PlacementFieldGroup title={tx("contentModel.integration.map.section.tags")} summary={values.tagIds.length ? tags.filter((tag) => values.tagIds.includes(tag.id)).map((tag) => tag.name).join(" · ") || tx("contentModel.integration.map.section.tagCount", { count: values.tagIds.length }) : tx("contentModel.integration.map.section.noTags")}>
+        <AssetTagEditor tagIds={values.tagIds} workspaceId={placement.workspace_id} isEditing={editable} onTagIdsChange={(tagIds) => onChange({ tagIds: [...tagIds].sort() })} />
+      </PlacementFieldGroup>
+    </div>
   );
 }

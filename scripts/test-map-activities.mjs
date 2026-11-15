@@ -102,6 +102,7 @@ try {
     await trigger.waitFor();
     assert.equal(await page.getByRole("tab", { name: text.title, exact: true }).count(), 0, "activities must leave the sidebar");
     const anchors = page.getByRole("tab", { name: language === "zh" ? "识别目标" : "Anchors", exact: true });
+    if (width < 996) await page.getByRole("button", { name: language === "zh" ? "投放" : "Placements", exact: true }).click();
     await anchors.click();
     await trigger.scrollIntoViewIfNeeded();
     const iframe = await page.locator('iframe[title="3D Viewer"]').elementHandle();

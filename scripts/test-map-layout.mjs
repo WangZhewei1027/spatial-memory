@@ -43,14 +43,15 @@ async function verifyLayout(page, label, width) {
   assert.ok(frames.some((frame) => frame.loaded), `${label}: the real map must be sampled`);
   assert.ok(frames.some((frame) => !frame.loaded), `${label}: sample the loading placeholder too`);
   const final = frames.at(-1).boxes;
+  const expectedPanels = width >= 996 ? ["header", "list", "sidebar", "viewer"] : ["header", "viewer"];
   for (const frame of frames) {
-    assert.deepEqual(Object.keys(frame.boxes).sort(), ["header", "list", "sidebar", "viewer"]);
+    assert.deepEqual(Object.keys(frame.boxes).sort(), expectedPanels);
     for (const [panel, rect] of Object.entries(frame.boxes)) {
       assert.ok(rect.every((value, index) => Math.abs(value - final[panel][index]) <= 1),
         `${label}: ${panel} moved during loading: ${JSON.stringify(rect)} → ${JSON.stringify(final[panel])}`);
     }
   }
-  for (const panel of ["list", "viewer", "sidebar"]) {
+  for (const panel of expectedPanels.filter((panel) => panel !== "header")) {
     const [x, , w, h] = final[panel];
     assert.ok(x >= 0 && x + w <= width && w > 0 && h > 0, `${label}: ${panel} must fit horizontally`);
   }
@@ -60,13 +61,10 @@ async function verifyLayout(page, label, width) {
     assert.equal(list[1], viewer[1]);
     assert.equal(sidebar[1], viewer[1]);
     assert.ok(list[0] + list[2] < viewer[0] && viewer[0] + viewer[2] < sidebar[0]);
-  } else if (width >= 768) {
-    assert.ok(viewer[1] + viewer[3] < list[1]);
-    assert.equal(list[1], sidebar[1]);
-    assert.ok(list[0] + list[2] < sidebar[0]);
   } else {
-    assert.ok(viewer[1] + viewer[3] < list[1]);
-    assert.ok(list[1] + list[3] < sidebar[1]);
+    assert.ok(viewer[2] >= width - 32, `${label}: narrow map uses the available width`);
+    assert.equal(list, undefined, "list opens on demand");
+    assert.equal(sidebar, undefined, "inspector opens on demand");
   }
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${label}: page must not overflow horizontally`);
   console.log(`PASS map layout ${label}: stable placeholder, panels and header`);

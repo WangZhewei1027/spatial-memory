@@ -44,6 +44,7 @@ export type CreateBody = DistributiveOmit<CreatePlacementRequest, "idempotencyKe
  */
 export function useCreatePlacement() {
   const { tx, workspaceId, focusPlacement } = usePlacementMap();
+  const submitting = useRef(false);
   const key = useRef(newIdempotencyKey());
   const lastBody = useRef<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -58,7 +59,9 @@ export function useCreatePlacement() {
   /** `prepare` runs inside the pending state (uploads) and returns the request body. */
   const submit = useCallback(
     async (prepare: () => Promise<CreateBody>): Promise<PlacementDto | null> => {
-      if (!workspaceId) return null;
+      if (!workspaceId || submitting.current) return null;
+      const scopeKey = usePlacementStore.getState().scopeKey;
+      submitting.current = true;
       setPending(true);
       setError(null);
       try {
@@ -69,8 +72,10 @@ export function useCreatePlacement() {
         lastBody.current = json;
         const result = await collectionApi.createPlacement(workspaceId, { ...body, idempotencyKey: key.current } as CreatePlacementRequest);
         const placement = result.placement;
-        usePlacementStore.getState().upsertPlacements([placement]);
-        focusPlacement(placement);
+        const store = usePlacementStore.getState();
+        if (store.scopeKey !== scopeKey) return placement;
+        store.upsertPlacements([placement]);
+        if (store.sidebarMode === "create") focusPlacement(placement);
         toast.success(tx("contentModel.integration.map.create.done"));
         key.current = newIdempotencyKey();
         lastBody.current = null;
@@ -79,6 +84,7 @@ export function useCreatePlacement() {
         setError(errorMessage(failure, tx));
         return null;
       } finally {
+        submitting.current = false;
         setPending(false);
       }
     },

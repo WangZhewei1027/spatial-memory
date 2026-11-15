@@ -28,6 +28,7 @@ export function PlacementCard({ placement, tags, selected, selectMode, checked, 
   const { t } = useTranslation();
   const { tx, focusPlacement, organizationId, workspaceId } = usePlacementMap();
   const contents = usePlacementStore((state) => state.placementContents);
+  const hasDraft = usePlacementStore((state) => !!state.placementDrafts[placement.id]);
   const content = resolvedContentOf(placement, contents, placementScopeKey(organizationId, workspaceId));
   const name = placementDisplayName(placement);
   const type = placementFileType(placement);
@@ -62,6 +63,7 @@ export function PlacementCard({ placement, tags, selected, selectMode, checked, 
         <p className="truncate text-sm font-medium leading-tight" title={name}>{name}</p>
         <div className="flex flex-wrap items-center gap-1">
           <Badge variant="secondary" className="px-1.5 py-0 text-xs">{tx(`contentModel.integration.map.type.${type}`)}</Badge>
+          {hasDraft && <Badge variant="outline" className="text-warning">{tx("contentModel.integration.map.editor.unsaved")}</Badge>}
           {placement.status !== "active" && (
             <Badge variant="outline" className="px-1.5 py-0 text-xs">{t(`contentModel.placement.status.${placement.status}`)}</Badge>
           )}

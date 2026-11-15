@@ -2,6 +2,7 @@
 import type { AssetDetailDto, PlacementContentDto, PlacementDto, PlacementStatus } from "@/lib/content-model/contracts";
 import { create } from "zustand";
 import { contentMatchesPlacement, placementContentKey } from "./placement-to-viewer";
+import type { PlacementDraft } from "./placement-draft";
 
 export interface MapPoint {
   longitude: number;
@@ -34,6 +35,10 @@ interface PlacementStore {
   tagFilter: string[];
   tab: PlacementListTab;
   activitiesOpen: boolean;
+  sidebarMode: "inspect" | "create";
+  mobilePanel: "list" | "sidebar" | null;
+  placementDrafts: Record<string, PlacementDraft>;
+  createHasDraft: boolean;
 
   selectedPlacementId: string | null;
   selectedActivityPlacementId: string | null;
@@ -58,6 +63,11 @@ interface PlacementStore {
   setTagFilter: (value: string[]) => void;
   setTab: (tab: PlacementListTab) => void;
   setActivitiesOpen: (open: boolean) => void;
+  startCreate: () => void;
+  closeCreate: () => void;
+  setMobilePanel: (panel: "list" | "sidebar" | null) => void;
+  setPlacementDraft: (scopeKey: string, id: string, draft: PlacementDraft | null) => void;
+  setCreateHasDraft: (dirty: boolean) => void;
 
   selectPlacement: (id: string | null) => void;
   selectActivityPlacement: (id: string | null) => void;
@@ -80,6 +90,11 @@ const SCOPE_RESET = {
   selectedPlacementId: null,
   selectedActivityPlacementId: null,
   activitiesOpen: false,
+  sidebarMode: "inspect" as const,
+  mobilePanel: null,
+  placementDrafts: {} as Record<string, PlacementDraft>,
+  createHasDraft: false,
+  clickedLocation: null,
   selectedPlacementIds: [] as string[],
   selectedAnchorId: null,
   notice: null,
@@ -95,7 +110,6 @@ export const usePlacementStore = create<PlacementStore>()((set) => ({
   fileTypeFilter: [],
   tagFilter: [],
   tab: "placements",
-  clickedLocation: null,
 
   beginLoad: (scopeKey) =>
     set((state) =>
@@ -133,12 +147,23 @@ export const usePlacementStore = create<PlacementStore>()((set) => ({
   setTagFilter: (tagFilter) => set({ tagFilter }),
   setTab: (tab) => set({ tab }),
   setActivitiesOpen: (activitiesOpen) => set({ activitiesOpen, selectedActivityPlacementId: null }),
+  startCreate: () => set({ sidebarMode: "create", mobilePanel: "sidebar" }),
+  closeCreate: () => set((state) => ({ sidebarMode: "inspect", mobilePanel: state.selectedPlacementId || state.selectedAnchorId ? "sidebar" : null })),
+  setMobilePanel: (mobilePanel) => set({ mobilePanel }),
+  setCreateHasDraft: (createHasDraft) => set({ createHasDraft }),
+  setPlacementDraft: (scopeKey, id, draft) => set((state) => {
+    if (state.scopeKey !== scopeKey) return {};
+    const placementDrafts = { ...state.placementDrafts };
+    if (draft) placementDrafts[id] = draft;
+    else delete placementDrafts[id];
+    return { placementDrafts };
+  }),
 
-  selectPlacement: (selectedPlacementId) => set({ selectedPlacementId, selectedAnchorId: null, selectedActivityPlacementId: null }),
+  selectPlacement: (selectedPlacementId) => set({ selectedPlacementId, selectedAnchorId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedPlacementId ? "sidebar" : null }),
   setSelectedPlacementIds: (selectedPlacementIds) => set({ selectedPlacementIds }),
-  selectAnchor: (selectedAnchorId) => set({ selectedAnchorId, selectedPlacementId: null, selectedActivityPlacementId: null }),
+  selectAnchor: (selectedAnchorId) => set({ selectedAnchorId, selectedPlacementId: null, selectedActivityPlacementId: null, sidebarMode: "inspect", mobilePanel: selectedAnchorId ? "sidebar" : null }),
   selectActivityPlacement: (selectedActivityPlacementId) => set({ selectedActivityPlacementId, ...(selectedActivityPlacementId ? { activitiesOpen: true } : {}) }),
-  setClickedLocation: (clickedLocation) => set({ clickedLocation }),
+  setClickedLocation: (clickedLocation) => set((state) => ({ clickedLocation, ...(clickedLocation && (state.sidebarMode === "create" || state.selectedPlacementId) ? { mobilePanel: "sidebar" as const } : {}) })),
   setNotice: (notice) => set({ notice }),
 
   putPlacementContents: (scopeKey, contents) =>

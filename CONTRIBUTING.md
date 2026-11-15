@@ -88,6 +88,10 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 地图首屏布局运行 `node scripts/test-map-layout.mjs`，需要本地服务，API 与 viewer 使用隔离 fixture。逐帧比较加载占位到正式内容的三栏位置、尺寸与顶栏，覆盖直接进入、刷新和从地图列表打开、中英文、明暗主题、桌面/平板/手机及矮视口；不只检查加载完成后的截图。设置 `MAP_LAYOUT_SCREENSHOTS` 可保存截图。
 
+地图投放检视器运行 `node scripts/test-placement-inspector.mjs`，使用隔离 API 和 viewer fixture。覆盖详情/新增互斥、来源预览、固定保存栏、切换/关闭后的草稿恢复、保存失败与锁冲突、已有素材及新文本的原子创建、显式应用地图候选点、只读、中英文、明暗主题与1440/1100/820/390/320px。`PLACEMENT_INSPECTOR_SCREENSHOTS` 可保存截图；fixture 不访问真实业务数据或地图服务。
+
+该回归也覆盖内容选择器的素材/场景混排、类别与搜索组合、已存模型/视频缩略图、缺图回退及搜索条件保留，并逐帧检查加载、空结果、类别和上传模式/类型切换时弹窗与标题不跳变。关闭只保留右上角入口，上传确认在表单内完成。
+
 地图活动弹窗运行 `node scripts/test-map-activities.mjs`，需要本地服务，所有 API 读写和 viewer 均使用隔离 fixture。覆盖 navbar 入口、活动标记与旧链接、弹窗开关时地图及列表状态保留、仅开启/暂停两种状态、关联与原位状态写入、取消关联和按原 ID 重新关联、冲突与读取失败恢复、只读/归档、中英文、明暗主题和窄屏。还验证地图内“新建活动”复用活动库表单、仅改变标题、取消返回与失败重试、成功创建暂停关联，以及活动库通过同一表单创建不关联地图的活动。设置 `MAP_ACTIVITIES_SCREENSHOTS` 可保存截图。
 
 活动详情关联运行 `node scripts/test-activity-map-links.mjs`，使用上述本地服务与隔离 fixture，覆盖已有关联时禁用新增、仅开启/暂停、取消后关联新地图、恢复原地图的关联 ID、只读、中英文与明暗/窄屏。单地图迁移回归 `node --import tsx --conditions react-server scripts/test-activity-map-migration.ts` 使用本机 55439 的唯一临时数据库，验证多地图冲突中止、旧草稿转暂停、唯一约束、来源记录保留、回滚和重复迁移；CI 运行同一脚本。

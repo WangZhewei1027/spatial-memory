@@ -19,6 +19,8 @@ import { listTabOf, matchesFilters } from "./placement-utils";
 import { usePlacementData } from "./usePlacementData";
 import { activityApi } from "../../lib/activity-api";
 import { useActivityQuery } from "../activities/useActivityQuery";
+import { Button } from "@/components/ui/button";
+import { List, PanelRight, Plus } from "lucide-react";
 
 /** One map collection as the placement map sees it (the collection id is its workspace UUID). */
 export interface PlacementMapScope {
@@ -54,6 +56,7 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
   const statusFilter = usePlacementStore((state) => state.statusFilter);
   const fileTypeFilter = usePlacementStore((state) => state.fileTypeFilter);
   const tagFilter = usePlacementStore((state) => state.tagFilter);
+  const mobilePanel = usePlacementStore((state) => state.mobilePanel);
 
   const visible = useMemo(
     () => loadedScopeKey === scopeKey ? placements.filter((placement) => matchesFilters(placement, { status: statusFilter, fileTypes: fileTypeFilter, tagIds: tagFilter })) : [],
@@ -130,6 +133,13 @@ export function PlacementMapView({ scope }: { scope: PlacementMapScope }) {
     <PlacementMapProvider value={value}>
       <ManageGridLayout
         fill={scope.fill}
+        mapEditor
+        mobilePanel={mobilePanel}
+        controls={<>
+          <Button variant={mobilePanel === "list" ? "secondary" : "outline"} size="sm" aria-pressed={mobilePanel === "list"} onClick={() => usePlacementStore.getState().setMobilePanel(mobilePanel === "list" ? null : "list")}><List className="size-4" aria-hidden />{tx("contentModel.integration.map.list.title")}</Button>
+          <Button variant={mobilePanel === "sidebar" ? "secondary" : "outline"} size="sm" aria-pressed={mobilePanel === "sidebar"} onClick={() => usePlacementStore.getState().setMobilePanel(mobilePanel === "sidebar" ? null : "sidebar")}><PanelRight className="size-4" aria-hidden />{tx("contentModel.integration.map.editor.title")}</Button>
+          {workspaceCanEdit && <Button variant="outline" size="sm" onClick={() => usePlacementStore.getState().startCreate()} aria-label={tx("contentModel.integration.map.create.title")}><Plus className="size-4" aria-hidden /></Button>}
+        </>}
         list={<PlacementList visible={visible} />}
         viewer={
           <>

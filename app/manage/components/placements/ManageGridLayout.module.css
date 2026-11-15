@@ -74,3 +74,73 @@
   .viewer { grid-column: 4 / span 6; }
   .sidebar { grid-column: 10 / span 3; }
 }
+
+/* Collection editing keeps the map mounted and usable while panels open. */
+.mapEditor {
+  position: relative;
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.mapEditor .controls {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  min-height: 2.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mapEditor .viewer {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.mapEditor .list,
+.mapEditor .sidebar {
+  display: none;
+  grid-area: auto;
+  position: absolute;
+  z-index: 20;
+  top: 4rem;
+  bottom: 0.75rem;
+  width: min(24rem, calc(100% - 1.5rem));
+  border-radius: var(--radius);
+  background: hsl(var(--background));
+  box-shadow: 0 6px 24px hsl(var(--foreground) / 0.12);
+}
+
+.mapEditor .list { left: 0.75rem; }
+.mapEditor .sidebar { right: 0.75rem; }
+.mapEditor[data-mobile-panel="list"] .list,
+.mapEditor[data-mobile-panel="sidebar"] .sidebar { display: block; }
+
+@container map-workspace (max-width: 767px) {
+  .mapEditor .sidebar {
+    top: auto;
+    height: min(72cqh, 40rem);
+    max-height: calc(100% - 4.75rem);
+    width: calc(100% - 1.5rem);
+  }
+}
+
+@container map-workspace (min-width: 996px) {
+  .mapEditor {
+    grid-template-columns: clamp(12rem, 20cqw, 17rem) minmax(0, 1fr) clamp(20rem, 26cqw, 24rem);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .mapEditor .controls { display: none; }
+  .mapEditor .list,
+  .mapEditor .sidebar {
+    display: block;
+    position: static;
+    width: auto;
+    box-shadow: none;
+    background: transparent;
+  }
+  .mapEditor .list { grid-column: 1; grid-row: 1; }
+  .mapEditor .viewer { grid-column: 2; grid-row: 1; }
+  .mapEditor .sidebar { grid-column: 3; grid-row: 1; }
+}
