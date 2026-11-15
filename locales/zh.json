@@ -1295,6 +1295,8 @@
     "title": "活动",
     "view": "查看",
     "create": "创建活动",
+    "newActivity": "新建活动",
+    "createAndLink": "创建并关联活动",
     "name": "活动名称",
     "type": "活动类型",
     "types": {

@@ -17,6 +17,7 @@ import { usePlacementStore } from "../../lib/placement-store";
 import { useActivityQuery } from "./useActivityQuery";
 import { ActivityPlacementForm } from "./ActivityPlacementForm";
 import { ActivityFailure } from "./ActivityFeedback";
+import { ActivityCreateDialog } from "./ActivityCreateDialog";
 
 export interface MapActivitiesProps {
   workspaceId: string;
@@ -70,9 +71,14 @@ export function MapActivities({ workspaceId, workspaceName, organizationId, canE
             <MapActivityRow key={placement.id} placement={placement} activity={activities.data?.find((activity) => activity.id === placement.activity_id)} canEdit={canEdit} highlighted={highlightedId === placement.id} onReload={placements.reload} />
           ))}</ul>}
       </div>
-      {canEdit && <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t px-5 py-3 sm:px-6">
-        {choicesReady && !availableActivities.length && <Text as="p" variant="bodySm" tone="subdued">{t("activities.noAvailableActivities")}</Text>}
-        <Button className="min-h-10" disabled={!choicesReady || !availableActivities.length} onClick={() => setCreating(true)}><Plus aria-hidden />{t("activities.placeExisting")}</Button>
+      {canEdit && <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t px-5 py-3 sm:px-6">
+        <ActivityCreateDialog organizationId={organizationId} workspaceId={workspaceId} onCreated={() => { placements.reload(); activities.reload(); }}>
+          <Button variant="outline" className="min-h-10"><Plus aria-hidden />{t("activities.newActivity")}</Button>
+        </ActivityCreateDialog>
+        <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
+          {choicesReady && !availableActivities.length && <Text as="p" variant="bodySm" tone="subdued">{t("activities.noAvailableActivities")}</Text>}
+          <Button className="min-h-10" disabled={!choicesReady || !availableActivities.length} onClick={() => setCreating(true)}><Plus aria-hidden />{t("activities.placeExisting")}</Button>
+        </div>
       </div>}
     </div>
   );

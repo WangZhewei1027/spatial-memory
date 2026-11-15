@@ -33,7 +33,8 @@ async function main() {
   try {
     await seedServicesFixture(client, f);
     const [editor, viewer, foreign] = await Promise.all([f.users.editor, f.users.viewer, f.users.foreign].map((id) => loadActor(db, id)));
-    const standalone = await service.createActivity(await loadActor(db, f.users.owner), f.organizations.solo, { name: "No map needed", type: "danmaku" });
+    const owner = await loadActor(db, f.users.owner);
+    const standalone = await service.createActivity(owner, f.organizations.solo, { name: "No map needed", type: "danmaku" });
     assert.equal(standalone.config.maxLength, 50, "new danmaku activities default to 50 characters");
     assert.equal(standalone.points.length, 0);
     auth.setStubSessionUser({ id: f.users.owner, email: null, name: null, emailVerified: false });
@@ -47,6 +48,28 @@ async function main() {
     await reject(() => service.createActivity(viewer, f.organizations.team, create), "FORBIDDEN");
     await reject(() => service.getActivity(foreign, activity.id), "NOT_FOUND");
     assert.equal((await service.getActivity(viewer, activity.id)).capabilities.can_edit, false);
+    checks++;
+
+    const createLinked = { name: "Create and link together", type: "danmaku", workspaceId: f.workspaces.empty, idempotencyKey: randomUUID() };
+    const linked = await Promise.all([1, 2].map(() => service.createActivity(editor, f.organizations.team, createLinked)));
+    assert.equal(linked[0].id, linked[1].id, "concurrent retries create one activity");
+    assert.equal(linked[0].has_map_link, true);
+    const initialLinks = await service.listActivityPlacements(editor, linked[0].id);
+    assert.equal(initialLinks.length, 1);
+    assert.equal(initialLinks[0].workspace_id, f.workspaces.empty);
+    assert.equal(initialLinks[0].status, "paused");
+    await reject(() => service.createActivity(editor, f.organizations.team, { ...createLinked, workspaceId: f.workspaces.a }), "IDEMPOTENCY_CONFLICT");
+    const activityCount = async () => (await client.query("select count(*) from activity")).rows[0].count;
+    const beforeDeniedCreate = await activityCount();
+    await reject(() => service.createActivity(viewer, f.organizations.team, { ...createLinked, idempotencyKey: randomUUID() }), "FORBIDDEN");
+    await reject(() => service.createActivity(editor, f.organizations.team, { ...createLinked, workspaceId: f.workspaces.foreign, idempotencyKey: randomUUID() }), "NOT_FOUND");
+    await reject(() => service.createActivity(owner, f.organizations.solo, createLinked), "NOT_FOUND");
+    await client.query("update workspace set archived_at=now() where id=$1", [f.workspaces.empty]);
+    await reject(() => service.createActivity(editor, f.organizations.team, { ...createLinked, idempotencyKey: randomUUID() }), "ARCHIVED");
+    await client.query("update workspace set archived_at=null where id=$1", [f.workspaces.empty]);
+    assert.equal(await activityCount(), beforeDeniedCreate, "invalid associations must not leave an unlinked activity");
+    await service.updateActivityPlacement(editor, initialLinks[0].id, { expectedLockVersion: initialLinks[0].lock_version, status: "archived" });
+    assert.equal((await service.createActivity(editor, f.organizations.team, createLinked)).has_map_link, false, "retrying creation must not restore a later unlinked activity");
     checks++;
 
     const racing = await service.createActivity(editor, f.organizations.team, { name: "Concurrent map association", type: "danmaku" });
@@ -299,7 +322,7 @@ async function main() {
     assert.ok((await response.json()).id);
     assert.equal((await recordRoute.POST(new Request("http://test/api/miniapp/activity-records", { method: "POST", body: JSON.stringify({ placement_id: chatA.id, kind: "danmaku" }) }))).status, 400);
     checks++;
-    console.log(`PASS ${checks} activity integration scenarios (single-map links, concurrent create/restore, two statuses, source history, ownership, scope, idempotency, archival race, moderation, files, HTTP)`);
+    console.log(`PASS ${checks} activity integration scenarios (atomic create-and-link, single-map links, concurrent create/restore, two statuses, source history, ownership, scope, idempotency, archival race, moderation, files, HTTP)`);
   } finally {
     await cleanupServicesFixture(client, f);
     await client.end();

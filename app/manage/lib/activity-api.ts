@@ -2,7 +2,7 @@ import type { ActivityConfig, ActivityDto, ActivityLocation, ActivityPlacementDt
 import { contentRequest } from "./content-api";
 
 type Data<T> = { data: T };
-export interface ActivityInput { name: string; description?: string | null; type: ActivityType; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; idempotencyKey: string }
+export interface ActivityInput { name: string; description?: string | null; type: ActivityType; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; workspaceId?: string; idempotencyKey: string }
 export interface ActivityUpdate { expectedLockVersion: number; name?: string; description?: string | null; config?: ActivityConfig; location?: ActivityLocation | null; radiusMeters?: number | null; state?: "active" | "archived"; points?: ActivityPointInput[] }
 export interface ActivityPlacementInput {
   workspaceId: string;

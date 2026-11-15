@@ -65,20 +65,30 @@ export async function listActivities(actor: Actor, organizationId: string, opts:
 
 export async function createActivity(actor: Actor, organizationId: string, value: unknown): Promise<ActivityDto> {
   const body = requireRecord(value, "activity");
-  rejectUnknown(body, ["name", "type", "description", "config", "location", "radiusMeters", "idempotencyKey"]);
+  rejectUnknown(body, ["name", "type", "description", "config", "location", "radiusMeters", "workspaceId", "idempotencyKey"]);
   const type = typeOf(requireString(body.type, "type"));
   const name = requireString(body.name, "name");
   const description = optionalString(body.description, "description", { max: 5000 }) ?? null;
   const config = effectiveConfig(type, parseActivityConfig(body.config ?? {}, type));
   const area = parseActivityArea(body);
+  const workspaceId = body.workspaceId === undefined ? null : requireUuid(body.workspaceId, "workspaceId");
   const key = optionalIdempotencyKey(body.idempotencyKey);
   const id = await contentTransaction(async (trx) => {
     await requireOrgWrite(trx, actor, organizationId);
-    await lockOrgForWrite(trx, organizationId);
+    if (workspaceId) {
+      const access = await requireWorkspaceEdit(trx, actor, workspaceId);
+      if (access.org.id !== organizationId) throw notFound("地图合集不存在");
+      await lockWorkspaceForWrite(trx, access);
+    } else await lockOrgForWrite(trx, organizationId);
     const scope = key ? { actorId: actor.userId, command: `activity.create:${organizationId}`, key, hash: requestHash(body) } : null;
     if (scope) { const replay = await claimIdempotency(trx, scope); if (replay) return replay; }
     const result = await trx.insertInto("activity").values({ organization_id: organizationId, type, name, description, config: JSON.stringify(config),
       location: locationSql(area.location), radius_meters: area.radius_meters, created_by: actor.userId, updated_by: actor.userId }).returning("id").executeTakeFirstOrThrow();
+    if (workspaceId) {
+      const placement = await trx.insertInto("activity_placement").values({ activity_id: result.id, organization_id: organizationId, workspace_id: workspaceId,
+        status: "paused", created_by: actor.userId, updated_by: actor.userId }).returning("id").executeTakeFirstOrThrow();
+      await audit(trx, { organizationId, workspaceId, actorId: actor.userId, action: "activity.place", objectType: "activity_placement", objectId: placement.id });
+    }
     if (scope) await recordIdempotency(trx, scope, organizationId, "activity", result.id);
     await audit(trx, { organizationId, actorId: actor.userId, action: "activity.create", objectType: "activity", objectId: result.id });
     return result.id;

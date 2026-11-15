@@ -1307,6 +1307,8 @@
     "title": "Activities",
     "view": "View",
     "create": "Create activity",
+    "newActivity": "New activity",
+    "createAndLink": "Create and link activity",
     "name": "Activity name",
     "type": "Activity type",
     "types": {

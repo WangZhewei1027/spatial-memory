@@ -64,13 +64,15 @@ Danmaku `config.maxLength` defaults to 50 for new activities and configurations 
 
 | Route | Behavior |
 | --- | --- |
-| `GET/POST /api/organizations/[id]/activities` | List/create team activities without selecting a map |
+| `GET/POST /api/organizations/[id]/activities` | List/create team activities; POST optionally accepts `workspaceId` to create an initial paused map association atomically |
 | `GET/PATCH /api/activities/[id]` | Edit shared rules, name, state, geographic scope (`location`, `radiusMeters`) and points including fixed `location`; points omitted from a submitted complete list are archived |
 | `GET/POST /api/activities/[id]/placements` | List/create map associations with map, status and idempotency key |
 | `GET/PATCH /api/activity-placements/[id]` | Read/update association status; activity and map identity cannot be changed; location, radius, config and point fields are rejected |
 | `GET /api/collections/[id]/activity-placements` | Map activity placements, separate from content placements |
 | `GET /api/activities/[id]/records` | Paginated records, optionally filtered by `placementId`; `limit` ≤ 200 |
 | `PATCH /api/activity-records/[id]` | Hide or restore a record with optimistic locking |
+
+Activity creation without `workspaceId` remains independent of maps. With `workspaceId`, `lib/activities/service.server.ts` checks team write permission and an editable, unarchived map in the same organization, then creates the activity and paused association in one transaction. Failure leaves neither new row. The existing creation `idempotencyKey` covers the whole request, including the map: matching retries reuse the activity, changed requests conflict, and replay does not restore a subsequently removed association. This uses the existing schema; no migration is required.
 
 Creating a link or restoring an archived link while another map is linked returns `DEPENDENCY_CONFLICT` (409). Writes serialize on an activity-wide lock, backed by a partial unique index on non-archived placements. The activity/map pair remains unique so relinking restores its original placement ID and history. Activity and map must belong to the same team; associations cannot move between teams.
 

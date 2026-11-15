@@ -26,6 +26,7 @@ try {
     const activities = ["Neighborhood check-in and community messages", "Weekend route", "Activity linked to another map"].map((name, index) => ({
       id: `activity-${index}`, name, organization_id: teamId, type: "danmaku", state: "active", lock_version: 1,
       config: {}, has_map_link: index !== 1, points: [], location: { longitude: 121.5, latitude: 31.2 }, radius_meters: 100,
+      created_at: "2026-11-15T00:00:00Z", updated_at: "2026-11-15T00:00:00Z",
       capabilities: { can_read: true, can_edit: !readOnly },
     }));
     const makePlacement = (activity, status = "active") => ({
@@ -38,6 +39,8 @@ try {
     let failPlacements = false;
     let conflict = false;
     let failWrite = false;
+    let failCreate = false;
+    const createdIntents = new Map();
     await context.addCookies([{ name: "better-auth.session_token", value: "map-activities-fixture", url: origin }, { name: "language", value: language, url: origin }]);
     await context.route("**/api/**", async (route) => {
       const request = route.request(), path = new URL(request.url()).pathname;
@@ -47,7 +50,20 @@ try {
         assert.ok(writable, "read-only map must not write");
         const input = request.postDataJSON();
         mutations.push({ path, method, input });
-        if (path === `/api/activity-placements/${placements[0].id}` && method === "PATCH") {
+        if (path === `/api/organizations/${teamId}/activities` && method === "POST") {
+          assert.ok(input.idempotencyKey);
+          if (input.workspaceId !== undefined) assert.equal(input.workspaceId, mapId);
+          if (failCreate) { status = 500; body = { error: "Fixture create failure" }; }
+          else {
+            let created = createdIntents.get(input.idempotencyKey);
+            if (!created) {
+              created = { ...activities[0], id: `activity-${activities.length}`, name: input.name, type: input.type, location: null, radius_meters: null, has_map_link: !!input.workspaceId };
+              activities.push(created); createdIntents.set(input.idempotencyKey, created);
+              if (input.workspaceId) placements.push(makePlacement(created, "paused"));
+            }
+            body = { data: created };
+          }
+        } else if (path === `/api/activity-placements/${placements[0].id}` && method === "PATCH") {
           assert.deepEqual(Object.keys(input).sort(), ["expectedLockVersion", "status"]);
           assert.equal(input.expectedLockVersion, placements[0].lock_version);
           if (conflict) { status = 409; body = { code: "LOCK_VERSION_CONFLICT", error: "Fixture conflict" }; }
@@ -66,7 +82,7 @@ try {
       else if (path === "/api/organizations") body = { data: [{ id: teamId, name: "Fixture team", role: readOnly ? "viewer" : "owner", allowed_file_types: ["text", "image"] }] };
       else if (path === `/api/organizations/${teamId}/collections`) body = { data: [collection] };
       else if (path === `/api/collections/${mapId}`) body = { data: collection };
-      else if (path === `/api/organizations/${teamId}/activities`) body = { data: activities };
+      else if (path === `/api/organizations/${teamId}/activities`) body = { data: activities, page: { total: activities.length, hasMore: false, limit: 30, offset: 0 } };
       else if (path === `/api/collections/${mapId}/activity-placements`) {
         body = { data: placements };
         if (failPlacements) { status = 500; body = { error: "Fixture read failure" }; }
@@ -103,6 +119,7 @@ try {
     assert.ok(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth), "dialog must not overflow horizontally");
     if (captureDir && writable) await page.screenshot({ path: `${captureDir}/${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
     if (!writable) {
+      assert.equal(await dialog.getByRole("button", { name: text.newActivity, exact: true }).count(), 0);
       assert.equal(await dialog.getByRole("button", { name: text.placeExisting, exact: true }).count(), 0);
       assert.equal(await dialog.getByRole("button", { name: text.unlink, exact: true }).count(), 0);
     } else {
@@ -246,6 +263,49 @@ try {
       await page.keyboard.press("Escape");
       placements.push(...originalPlacements);
     }
+    if (writable) {
+      await trigger.click();
+      const newActivity = dialog.getByRole("button", { name: text.newActivity, exact: true });
+      const currentPlacements = placements.length;
+      await newActivity.click();
+      const createDialog = page.getByRole("dialog", { name: text.createAndLink, exact: true });
+      const name = createDialog.getByLabel(text.name, { exact: true });
+      await name.waitFor();
+      assert.equal(await name.evaluate(node => node === document.activeElement), true);
+      await createDialog.getByRole("button", { name: text.cancel, exact: true }).click();
+      await createDialog.waitFor({ state: "hidden" });
+      assert.equal(await newActivity.evaluate(node => node === document.activeElement), true, "cancel returns focus to the map dialog's new action");
+      await newActivity.click();
+      const createdName = language === "zh" ? "地图中新建的活动" : "Activity created from this map";
+      await name.fill(createdName);
+      await createDialog.getByLabel(text.type, { exact: true }).click();
+      await page.getByRole("option", { name: text.types.danmaku, exact: true }).click();
+      assert.equal(await createDialog.getByRole("combobox").count(), 1, "the shared form adds no map or status fields");
+      const createBounds = await createDialog.boundingBox();
+      assert.ok(createBounds.x >= 0 && createBounds.x + createBounds.width <= width && createBounds.y >= 0 && createBounds.y + createBounds.height <= height);
+      assert.ok(await createDialog.evaluate(node => node.scrollWidth <= node.clientWidth));
+      if (captureDir) await page.screenshot({ path: `${captureDir}/new-${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
+      const createButton = createDialog.getByRole("button", { name: text.create, exact: true });
+      if (language === "zh" && width === 1440) {
+        failCreate = true;
+        await createButton.click();
+        await createDialog.getByText(text.failed, { exact: true }).waitFor();
+        assert.equal(await name.inputValue(), createdName);
+        assert.equal(placements.length, currentPlacements);
+        failCreate = false;
+      }
+      const priorCreate = mutations.at(-1);
+      await createButton.click();
+      await createDialog.waitFor({ state: "hidden" });
+      await dialog.getByRole("heading", { name: createdName, exact: true }).waitFor();
+      assert.equal(placements.length, currentPlacements + 1);
+      assert.equal(placements.at(-1).status, "paused");
+      assert.equal(mutations.at(-1).input.workspaceId, mapId);
+      if (language === "zh" && width === 1440) assert.equal(mutations.at(-1).input.idempotencyKey, priorCreate.input.idempotencyKey, "retry reuses the same creation intent");
+      assert.equal(await iframe.evaluate(node => node.isConnected), true);
+      assert.deepEqual(await iframe.boundingBox(), bounds, "creating an activity preserves the map workspace");
+      await page.keyboard.press("Escape");
+    }
     await page.goto(`${url}&tab=activities`, { waitUntil: "networkidle" });
     await dialog.getByRole("heading", { name: activities[0].name, exact: true }).waitFor();
     await page.keyboard.press("Escape");
@@ -253,6 +313,17 @@ try {
     await page.goto(url, { waitUntil: "networkidle" });
     await trigger.waitFor();
     assert.equal(await dialog.count(), 0, "activity dialog state must not leak into another map visit");
+    if (writable) {
+      await page.goto(`${origin}/manage/activities?organizationId=${teamId}`, { waitUntil: "networkidle" });
+      await page.locator(".team-library header").getByRole("button", { name: text.create, exact: true }).click();
+      const libraryCreate = page.getByRole("dialog", { name: text.create, exact: true });
+      await libraryCreate.getByLabel(text.name, { exact: true }).fill("Standalone library activity");
+      await libraryCreate.getByRole("button", { name: text.create, exact: true }).click();
+      await libraryCreate.waitFor({ state: "hidden" });
+      await page.getByRole("link", { name: "Standalone library activity", exact: true }).waitFor();
+      assert.equal(mutations.at(-1).input.workspaceId, undefined, "the shared library form creates without a map");
+      assert.equal(activities.at(-1).has_map_link, false);
+    }
     assert.deepEqual(errors, []);
     console.log(`PASS map activities ${language} ${dark ? "dark" : "light"} ${width}${readOnly ? " viewer" : archived ? " archived" : ""}`);
     await context.close();
