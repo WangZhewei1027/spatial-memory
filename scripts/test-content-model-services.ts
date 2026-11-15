@@ -807,7 +807,7 @@ async function main(): Promise<void> {
     });
 
     await check("T12 anchor edits update every collection and invalidate in-flight descriptors", async () => {
-      const { findNearbyAnchors } = await import("../lib/anchor/recognize.server");
+      const { findNearbyAnchors } = await import("../lib/anchor/nearby.server");
       const { getMatchingAnchor } = await import("../lib/anchor/access.server");
       const anchor = await assetService.createAssetForCollection(actors.editor, f.workspaces.a, {
         name: "live anchor", fileType: "anchor", payload: { kind: "anchor" },

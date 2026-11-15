@@ -47,16 +47,3 @@ export async function getWorkspaceOrgId(
     .executeTakeFirst();
   return row?.organization_id ?? null;
 }
-
-/** Distinct organization ids for a set of workspaces. */
-export async function getWorkspaceOrgIds(
-  workspaceIds: string[],
-): Promise<string[]> {
-  if (workspaceIds.length === 0) return [];
-  const rows = await db
-    .selectFrom("workspace")
-    .select("organization_id")
-    .where("id", "in", workspaceIds)
-    .execute();
-  return Array.from(new Set(rows.map((w) => w.organization_id)));
-}

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { extractGPSFromImage } from "@/lib/exif-reader";
 import { UPLOAD_ACCEPTS } from "./detection";
-import { STORED_FILE_MAX_BYTES, UPLOAD_SOURCE_MAX_MB } from "./policy";
+import { UPLOAD_SOURCE_MAX_MB } from "./policy";
 
 // 定义移至 ./types（纯模块，服务端路由可安全导入），此处再导出以兼容现有引用
 export { DEFAULT_UPLOAD_TYPES } from "./types";
@@ -86,9 +86,6 @@ export const FILE_TYPE_CONFIGS: Record<UploadType, FileTypeConfig> = {
     maxSize: UPLOAD_SOURCE_MAX_MB.model,
   },
 };
-
-/** Final non-video size; videos use bitrate/duration, originals have separate limits. */
-export const STORAGE_MAX_FILE_SIZE_MB = STORED_FILE_MAX_BYTES / 1024 / 1024;
 
 /** Original-file size accepted before server-side compression. */
 export function getEffectiveMaxSizeMB(type: UploadType): number {

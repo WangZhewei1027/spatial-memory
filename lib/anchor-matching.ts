@@ -1,19 +1,9 @@
-/** Shared protocol and pure matching logic. No browser or server dependencies. */
-export const EMBEDDING_DIM = 8448;
+/** Shared recognition request validation. No browser or server dependencies. */
 export const MAX_MATCH_IMAGE_BYTES = 4 * 1024 * 1024;
-export const MATCH_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-export type MatchingErrorCode =
-  | "client_rate_limited"
-  | "workspace_rate_limited"
-  | "model_busy"
-  | "model_queue_full"
-  | "model_queue_timeout";
 export class MatchingError extends Error {
   constructor(
     message: string,
     public status = 400,
-    public code?: MatchingErrorCode,
-    public retryAfterSeconds?: number,
   ) {
     super(message);
   }
@@ -43,32 +33,6 @@ export function requireUuid(value: unknown, name = "workspace_id"): string {
     throw new MatchingError(`Invalid ${name}`);
   return value;
 }
-export function validateEmbedding(value: unknown): number[] {
-  if (
-    !Array.isArray(value) ||
-    value.length !== EMBEDDING_DIM ||
-    value.some((v) => typeof v !== "number" || !Number.isFinite(v))
-  )
-    throw new MatchingError("Invalid model descriptor", 502);
-  const norm = Math.sqrt(value.reduce((sum, n) => sum + n * n, 0));
-  if (!Number.isFinite(norm) || norm < 1e-8)
-    throw new MatchingError("Invalid model descriptor", 502);
-  return value.map((n) => n / norm);
-}
-export function distanceMeters(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
-  const rad = Math.PI / 180;
-  const a =
-    Math.sin(((lat2 - lat1) * rad) / 2) ** 2 +
-    Math.cos(lat1 * rad) *
-      Math.cos(lat2 * rad) *
-      Math.sin(((lng2 - lng1) * rad) / 2) ** 2;
-  return 6371008.8 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))));
-}
 export function parseGps(form: FormData, now = Date.now()) {
   if (form.get("coordinate_system") !== "wgs84")
     throw new MatchingError("coordinate_system must be wgs84");
@@ -93,33 +57,4 @@ export function parseGps(form: FormData, now = Date.now()) {
     timestamp,
     radius: Math.min(200, Math.max(75, accuracy * 2)),
   };
-}
-export type RankedAnchor = {
-  id: string;
-  score: number;
-  distance_meters: number;
-};
-export function chooseMatch(
-  ranked: RankedAnchor[],
-  threshold: number,
-  margin: number,
-) {
-  const sorted = [...ranked].sort(
-    (a, b) => b.score - a.score || a.id.localeCompare(b.id),
-  );
-  const best = sorted[0];
-  if (!best || best.score < threshold)
-    return { match: null, reason: "below_threshold" as const };
-  if (sorted[1] && best.score - sorted[1].score < margin)
-    return { match: null, reason: "ambiguous" as const };
-  return { match: best, reason: "matched" as const };
-}
-export function cosine(a: number[], b: number[]) {
-  return Math.max(
-    -1,
-    Math.min(
-      1,
-      a.reduce((sum, n, i) => sum + n * b[i], 0),
-    ),
-  );
 }

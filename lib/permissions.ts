@@ -121,14 +121,6 @@ export function isSuperAdmin(globalRole: string | undefined | null): boolean {
   return globalRole === "super_admin";
 }
 
-/** Get all org permissions for a role */
-export function getOrgPermissions(
-  orgRole: string | undefined | null,
-): OrgPermission[] {
-  if (!orgRole) return [];
-  return ORG_PERMISSION_MATRIX[orgRole as OrgRole] ?? [];
-}
-
 /**
  * Sidebar visibility config: which sidebar items are visible to which roles.
  * super_admin always sees everything.

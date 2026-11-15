@@ -24,12 +24,6 @@ export const TAG_COLOR_PRESETS: TagColorPreset[] = [
 
 export const DEFAULT_TAG_COLOR = "#9B9A97";
 
-/** 判断一个 hex 是否属于固定色板。 */
-export function isPresetColor(hex: string): boolean {
-  const normalized = hex.toLowerCase();
-  return TAG_COLOR_PRESETS.some((p) => p.hex.toLowerCase() === normalized);
-}
-
 /**
  * 给定背景 hex,返回可读的前景文字色(深底白字、浅底深字),
  * 用于彩色 badge 的文字对比。

@@ -24,7 +24,7 @@
 | [Scene](scene-asset.md) | 场景文档、编辑、播放协议与验证入口 |
 | [本地 Agent 编排](scene-agent.md) | CLI 素材导入、草稿、编排、截图与保存 |
 | [地图交互](map-asset-interaction.md) | Placement、Cesium 消息与拖动保存 |
-| [匹配点](anchor-matching.md) | 图片识别、参考特征、限流和诊断 |
+| [匹配点](anchor-matching.md) | 本机识别的参考图候选、内容接口与限流 |
 | [小程序 API](miniapp-api.md) | 匿名读取、发现与播放 |
 | [微信二维码](wechat-qr-code.md) | 入口参数、环境切换与缓存 |
 | [文字样式](text-asset-miniapp-style.md) | 团队配置在小程序端的展示 |
