@@ -27,6 +27,7 @@
 - **lint error**：`app/`、`components/`、`lib/` 通过 `components/ui/` 使用 Radix；直接导入 `@radix-ui/*` 或 `radix-ui`（含重导出、require 和字面量动态导入）会阻止检查通过。
 - **零警告门槛**：任意值字号 `text-[..px]`、刻度外字号（text-xl/4xl/5xl…）及 Text 的 className 携带文字类由 ESLint 检查。`npm run lint` 使用 `--max-warnings 0`，warning 同样阻止提交和 CI。
 - **图片预览例外**：固定尺寸缩略图使用 `next/image`；用户素材可能来自外站或本地 Blob，使用 `unoptimized` 保留直接加载。匹配参考图需要未知尺寸下的自然高度和本地 Blob 预览，保留原生 `img`，在组件内注明该单行 lint 豁免；不得把该例外扩展成全局禁用。
+- **模型缩略图底色**：服务端生成的模型图片使用固定浅灰 `#F5F6F8` 背景，在明暗主题中保持一致。该颜色属于图片的渲染场景，不读取页面主题 token；页面容器仍使用语义色。
 
 ## 二、文字体系（全站最重要的一章）
 
