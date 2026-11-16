@@ -97,6 +97,14 @@ export function AssetDetailView({ id, inspector = false, library = "asset" }: As
   const type = asset.file_type as CreatableType;
   // Recognition targets keep several reference images, managed in their own section.
   const anchor = asset.file_type === "anchor";
+  const actions = !archived && (canMaintain || canCopy) ? <>
+    {!archived && canMaintain && (
+      <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}><PencilLine aria-hidden />{tx("contentModel.integration.assetDetail.rename")}</Button>
+    )}
+    {!archived && canCopy && (
+      <Button variant="ghost" size="sm" onClick={() => setCopyOpen(true)}><Copy aria-hidden />{tx("contentModel.integration.assetDetail.duplicate")}</Button>
+    )}
+  </> : undefined;
 
   return content(
     <>
@@ -109,6 +117,7 @@ export function AssetDetailView({ id, inspector = false, library = "asset" }: As
       />
       <AssetDetail
         inspector={inspector}
+        headerActions={inspector ? actions : undefined}
         asset={data}
         preview={!anchor && hasPreview(asset) ? <AssetPreview content={asset} name={data.name} tx={tx} fullWidth={inspector} /> : undefined}
         canMaintain={canMaintain}
@@ -148,14 +157,6 @@ export function AssetDetailView({ id, inspector = false, library = "asset" }: As
         tx={tx}
       />
     </>,
-    <>
-      {!inspector && backLink}
-      {!archived && canMaintain && (
-        <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}><PencilLine aria-hidden />{tx("contentModel.integration.assetDetail.rename")}</Button>
-      )}
-      {!archived && canCopy && (
-        <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}><Copy aria-hidden />{tx("contentModel.integration.assetDetail.duplicate")}</Button>
-      )}
-    </>,
+    inspector ? undefined : <>{backLink}{actions}</>,
   );
 }

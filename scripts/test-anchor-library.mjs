@@ -21,7 +21,7 @@ try {
     const ref = (ordinal, url = `${origin}/fixtures/reference-${ordinal}.png`) => ({ role: "reference", ordinal, url, mime_type: "image/png", size_bytes: png.length, managed: true });
     const target = (n, state = "active") => ({
       id: assetId(n), organization_id: teamId, name: `Target ${n}`, file_type: "anchor", payload: { kind: "anchor" }, resources: [ref(0), ref(1)],
-      state, lock_version: 1, origin: "team_upload", visibility: "organization", maintained_by: null, maintainer: null, created_by: null,
+      state, lock_version: 1, origin: "team_upload", visibility: "organization", maintained_by: "fixture", maintainer: { id: "fixture", name: "David Zhewei Wang" }, created_by: null,
       create_at: "2026-11-16T00:00:00Z", updated_at: "2026-11-16T00:00:00Z", archived_at: state === "archived" ? "2026-11-16T00:00:00Z" : null,
       usage_count: 0, capabilities: { can_read: true, can_maintain: writable, can_use_in_workspace: writable },
     });
@@ -104,7 +104,33 @@ try {
     assert.ok(await library.evaluate(el => el.isConnected));
     assert.equal(await panel.locator('img[alt^="Reference image"],img[alt^="识别图"]').count(), 2);
     assert.equal(await panel.getByText(t("挂载素材", "Attached content"), { exact: true }).count(), 0, "team editor owns no map attachments");
+    const references = panel.getByRole("region", { name: t("识别图 · 2/5", "Reference images · 2/5"), exact: true });
+    const metadata = panel.getByRole("region", { name: t("基本信息", "Details"), exact: true });
+    assert.ok((await references.boundingBox()).y < (await metadata.boundingBox()).y, "reference images precede supporting metadata");
+    assert.ok((await references.boundingBox()).y < 400, "reference images are discoverable in the first viewport");
+    assert.ok(await panel.evaluate(el => el.scrollWidth <= el.clientWidth), "inspector content does not overflow horizontally");
     if (capture) await page.screenshot({ path: `${capture}/${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
+    const previewTrigger = panel.getByRole("button", { name: t("全屏查看：识别图 2", "View full screen: Reference image 2"), exact: true });
+    const preview = page.getByRole("dialog", { name: t("全屏查看：识别图 2", "View full screen: Reference image 2"), exact: true });
+    const beforePreview = new URL(page.url()).search;
+    await previewTrigger.focus();
+    await page.keyboard.press("Enter");
+    await preview.waitFor();
+    await preview.locator(".PhotoView__Photo").evaluate(img => img.decode());
+    await preview.locator(".PhotoView-Portal:not(.PhotoView-Slider__clean)").waitFor();
+    assert.equal(await preview.locator(".PhotoView__Photo").getAttribute("src"), rows[0].resources[1].url, "preview opens the clicked full image");
+    const previewBounds = await preview.boundingBox();
+    assert.ok(previewBounds.width >= width - 1 && previewBounds.height >= 899, `preview fills the viewport: ${JSON.stringify(previewBounds)}`);
+    if (capture) await page.screenshot({ path: `${capture}/${language}-${dark ? "dark" : "light"}-${width}-preview.png`, animations: "disabled" });
+    await page.keyboard.press("Escape");
+    await preview.waitFor({ state: "hidden" });
+    await panel.getByRole("heading", { name: "Target 1", exact: true }).waitFor();
+    assert.equal(new URL(page.url()).search, beforePreview, "closing preview retains the inspector selection");
+    assert.ok(await previewTrigger.evaluate(el => el === document.activeElement), "focus returns to the clicked image");
+    await previewTrigger.click();
+    await preview.getByRole("button", { name: t("关闭", "Close"), exact: true }).click();
+    await preview.waitFor({ state: "hidden" });
+    await panel.getByRole("heading", { name: "Target 1", exact: true }).waitFor();
     if (writable) {
       await panel.getByRole("button", { name: t("重命名", "Rename"), exact: true }).click();
       const dialog = page.getByRole("dialog").last();
@@ -120,6 +146,7 @@ try {
       assert.equal(await search.inputValue(), "Target");
       await panel.getByRole("button", { name: t("删除识别图 2", "Remove reference image 2"), exact: true }).click();
       await page.waitForFunction(() => document.querySelectorAll('img[alt="Reference image 2"],img[alt="识别图 2"]').length === 0);
+      assert.equal(await page.locator(".PhotoView-Portal").count(), 0, "removing a reference never opens its preview");
       assert.equal(rows[0].resources.length, 1);
       await panel.locator('input[type="file"]').setInputFiles({ name: "reference.png", mimeType: "image/png", buffer: png });
       await panel.locator('img[alt="Reference image 2"],img[alt="识别图 2"]').waitFor();

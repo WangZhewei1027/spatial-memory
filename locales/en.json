@@ -744,6 +744,8 @@
     },
     "preview": {
       "image": "Image Preview",
+      "openImage": "View full screen: {{name}}",
+      "removeImage": "Remove replacement image",
       "imageReplace": "Click or drag to replace image",
       "audio": "Audio Preview",
       "audioNotSupported": "Your browser does not support audio playback.",
@@ -922,6 +924,7 @@
   },
   "matching": {
     "imageHint": "Use clear target photos with a simple background, at least 240 × 240; avoid narrow images. Add photos from other angles or lighting. Recognition runs on the phone, and a match on any image shows the attached content.",
+    "imageRequirements": "Image requirements",
     "children": "Attached assets",
     "emptyChildren": "No attached assets yet. Choose a placement from this collection below to attach it.",
     "selectChildren": "Attach existing assets",
@@ -1108,6 +1111,7 @@
       "title": "Archive",
       "archive": "Archive asset",
       "archiveHint": "Archived assets keep working where they are used but can't be added anywhere new. You can restore them at any time.",
+      "help": "About archiving",
       "archivedBody": "This asset is archived. Restore it to use it in scenes and map collections again.",
       "restore": "Restore asset",
       "archiveTitle": "Archive “{{name}}”?",
@@ -1126,6 +1130,7 @@
       "fileMissingBody": "Scenes using this asset cannot play. Edit its file or ask an administrator to repair storage."
     },
     "detail": {
+      "information": "Details",
       "type": "Type",
       "maintainer": "Maintainer",
       "source": "Source",

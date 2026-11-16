@@ -744,6 +744,8 @@
     },
     "preview": {
       "image": "图片预览",
+      "openImage": "全屏查看：{{name}}",
+      "removeImage": "移除待上传图片",
       "imageReplace": "点击或拖拽替换图片",
       "audio": "音频预览",
       "audioNotSupported": "您的浏览器不支持音频播放。",
@@ -922,6 +924,7 @@
   },
   "matching": {
     "imageHint": "使用主体清晰、背景简单的目标照片，至少 240 × 240，避免狭长图片。可添加不同角度或光线下的照片，小程序在本机识别，命中任意一张即锁定展示挂载素材。",
+    "imageRequirements": "图片要求",
     "children": "挂载素材",
     "emptyChildren": "暂无挂载素材。可在下方选择本合集的投放进行挂载。",
     "selectChildren": "挂载已有素材",
@@ -1102,6 +1105,7 @@
       "title": "归档",
       "archive": "归档素材",
       "archiveHint": "归档后，已有引用继续工作，但不能再新增使用。可以随时恢复。",
+      "help": "归档说明",
       "archivedBody": "此素材已归档。恢复后，可以再次用于场景和地图合集。",
       "restore": "恢复素材",
       "archiveTitle": "归档“{{name}}”？",
@@ -1119,6 +1123,7 @@
       "fileMissingBody": "引用此素材的场景无法播放。请编辑素材文件，或联系管理员修复存储。"
     },
     "detail": {
+      "information": "基本信息",
       "type": "类型",
       "maintainer": "维护人",
       "source": "来源",

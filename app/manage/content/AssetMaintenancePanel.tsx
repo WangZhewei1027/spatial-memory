@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Archive, ArchiveRestore, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/typography";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { AssetArchiveDialog } from "./AssetArchiveDialog";
 import { ContentFailureNotice } from "./ContentFeedback";
 import { ContentSection } from "./ContentSection";
@@ -30,11 +30,12 @@ export function AssetMaintenancePanel(props: AssetMaintenancePanelProps) {
   const archived = props.state === "archived";
 
   return (
-    <ContentSection plain={props.compact} title={t("contentModel.maintenance.title")}>
+    <ContentSection
+      plain={props.compact}
+      title={t("contentModel.maintenance.title")}
+      titleSuffix={<InfoTooltip label={t("contentModel.maintenance.help")}>{archived ? t("contentModel.maintenance.archivedBody") : t("contentModel.maintenance.archiveHint")}</InfoTooltip>}
+    >
       <div className={props.compact ? "space-y-3" : "space-y-2 px-4 py-3"}>
-        <Text as="p" variant="bodySm" tone="subdued">
-          {archived ? t("contentModel.maintenance.archivedBody") : t("contentModel.maintenance.archiveHint")}
-        </Text>
         {props.canMaintain && (archived ? (
           <Button variant="outline" size="sm" onClick={() => restore.run(props.onRestore)} disabled={restore.pending}>
             {restore.pending ? <Loader2 className="animate-spin" aria-hidden /> : <ArchiveRestore aria-hidden />}

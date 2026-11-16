@@ -9,9 +9,11 @@ import type { ContentActionResult } from "@/app/manage/content/types";
 import { useContentAction } from "@/app/manage/content/useContentAction";
 import { acceptFor, prepareFile, uploadAssetFiles } from "@/app/manage/lib/content-upload";
 import { Button } from "@/components/ui/button";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { Text } from "@/components/ui/typography";
 import { MAX_ANCHOR_REFERENCES, type AssetDetailDto, type AssetResourceDto, type ResourceInput } from "@/lib/content-model/contracts";
 import { referenceImagesOf, referenceResources } from "./anchor-references";
+import { AssetImagePreview } from "./previews/AssetImagePreview";
 
 /**
  * Recognition-target section of the asset panel: every reference image the
@@ -52,21 +54,19 @@ export function AnchorReferenceImages({ asset, canEdit, onChange }: {
     <ContentSection
       plain
       title={t("matching.referenceImages", { count: images.length, max: MAX_ANCHOR_REFERENCES })}
-      description={t("matching.imageHint")}
+      titleSuffix={<InfoTooltip label={t("matching.imageRequirements")}>{t("matching.imageHint")}</InfoTooltip>}
     >
-      <div className="space-y-2 pb-1">
-        <ul className="grid grid-cols-3 gap-2">
+      <div className="space-y-3 pb-1">
+        <ul className="grid grid-cols-2 gap-3">
           {images.map((image, index) => (
-            <li key={`${image.role}:${image.ordinal}`} className="relative aspect-square overflow-hidden rounded-md bg-muted">
-              {/* Reference photos have arbitrary sizes and come straight from the media host. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={t("matching.referenceImageAlt", { index: index + 1 })} className="size-full object-cover" />
+            <li key={`${image.role}:${image.ordinal}`} className="relative min-w-0">
+              <AssetImagePreview fileUrl={image.url} fileName={t("matching.referenceImageAlt", { index: index + 1 })} variant="thumbnail" />
               {canEdit && images.length > 1 && (
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon"
-                  className="absolute end-1 top-1 size-7"
+                  className="absolute end-1 top-1 size-8"
                   aria-label={t("matching.removeImage", { index: index + 1 })}
                   disabled={action.pending}
                   onClick={() => remove(image)}

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { AssetDetailHeader } from "./AssetDetailHeader";
+import { AssetDetailHeader, AssetDetailMetadata } from "./AssetDetailHeader";
 import { AssetMaintenancePanel } from "./AssetMaintenancePanel";
 import { AssetUsagePanel } from "./AssetUsagePanel";
 import { AssetEditDialog, type AssetContentInput } from "./AssetEditDialog";
@@ -20,6 +20,7 @@ export interface AssetDetailProps {
   inspector?: boolean;
   asset: AssetDetailData;
   preview?: ReactNode;
+  headerActions?: ReactNode;
   /** Server capability: editing team members may edit content, rename and archive. */
   canMaintain: boolean;
   /** False when a type-specific section edits the content instead of the header action. */
@@ -57,7 +58,7 @@ export function AssetDetail(props: AssetDetailProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <AssetDetailHeader asset={asset} inspector={props.inspector} canMaintain={props.canMaintain} canEditContent={props.canEditContent ?? true} onEditContent={() => setUploadOpen(true)} preview={props.preview} />
+      <AssetDetailHeader asset={asset} inspector={props.inspector} canMaintain={props.canMaintain} canEditContent={props.canEditContent ?? true} onEditContent={() => setUploadOpen(true)} preview={props.preview} actions={props.headerActions} />
 
       {props.stale && (
         <ContentNotice
@@ -73,6 +74,7 @@ export function AssetDetail(props: AssetDetailProps) {
       <div className={props.inspector ? "flex flex-col gap-5" : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"}>
         <div className="flex min-w-0 flex-col gap-6">
           {props.children}
+          {props.inspector && <AssetDetailMetadata asset={asset} inspector />}
           <AssetUsagePanel
             compact={props.inspector}
             usage={props.usage}
