@@ -8,6 +8,7 @@ import type { PlacementDto } from "@/lib/content-model/contracts";
 import { Archive, Copy, Loader2, MoreHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import { usePlacementStore } from "../../lib/placement-store";
+import { CrossOrganizationDuplicateButton } from "../CrossOrganizationDuplicate";
 import { PlacementArchiveDialog } from "./PlacementArchiveDialog";
 import { PlacementActionBar } from "./PlacementActionBar";
 import { PlacementFieldsForm } from "./PlacementFieldsForm";
@@ -43,6 +44,7 @@ export function PlacementEditor({ placement }: { placement: PlacementDto }) {
   return (
     <Card className="flex h-full min-h-0 flex-col overflow-hidden" data-placement-editor>
       <PlacementSourceSection placement={placement} actions={<>
+        <CrossOrganizationDuplicateButton sourceType="placement" sourceId={placement.id} sourceOrganizationId={placement.organization_id} name={placement.name ?? (placement.target.kind === "asset" ? placement.target.asset_name : placement.target.scene_name) ?? ""} archived={placement.status === "archived"} disabled={!editable} iconOnly />
         {(copyable || (editable && placement.status !== "archived")) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={tx("contentModel.integration.map.editor.more")}><MoreHorizontal className="size-4" aria-hidden /></Button></DropdownMenuTrigger>

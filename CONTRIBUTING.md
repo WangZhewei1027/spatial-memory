@@ -72,6 +72,10 @@ npm run db:migrate
 npm run test:integration
 ```
 
+跨团队复制的 `scripts/test-content-duplicate.ts` 也包含在集成套件中，使用同一专用数据库验证真实路由权限、Scene 依赖重写、素材去重与保留、活动与地图完整复制、识别目标挂载、并发幂等及失败回滚。
+
+跨团队复制界面运行 `node scripts/test-content-duplicate.mjs`，需本地 Next 服务（`MANAGE_TEST_ORIGIN` 可指定本机端口），通过隔离 API fixture 验证全部内容入口、超级管理员权限、目标团队/地图选择与重试幂等，以及中英文、明暗主题和桌面/窄屏。`CONTENT_DUPLICATE_SCREENSHOTS` 可保存截图；不访问或修改真实业务数据。
+
 这两个命令必须继承同一个显式设置的测试 `DATABASE_URL`；集成测试拒绝开发库、非本机地址和非测试端口。单独排查某套测试时可用 `node --import tsx --conditions react-server scripts/test-<对应名称>.ts`。完整 HTTP 验收另见 `scripts/test-content-model-http.ts` 的本地服务与 fixture 要求。数据库测试由 CI 单独运行，不属于本地 `npm run check`；PR 要报告相关集成验证，不能用构建成功替代。
 
 共享包的独立检查与依赖准备见 [Scene Authoring](packages/scene-authoring/README.md)、[Scene Renderer](packages/scene-renderer/README.md)。`test:cli-auth` 的测试入口是 `scripts/test-cli-auth-client.mjs`；先运行 `npm --prefix ../spatial-memory-web-cli run build`，测试会启动临时本地 HTTP 服务与实际 CLI，不访问真实数据库或 Google，也不替代真实账号授权。

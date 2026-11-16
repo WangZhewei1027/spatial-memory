@@ -14,6 +14,7 @@ import { activityApi } from "../../lib/activity-api";
 import { ManageGridLayout } from "../placements/ManageGridLayout";
 import { ManageLayoutSkeleton } from "../placements/ManageLayoutSkeleton";
 import { useActivityQuery } from "./useActivityQuery";
+import { CrossOrganizationDuplicateButton } from "../CrossOrganizationDuplicate";
 import { ActivityEditor } from "./ActivityEditor";
 import { ActivityPlacements } from "./ActivityPlacements";
 import { ActivityRecords } from "./ActivityRecords";
@@ -40,7 +41,7 @@ export function ActivityDetailRoute({ activityId }: { activityId: string }) {
         backLabel={t("activities.title")}
         icon={<Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
         status={activity?.state === "archived" && <Badge variant="outline" className="shrink-0 max-sm:hidden">{t("activities.states.archived")}</Badge>}
-        actions={actions}
+        actions={<>{activity && <CrossOrganizationDuplicateButton sourceType="activity" sourceId={activity.id} sourceOrganizationId={activity.organization_id} name={activity.name} archived={activity.state === "archived"} iconOnly />}{actions}</>}
       />
       <div className="relative min-h-0 flex-1">{body}</div>
     </main>

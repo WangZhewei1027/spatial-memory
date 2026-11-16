@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ContentStatusBadge } from "./ContentStatusBadge";
 import { LibraryCard } from "./LibraryCard";
+import { CrossOrganizationDuplicateButton } from "../components/CrossOrganizationDuplicate";
 import { useContentFormat } from "./useContentFormat";
 import type { CollectionItem } from "./types";
 
@@ -37,7 +38,9 @@ export function CollectionCard({ collection, href, onEdit, onArchive, onRestore,
         {collection.createdAt && <time dateTime={collection.createdAt} title={t("contentModel.collections.created", { date: format.date(collection.createdAt) })} className="whitespace-nowrap tabular-nums">{format.date(collection.createdAt)}</time>}
       </>}
       badges={collection.archived && <ContentStatusBadge kind="archived" />}
-      actions={(onEdit || lifecycle) && <DropdownMenu>
+      actions={<div className="flex items-center">
+        {collection.organizationId && <CrossOrganizationDuplicateButton sourceType="collection" sourceId={collection.id} sourceOrganizationId={collection.organizationId} name={collection.name} archived={collection.archived} disabled={busy} iconOnly />}
+        {(onEdit || lifecycle) && <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="size-8" disabled={busy} aria-label={t("contentModel.collections.moreNamed", { name: collection.name })}>
             <MoreHorizontal aria-hidden />
@@ -51,6 +54,7 @@ export function CollectionCard({ collection, href, onEdit, onArchive, onRestore,
           </DropdownMenuItem>}
         </DropdownMenuContent>
       </DropdownMenu>}
+      </div>}
     />
   );
 }

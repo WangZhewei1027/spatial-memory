@@ -4,6 +4,7 @@ import Image from "next/image";
 import { MapPin, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ActivityDto } from "@/lib/activities/contracts";
+import { CrossOrganizationDuplicateButton } from "../CrossOrganizationDuplicate";
 import { ContentStatusBadge } from "../../content/ContentStatusBadge";
 import { LibraryCard } from "../../content/LibraryCard";
 import { useContentFormat } from "../../content/useContentFormat";
@@ -33,6 +34,7 @@ export function ActivityCard({ activity, href }: { activity: ActivityDto; href: 
         <time dateTime={activity.updated_at} className="whitespace-nowrap tabular-nums">{format.date(activity.updated_at)}</time>
       </>}
       badges={activity.state === "archived" && <ContentStatusBadge kind="archived" />}
+      actions={<CrossOrganizationDuplicateButton sourceType="activity" sourceId={activity.id} sourceOrganizationId={activity.organization_id} name={activity.name} archived={activity.state === "archived"} iconOnly />}
     />
   );
 }

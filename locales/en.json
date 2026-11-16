@@ -1312,6 +1312,30 @@
         "viewerBody": "Recognition targets created by your team appear here.",
         "archivedBody": "Archived recognition targets appear here."
       }
+    },
+    "crossCopy": {
+      "action": "Copy to team",
+      "namedAction": "Copy to team: {{name}}",
+      "name": "Copy name",
+      "defaultName": "{{name}} copy",
+      "team": "Destination team",
+      "chooseTeam": "Choose a destination team",
+      "noTeams": "No other teams are available.",
+      "map": "Destination map collection",
+      "chooseMap": "Choose a destination map",
+      "noMaps": "This team has no available maps. Create a map collection first.",
+      "mapsFailed": "Could not load destination maps. Try again.",
+      "submit": "Create copy",
+      "copying": "Copying…",
+      "success": "Copied “{{name}}” to {{team}}",
+      "open": "Open copy",
+      "description": {
+        "asset": "Create an independent asset in the destination team, including all of its files.",
+        "scene": "Copy the saved scene and every asset it references. References in the copy point to new assets owned by the destination team, so later edits are independent.",
+        "activity": "Copy the saved activity, check-in points and their images. The copy has no participant records or association with the original map.",
+        "collection": "Copy map settings, tags, non-archived placements and linked activities, including all referenced content. Content placement statuses are preserved; activity links start paused. Participant records are excluded.",
+        "placement": "Copy the saved placement and its referenced scenes, assets and recognition targets to the destination map, preserving placement statuses."
+      }
     }
   },
   "collectionSettings": {

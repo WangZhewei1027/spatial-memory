@@ -71,6 +71,7 @@ export function isFileMissing(asset: AssetContentDto) {
 export function toWorkbenchAsset(asset: AssetDto, people?: ReadonlyMap<string, ContentPerson>): WorkbenchItem {
   return {
     id: asset.id,
+    organizationId: asset.organization_id,
     kind: "asset",
     name: asset.name || asset.id.slice(0, 8),
     type: contentType(asset.file_type),
@@ -149,6 +150,7 @@ export function toUsageSummary(impact: DependencyImpact | null | undefined, orga
 export function toWorkbenchScene(scene: SceneSummaryDto, people: ReadonlyMap<string, ContentPerson>): WorkbenchItem {
   return {
     id: scene.id,
+    organizationId: scene.organization_id,
     kind: "scene",
     name: scene.name,
     type: "scene",
@@ -163,6 +165,7 @@ export function toWorkbenchScene(scene: SceneSummaryDto, people: ReadonlyMap<str
 export function toCollectionItem(collection: CollectionDto): CollectionItem {
   return {
     id: collection.id,
+    organizationId: collection.organization_id,
     name: collection.name,
     description: collection.description,
     createdAt: collection.create_date,

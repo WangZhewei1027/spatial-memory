@@ -16,6 +16,7 @@ export interface SceneToolbarProps {
   /** Archive state shown beside the save state (scenes). */
   status?: ReactNode;
   qr?: ReactNode;
+  actions?: ReactNode;
   panelOpen?: boolean;
   onTogglePanel?: () => void;
   onAddText?: () => void;
@@ -41,6 +42,7 @@ export function SceneToolbar(props: SceneToolbarProps) {
     {props.onAddText && !props.readOnly && !props.panelOpen && <Button variant="ghost" size="sm" className="h-7 px-2" disabled={!props.canAddText} onClick={props.onAddText} aria-label={i18n.language.startsWith("zh") ? "添加空间文字" : "Add spatial text"}><Type /><span className="hidden md:inline">{i18n.language.startsWith("zh") ? "文字" : "Text"}</span></Button>}
     <Button variant={props.preview ? "secondary" : "ghost"} size="sm" className="h-7 px-2" aria-pressed={props.preview} aria-controls="scene-camera-preview" onClick={props.onPreview}><Eye /><span className="hidden sm:inline">{previewLabel}</span><span className="sr-only sm:hidden">{previewLabel}</span></Button>
     {!props.readOnly && <Button size="sm" variant="default" className="h-7 px-2.5" disabled={props.saving || (!props.dirty && draft === props.title) || !draft.trim()} onClick={() => { props.onTitle(draft); props.onSave(); }} title="Ctrl/⌘ S">{props.saving ? <LoaderCircle className="animate-spin" /> : <Save />}{t(props.saving ? "sceneEditor.saving" : "common.save")}</Button>}
+    {props.actions}
     {props.qr && <div className="shrink-0">{props.qr}</div>}
   </header>;
 }

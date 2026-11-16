@@ -261,7 +261,7 @@ function parseCreateScene(body: JsonRecord) {
 }
 
 /** Insert a team scene (caller holds the write locks); `workspaceId` is origin metadata only. */
-async function insertSceneTx(
+export async function insertSceneTx(
   trx: Trx,
   actor: Actor,
   writer: OrgAccess,

@@ -31,6 +31,7 @@ export type WorkbenchTypeFilter = "all" | ContentAssetType;
 
 export interface WorkbenchItem {
   id: string;
+  organizationId?: string;
   /** Scenes open the editor; assets open their detail page. */
   kind: "asset" | "scene";
   name: string;
@@ -106,6 +107,7 @@ export interface SceneRef {
 
 export interface CollectionItem {
   id: string;
+  organizationId?: string;
   name: string;
   description?: string | null;
   createdAt?: string | null;

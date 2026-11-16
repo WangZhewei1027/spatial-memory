@@ -1,4 +1,5 @@
 "use client";
+import { CrossOrganizationDuplicateButton } from "../../components/CrossOrganizationDuplicate";
 import { SceneQrButton } from "@/components/scene-qr-button";
 import { ContentNotice } from "@/app/manage/content/ContentFeedback";
 import { Button } from "@/components/ui/button";
@@ -161,7 +162,7 @@ export default function SceneEditor({ sceneId, initial, organizationId }: { scen
   const hidden = hiddenNodeIds(document.definition.content);
   return <main className="scene-workspace-theme scene-native-stage fixed inset-0 z-50 bg-background" aria-label={t("sceneEditor.sceneView")}>
     <NavigationIsland ref={setHeaderElement} className="scene-project-island">
-      <SceneToolbar panelOpen={panelOpen} onTogglePanel={library.toggle} title={document.title} dirty={editor.dirty} saving={editor.saving} preview={preview} canUndo={editor.canUndo} canRedo={editor.canRedo} onUndo={editor.undo} onRedo={editor.redo} onTitle={title => commit(current => ({ ...current, title }))} onPreview={() => setPreview(!preview)} onSave={() => void editor.save()} onAddText={addText} canAddText={canAdd} backHref={teamHref("/manage/scenes", sceneOrganizationId)} readOnly={readOnly} qr={detail?.state === "active" ? <SceneQrButton sceneId={sceneId} dirty={editor.dirty} portalContainer={headerElement} /> : undefined} />
+      <SceneToolbar panelOpen={panelOpen} onTogglePanel={library.toggle} title={document.title} dirty={editor.dirty} saving={editor.saving} preview={preview} canUndo={editor.canUndo} canRedo={editor.canRedo} onUndo={editor.undo} onRedo={editor.redo} onTitle={title => commit(current => ({ ...current, title }))} onPreview={() => setPreview(!preview)} onSave={() => void editor.save()} onAddText={addText} canAddText={canAdd} backHref={teamHref("/manage/scenes", sceneOrganizationId)} readOnly={readOnly} actions={detail && <CrossOrganizationDuplicateButton sourceType="scene" sourceId={sceneId} sourceOrganizationId={detail.organization_id} name={detail.name} archived={detail.state === "archived"} disabled={editor.dirty || editor.saving} iconOnly />} qr={detail?.state === "active" ? <SceneQrButton sceneId={sceneId} dirty={editor.dirty} portalContainer={headerElement} /> : undefined} />
       {editor.conflict && <SceneConflictBanner draftJson={() => JSON.stringify({ name: document.title, document: document.definition }, null, 2)} fileName={`${document.title || "scene"}-draft.json`} onReload={editor.retry} onDismiss={editor.dismissConflict} />}
       {readOnly && <ContentNotice title={text("只读场景", "Read-only scene")} description={text("可以预览播放；当前权限或归档状态不允许编辑。", "Preview and playback are available. Editing is unavailable for this permission or archive status.")} />}
     </NavigationIsland>

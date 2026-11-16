@@ -12,6 +12,7 @@ import { useIntegrationText, type IntegrationTexts } from "@/app/manage/lib/inte
 import { Button } from "@/components/ui/button";
 import { WorkspaceQrButton } from "@/components/workspace-qr-button";
 import { use, useMemo, type ReactNode } from "react";
+import { CrossOrganizationDuplicateButton } from "../../components/CrossOrganizationDuplicate";
 import { CollectionSettingsDialog } from "./CollectionSettingsDialog";
 import workbench from "../../components/placements/MapWorkbench.module.css";
 
@@ -58,6 +59,7 @@ function CollectionDetailView({ id }: { id: string }) {
         archived={archived}
         backHref={backHref}
         actions={organizationId && collection && settled ? <>
+          <CrossOrganizationDuplicateButton sourceType="collection" sourceId={id} sourceOrganizationId={collection.organization_id} name={collection.name} archived={archived} iconOnly />
           <MapActivitiesDialog organizationId={organizationId} workspaceId={id} workspaceName={collection.name} canEdit={!archived && !!collection.capabilities?.can_edit} />
           <CollectionSettingsDialog collection={collection} onSaved={info.refresh} />
           <WorkspaceQrButton organizationId={organizationId} workspaceId={id} />

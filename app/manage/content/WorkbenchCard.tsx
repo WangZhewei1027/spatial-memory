@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { LibraryCard } from "./LibraryCard";
+import { CrossOrganizationDuplicateButton } from "../components/CrossOrganizationDuplicate";
 import { useContentFormat } from "./useContentFormat";
 import { WORKBENCH_TYPE_ICONS, WorkbenchBadges, WorkbenchItemMenu, WorkbenchThumbnail, workbenchTypeKey, type SceneItemActions } from "./WorkbenchItemParts";
 import type { WorkbenchItem } from "./types";
@@ -40,7 +41,10 @@ export function WorkbenchCard({ item, href, onOpen, selected, actions = {}, busy
         <time dateTime={item.updatedAt} className="whitespace-nowrap tabular-nums">{format.date(item.updatedAt)}</time>
       </>}
       badges={(item.state === "archived" || item.fileMissing) && <WorkbenchBadges item={item} />}
-      actions={<WorkbenchItemMenu item={item} actions={actions} busy={busy} />}
+      actions={<div className="flex items-center">
+        {item.organizationId && <CrossOrganizationDuplicateButton sourceType={item.kind} sourceId={item.id} sourceOrganizationId={item.organizationId} name={item.name} assetType={item.type} archived={item.state === "archived"} disabled={busy} iconOnly />}
+        <WorkbenchItemMenu item={item} actions={actions} busy={busy} />
+      </div>}
     />
   );
 }

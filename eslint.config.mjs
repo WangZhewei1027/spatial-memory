@@ -14,6 +14,7 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".local-db-backups/**",
       "node_modules/**",
       "packages/*/node_modules/**",
       "packages/*/dist/**",

@@ -22,6 +22,7 @@ Asset visibility, maintainer and origin collection are metadata, not permission 
 | `GET/POST /api/organizations/[id]/scenes` | List/create independent team scenes |
 | `POST /api/organizations/[id]/scenes/validate` | Read-only preflight of write permission, resource ownership/type, animations and optional scene lock version |
 | `POST /api/scenes/[id]/copy` | Copy saved content into an independent team scene |
+| `POST /api/content/duplicate` | Super-admin copy of authored content and its dependency closure into another team |
 | `GET/PATCH /api/scenes/[id]` | Read/save schema-6 scene with direct asset references |
 | `GET/POST /api/organizations/[id]/collections` | List/create collections |
 | `GET/PATCH /api/collections/[id]` | Read/rename collection or update its mini-program settings |
@@ -37,6 +38,20 @@ Asset visibility, maintainer and origin collection are metadata, not permission 
 Old `/api/workspaces/*`, workspace grants/members, asset move/copy adapters and content-model activation endpoints do not exist. Responses are `{ data }` (paged lists add `page`); errors are `{ error, code, details? }`. `lib/content-model/contracts.ts` is the typed contract.
 
 The scene, activity and collection catalogs accept optional `limit` (1–200) and `offset` (0–1000000). Supplying either requests a page with `{ data, page: { limit, offset, hasMore } }`. Omitting both returns the complete filtered `{ data }` list for existing pickers. State and literal case-insensitive name search (`q`) apply before pagination. The asset catalog retains its existing total-count page contract.
+
+## Cross-team duplication
+
+`POST /api/content/duplicate` accepts `{ sourceType, sourceId, targetOrganizationId, targetWorkspaceId?, name?, idempotencyKey }`. `sourceType` is `asset`, `scene`, `activity`, `collection` or `placement`; anchors use `asset`. Only the server-resolved global `super_admin` may call it, including when an ordinary user can write to both teams. Placements require an open target collection in the selected team. The source team, target team, root content and copied dependencies must be unarchived; restore archived content before copying it. Existing same-team copy and ordinary resource-reuse APIs keep their current permission rules.
+
+The result is `{ data: { id, sourceType, organizationId, created } }`, with HTTP 201 for a new copy and 200 for an idempotent replay. The idempotency scope includes the source, destination and name; using the same key with different inputs returns 409. One transaction creates the entire dependency graph or rolls it back. Copies have new IDs, initial concurrency counters and target-team ownership. Each source entity is copied once within that operation, so repeated scene aliases and placements share the corresponding new entity.
+
+- Assets copy payload and all file roles/ordinals and metadata. Managed physical files are reused under the retention locks; source edits cannot change the copied asset or release its files. External URLs continue to refer to the external provider.
+- Scenes copy their saved document, duplicate every referenced asset, rewrite all asset aliases and rebuild `scene_asset_ref` in the target team.
+- Activities copy their definition, points and image/reward assets. Standalone copies have no map association or participation records.
+- Collections copy map settings, tags, non-archived content placements, non-archived activity associations and their dependencies. Ordinary placement states and anchor bindings are preserved; new activity associations start paused and refer to new activities.
+- Standalone placements copy their target content, tags and recognition dependency, including an active anchor placement in the destination map when required.
+
+Organization memberships, participant history, upload receipts, old audits and derived recognition caches are not copied. The operation writes its own audit entry. No schema migration or mini-program protocol change is required.
 
 ## Consistency
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { CrossOrganizationDuplicateButton } from "../../components/CrossOrganizationDuplicate";
 import { TeamPageLoading } from "@/app/manage/components/TeamShell";
 import { AssetDetail, ContentErrorState } from "@/app/manage/content";
 import { isContentApiError, isEndpointMissing } from "@/app/manage/lib/content-api";
@@ -104,6 +105,7 @@ export function AssetDetailView({ id, inspector = false, library = "asset" }: As
     {!archived && canCopy && (
       <Button variant="ghost" size="sm" onClick={() => setCopyOpen(true)}><Copy aria-hidden />{tx("contentModel.integration.assetDetail.duplicate")}</Button>
     )}
+    <CrossOrganizationDuplicateButton sourceType="asset" sourceId={asset.id} sourceOrganizationId={asset.organization_id} name={data.name} assetType={asset.file_type} archived={archived} />
   </> : undefined;
 
   return content(
