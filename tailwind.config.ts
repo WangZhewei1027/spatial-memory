@@ -10,7 +10,7 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    // 字号词汇表收窄：全站只有六级刻度 + 两个营销专用 display 档。
+    // 字号词汇表收窄：全站只有六级刻度 + 三个营销专用 display 档。
     // 刻度外的类（text-xl/4xl/5xl…）不再存在，写了也不生效。
     // 六级的值与行高保持 Tailwind 默认，display 档行高收紧（大字号展示用）。
     fontSize: {
@@ -23,6 +23,7 @@ export default {
       // 仅限营销页（首页 / hero）的展示字号，不进入 Text variant
       display: ["2.25rem", { lineHeight: "1.2" }],
       "display-lg": ["3rem", { lineHeight: "1.1" }],
+      "display-xl": ["4.5rem", { lineHeight: "1.12" }],
     },
     extend: {
       // Geist 只有拉丁字形，中文必须显式声明系统字体链，

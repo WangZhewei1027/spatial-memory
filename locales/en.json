@@ -155,9 +155,181 @@
   },
   "home": {
     "hero": {
-      "title": "Spatial Memory",
-      "subtitle": "IMA, DHL, NYU Shanghai",
-      "description": "Connect real places with digital content. Capture onsite, compose 3D scenes, and share and explore spatial memories through maps and AR."
+      "line1": "Every place.",
+      "line2": "A new story.",
+      "description": "From a storefront to an entire neighborhood. Bring images, sound and 3D creations into real spaces with Spatial Memory, connecting your content to the people who visit.",
+      "project": "Dongming · Street spaces",
+      "real": "Inside the product",
+      "phone": "AR in WeChat",
+      "caption": "Create and manage on the web. Discover and experience in WeChat.",
+      "scroll": "Explore the workflow"
+    },
+    "cta": {
+      "signIn": "Start creating",
+      "enter": "Open workspace",
+      "instructions": "User guide",
+      "explore": "Explore the platform"
+    },
+    "heroShotAlt": "The real Dongming 3D map workspace, with a placement list, street map and content inspector",
+    "workflow": {
+      "title": "From content to place. Connected.",
+      "description": "One content workflow for creation, placement, experiences and ongoing operations.",
+      "collect": {
+        "title": "Capture",
+        "desc": "Record media on location and bring it into your library."
+      },
+      "compose": {
+        "title": "Compose",
+        "desc": "Combine 3D and media into a story on a timeline."
+      },
+      "place": {
+        "title": "Place",
+        "desc": "Choose locations, connect recognition targets and activities."
+      },
+      "engage": {
+        "title": "Engage",
+        "desc": "Explore AR in WeChat, check in and leave messages."
+      }
+    },
+    "platform": {
+      "title": "Five tools for creation and operations.",
+      "description": "Dedicated tools for every step, from assets to interaction. Select a feature to explore real screens from the Dongming team.",
+      "tabsLabel": "Platform features",
+      "capture": "Dongming team · Actual product screenshot",
+      "scene": {
+        "label": "Scene editor",
+        "title": "Give your ideas space. And time.",
+        "desc": "Compose models, images, video, audio and text into spatial stories. Position every element on a visual stage and orchestrate its appearance on a multitrack timeline.",
+        "point1": "Transforms, groups and keyframe animation",
+        "point2": "Media trimming, volume and spatial audio",
+        "point3": "Camera preview and QR preview in WeChat",
+        "alt": "Dongming scene1-food editor showing the asset library, 3D stage, camera preview and multitrack timeline"
+      },
+      "map": {
+        "label": "Map placements",
+        "title": "Put digital content where it belongs.",
+        "desc": "Manage asset and scene placements on a 3D map. Adjust their location and presentation, and organize different areas into map collections.",
+        "point1": "Reuse assets and scenes across maps",
+        "point2": "Type and tag filters with batch selection",
+        "point3": "Placement status, position and display settings",
+        "alt": "Dongming street map editor showing real placements, an asset list and location inspector"
+      },
+      "activity": {
+        "label": "Activities",
+        "title": "Turn passing by into taking part.",
+        "desc": "Create shop check-ins and spatial message activities. Set locations and participation rules, connect a map, and manage participation records in your workspace.",
+        "point1": "Check-in points, distance rules and reward images",
+        "point2": "Message areas and character limits",
+        "point3": "Activity status and record visibility controls",
+        "alt": "Dongming shop check-in workspace with location, participation distance, shop details and reward images"
+      },
+      "anchor": {
+        "label": "Recognition",
+        "title": "Make the physical world an entry point.",
+        "desc": "Maintain reference images for real places and objects, then attach content on a map. Nearby target discovery and on-device image matching connect the experience to its surroundings.",
+        "point1": "Multiple reference images per target",
+        "point2": "A dedicated recognition target library",
+        "point3": "Map placements and associated content",
+        "alt": "Dongming recognition target library with real storefront reference images"
+      },
+      "assets": {
+        "label": "Asset library",
+        "title": "Every capture can spark the next creation.",
+        "desc": "Keep models, images, video, audio and text in one team library. On-site capture and workspace uploads feed content that can be reused in different spatial experiences.",
+        "point1": "Name search and content-type filters",
+        "point2": "Previews, usage records and copies",
+        "point3": "On-site location confirmation and placement",
+        "alt": "Dongming team asset library with model thumbnails, name search and content-type filters"
+      }
+    },
+    "ar": {
+      "title": "Raise your phone. Find the story.",
+      "subtitle": "Visitors scan into the WeChat mini program to discover another layer of a familiar street. Digital works meet the real environment, turning a walk into an exploration.",
+      "point1": "Enter through WeChat with no extra app download",
+      "point2": "Discover content through maps and nearby targets",
+      "point3": "Explore AR scenes, check in and leave messages",
+      "guide": "See how to experience it",
+      "phoneAlt": "Existing WeChat AR photograph showing digital content layered over a real street",
+      "street1Alt": "Existing mobile AR photograph of a digital character in a real environment",
+      "street2Alt": "Existing mobile AR photograph of 3D content on a street",
+      "street1Caption": "Real streets. Digital creations."
+    },
+    "operations": {
+      "title": "Teamwork and agent assistance",
+      "description": "Maintain content together, and connect a local agent to assist with scene creation.",
+      "team": {
+        "title": "Team content and permissions",
+        "desc": "Assets, scenes and activities belong to your team. Assign editing and viewing roles, then organize map content into collections.",
+        "rolesLabel": "Roles",
+        "updateLabel": "Updates",
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member",
+        "viewer": "Viewer",
+        "note": "Map placements reference the latest saved content."
+      },
+      "agent": {
+        "title": "Agent-assisted creation",
+        "desc": "Use the local CLI to let your agent find and import assets, compose scenes, render previews and validate the result before saving to the team workspace.",
+        "flowLabel": "Creation workflow",
+        "find": "Find assets",
+        "compose": "Compose a draft",
+        "verify": "Preview & validate",
+        "save": "Save the scene",
+        "link": "Read the platform guide"
+      }
+    },
+    "solutions": {
+      "title": "For tourism, retail and public culture.",
+      "description": "Organize content around real locations and shape an exploration that fits the setting.",
+      "imageAlt": "A real neighborhood photograph showing a place that can host digital content",
+      "imageCaption": "Real places. New ways to discover them.",
+      "culture": {
+        "title": "Tourism & cultural heritage",
+        "desc": "Place historical images, oral histories and 3D content where the stories happened, inviting visitors to explore the memories of a place.",
+        "tags": "Spatial storytelling / Digital exhibitions / AR discovery"
+      },
+      "commerce": {
+        "title": "Retail & commercial districts",
+        "desc": "Connect shop content, AR works and check-in points into a walking experience, giving visitors more reasons to participate.",
+        "tags": "Shop check-ins / Themed activities / Spatial interaction"
+      },
+      "community": {
+        "title": "Communities & public culture",
+        "desc": "Collect street stories and create local works together. Invite residents and visitors to contribute through messages, images and sound.",
+        "tags": "Co-creation / Local archives / Public participation"
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "description": "Common questions about creating, placing and experiencing content.",
+      "download": {
+        "q": "Do visitors need a separate app?",
+        "a": "No additional app is required. Visitors scan into the WeChat mini program and use camera and location features when prompted. AR results depend on the device, environment and content settings."
+      },
+      "content": {
+        "q": "What kinds of content can I use?",
+        "a": "The library supports images, video, audio, text and 3D models. The scene editor combines models and media with scene text, spatial transforms and timeline animation."
+      },
+      "update": {
+        "q": "Do I need to place content again after an update?",
+        "a": "Existing placements reference the latest saved asset or scene, so you do not need to create them again. Map positions, display settings and placement status are managed separately. Activity rules and map associations are maintained in the activity workspace."
+      },
+      "collaborate": {
+        "q": "How do teams collaborate and reuse content?",
+        "a": "Teams share assets, scenes and activities. Owners, admins and members can edit according to their permissions; viewers have read-only access. Assets and scenes can be placed on multiple maps. An activity can currently be associated with one map at a time."
+      }
+    },
+    "bottomCta": {
+      "title": "The next place to explore starts with you.",
+      "description": "Start with your first asset and your first scene. Bring your idea into the real world.",
+      "signUp": "Create an account"
+    },
+    "footer": {
+      "tagline": "Connecting real places and digital content.",
+      "navLabel": "Footer navigation",
+      "copyright": "© {{year}} Spatial Memory · All rights reserved",
+      "credit": "NYU Shanghai · Digital Heritage Lab"
     },
     "quickLinks": {
       "onsite": {
@@ -172,70 +344,6 @@
       "superAdmin": {
         "title": "Super Admin"
       }
-    },
-    "footer": {
-      "copyright": "© {{year}} Spatial Memory. All rights reserved.",
-      "credit": "NYU Shanghai · Digital Heritage Lab"
-    },
-    "cta": {
-      "signIn": "Sign in",
-      "instructions": "User Guide",
-      "enter": "Enter Workspace"
-    },
-    "badge": "Spatial Content Creation & AR Experiences",
-    "features": {
-      "title": "What you can do",
-      "subtitle": "Create and share with Spatial Memory, from onsite capture and scene composition to AR experiences.",
-      "capture": {
-        "title": "Onsite Capture",
-        "desc": "Works right in the mobile browser: GPS auto-locating, EXIF-aware image compression, with audio, video and text alongside."
-      },
-      "map": {
-        "title": "3D Map Workspace",
-        "desc": "Place, filter, box-select and batch-move assets and scenes on an interactive 3D map to arrange spatial content visually."
-      },
-      "ar": {
-        "title": "AR in Mini Program",
-        "desc": "Scan a QR code to open the WeChat Mini Program and explore AR content in real spaces, with no extra app to download."
-      },
-      "org": {
-        "title": "Team Collaboration",
-        "desc": "The team shares every asset and scene, four roles decide who can edit, and map collections decide where content appears."
-      }
-    },
-    "workflow": {
-      "title": "From capture to experience in three steps",
-      "step1": {
-        "title": "Capture",
-        "desc": "Shoot and record onsite"
-      },
-      "step2": {
-        "title": "Curate",
-        "desc": "Manage and arrange on the map"
-      },
-      "step3": {
-        "title": "Experience",
-        "desc": "Scan and explore spatial content in AR"
-      }
-    },
-    "bottomCta": {
-      "title": "Create your spatial experience with Spatial Memory",
-      "signUp": "Create an account"
-    },
-    "gallery": {
-      "title": "From real places to digital scenes",
-      "subtitle": "Bring onsite records, 3D scans and models together in Spatial Memory.",
-      "street": "Onsite capture",
-      "scan": "High-fidelity 3D scanning",
-      "mesh": "Point-cloud & mesh reconstruction"
-    },
-    "heroShotAlt": "The Spatial Memory 3D map workspace",
-    "ar": {
-      "title": "Bring digital creations into real spaces",
-      "subtitle": "Scan a code to open the WeChat Mini Program and explore digital content in the places around you.",
-      "point1": "Scan to enter — no app install",
-      "point2": "Digital content layered over your surroundings",
-      "point3": "Workspace updates go live instantly"
     }
   },
   "organization": {

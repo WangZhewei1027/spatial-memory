@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T07:32:05.647Z",
+  "title": "Design System: Spatial Memory — Homepage",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "White canvas",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Soft control gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Supporting gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "accent": {
+        "role": "neutral",
+        "displayName": "Hover gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Divider gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "ring": {
+        "role": "neutral",
+        "displayName": "Focus gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "landing-paper-muted": {
+        "role": "neutral",
+        "displayName": "Frame-caption gray",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "landing-shadow": {
+        "role": "neutral",
+        "displayName": "Shadow black",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display-xl": {
+        "displayName": "Hero display",
+        "purpose": "Desktop hero only; sizes down at the homepage breakpoints."
+      },
+      "display-lg": {
+        "displayName": "Section display",
+        "purpose": "Major marketing section headings from 768px."
+      },
+      "display": {
+        "displayName": "Compact display",
+        "purpose": "Mobile display text and workflow, operations and FAQ headings."
+      },
+      "heading-lg": {
+        "displayName": "Module title",
+        "purpose": "Product chapters, operation modules and use-case titles."
+      },
+      "heading-md": {
+        "displayName": "Step title",
+        "purpose": "Workflow step headings."
+      },
+      "body-md": {
+        "displayName": "Body",
+        "purpose": "Paragraph descriptions and FAQ answers."
+      },
+      "body-sm": {
+        "displayName": "Supporting text",
+        "purpose": "Short supporting content, operation facts and footer copy."
+      },
+      "body-xs": {
+        "displayName": "Metadata",
+        "purpose": "Compact attribution and copyright."
+      },
+      "control-label": {
+        "displayName": "Control label",
+        "purpose": "Shared buttons and product chapter tabs."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hero-map",
+        "value": "0 12px 36px hsl(var(--landing-shadow) / .1)",
+        "purpose": "Separates the hero screenshot from the white stage."
+      },
+      {
+        "name": "hero-phone",
+        "value": "0 18px 40px hsl(var(--landing-shadow) / .16)",
+        "purpose": "Lifts the mobile AR image over the hero map."
+      },
+      {
+        "name": "ar-phone",
+        "value": "0 20px 40px hsl(var(--landing-shadow) / .2)",
+        "purpose": "Separates overlapping imagery in the AR gallery."
+      },
+      {
+        "name": "shared-primary-button",
+        "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        "purpose": "Existing shared primary button depth."
+      },
+      {
+        "name": "shared-outline-button",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "Existing shared outline button depth."
+      }
+    ],
+    "motion": [
+      {
+        "name": "stage-duration",
+        "value": "850ms",
+        "purpose": "Single hero-stage entrance; enabled only under prefers-reduced-motion: no-preference."
+      },
+      {
+        "name": "stage-easing",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Hero translateY moves from 20px to zero while clip-path opens from inset(2% 0 0 0 round 16px) to inset(0 round 16px)."
+      },
+      {
+        "name": "shared-state-duration",
+        "value": "150ms",
+        "purpose": "Shared button, tab and accordion-trigger state transitions."
+      },
+      {
+        "name": "shared-state-easing",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Existing Tailwind transition easing for shared controls."
+      },
+      {
+        "name": "faq-chevron-duration",
+        "value": "200ms",
+        "purpose": "Existing accordion chevron rotation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "homepage-medium-max",
+        "value": "1100px"
+      },
+      {
+        "name": "homepage-mobile-max",
+        "value": "767px"
+      },
+      {
+        "name": "shared-md-min",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Homepage primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Unauthenticated CTA in the hero and final action row; application routing and translation remain in LandingCta.",
+      "html": "<a class=\"ds-primary\" href=\"/auth/login\">开始创作<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\"/><path d=\"M7 17 17 7\"/></svg></a>",
+      "css": ".ds-primary{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-primary svg{flex-shrink:0;margin-left:8px;}.ds-primary:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-primary:disabled{pointer-events:none;opacity:.5;}.ds-primary{min-height:48px;padding:0 22px;border-radius:8px;border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1);}.ds-primary:hover{background:hsl(var(--primary) / .9);}.ds-primary:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}@media(max-width:767px){.ds-primary{padding-inline:17px;}}"
+    },
+    {
+      "name": "Standalone outline guide action",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The AR guide action retains shared large-button sizing; action-row outlines receive the larger homepage row treatment.",
+      "html": "<a class=\"ds-outline\" href=\"/instructions/zh\">了解体验方式<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\"/><path d=\"M7 17 17 7\"/></svg></a>",
+      "css": ".ds-outline{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-outline svg{flex-shrink:0;margin-left:8px;}.ds-outline:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-outline:disabled{pointer-events:none;opacity:.5;}.ds-outline{height:40px;padding:0 32px;border-radius:6px;border:1px solid hsl(var(--input,0 0% 89.8%));background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);}.ds-outline:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground));}.ds-outline:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}"
+    },
+    {
+      "name": "Homepage ghost action",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet secondary action that links from the hero to the product chapter section.",
+      "html": "<a class=\"ds-ghost\" href=\"#platform\">探索产品<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/></svg></a>",
+      "css": ".ds-ghost{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-ghost svg{flex-shrink:0;margin-left:8px;}.ds-ghost:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-ghost:disabled{pointer-events:none;opacity:.5;}.ds-ghost{min-height:48px;padding:0 22px;border-radius:8px;border:0;background:transparent;color:hsl(var(--foreground));}.ds-ghost:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground));}.ds-ghost:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}@media(max-width:767px){.ds-ghost{padding-inline:17px;}}"
+    },
+    {
+      "name": "Product chapter tab states",
+      "kind": "custom",
+      "refersTo": "chapter-tab",
+      "description": "Selected and resting state specimens. The live page uses shared Radix Tabs for all five workspaces and their keyboard behavior.",
+      "html": "<div class=\"ds-chapters\"><button type=\"button\" class=\"ds-chapter\" data-state=\"active\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/><path d=\"m3.3 7 8.7 5 8.7-5\"/><path d=\"M12 22V12\"/></svg>场景编排</button><button type=\"button\" class=\"ds-chapter\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>地图投放</button></div>",
+      "css": ".ds-chapters{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:flex;gap:4px;border-bottom:1px solid hsl(var(--border));}.ds-chapter{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:10px;min-height:56px;padding:16px 12px;border:0;border-radius:8px 8px 0 0;background:transparent;color:hsl(var(--muted-foreground));font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;white-space:nowrap;transition:all 150ms cubic-bezier(.4,0,.2,1);}.ds-chapter svg{flex-shrink:0;}.ds-chapter[data-state=active]{background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:none;}.ds-chapter:hover:not([data-state=active]){background:hsl(var(--secondary));color:hsl(var(--foreground));}.ds-chapter:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-chapter:focus-visible{box-shadow:0 0 0 3px hsl(var(--ring) / .5);}.ds-chapter:disabled{pointer-events:none;opacity:.5;}@media(max-width:767px){.ds-chapters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;border:0;}.ds-chapter{min-height:44px;padding:12px 4px;gap:6px;border-radius:6px;background:hsl(var(--secondary));}}"
+    },
+    {
+      "name": "Team operation module",
+      "kind": "card",
+      "refersTo": "operation-module",
+      "description": "A white outlined module: title, explanation, then a semantic description list of plain-text roles and update behavior.",
+      "html": "<article class=\"ds-team\"><h3>团队内容与权限</h3><p>素材、场景与活动归团队共享。按角色分配编辑和查看能力，用合集组织地图内容，让协作保持清晰。</p><dl class=\"ds-team-details\"><div><dt>成员角色</dt><dd>所有者 / 管理员 / 成员 / 只读成员</dd></div><div><dt>内容更新</dt><dd>地图引用使用已保存的最新内容。</dd></div></dl></article>",
+      "css": ".ds-team{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";color:hsl(var(--foreground));background:hsl(var(--background));padding:32px;border:1px solid hsl(var(--border));border-radius:12px;}.ds-team h3{margin:0 0 14px;font-size:1.5rem;font-weight:600;line-height:1.375;text-wrap:balance;}.ds-team>p{margin:0;font-size:1rem;line-height:1.75rem;color:hsl(var(--muted-foreground));}@media(max-width:767px){.ds-team{padding:24px;}}.ds-team-details{display:flex;flex-direction:column;gap:16px;margin:26px 0 0;font-size:.875rem;line-height:1.5;}.ds-team-details>div{display:grid;grid-template-columns:72px 1fr;gap:16px;}.ds-team-details dt{font-weight:500;}.ds-team-details dd{min-width:0;margin:0;color:hsl(var(--muted-foreground));}@media(max-width:767px){.ds-team-details>div{grid-template-columns:1fr;gap:6px;}}"
+    },
+    {
+      "name": "Agent operation module",
+      "kind": "card",
+      "refersTo": "operation-module",
+      "description": "The companion white module uses an ordered, naturally wrapping text workflow and a guide link.",
+      "html": "<article class=\"ds-agent\"><h3>Agent 辅助创作</h3><p>通过本地 CLI，让你的 Agent 检索和导入素材、编排场景、生成预览并校验，再保存到团队工作台。</p><div class=\"ds-agent-process\"><p>创作流程</p><ol class=\"ds-agent-flow\"><li><span>检索素材</span><svg aria-hidden=\"true\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></li><li><span>编排草稿</span><svg aria-hidden=\"true\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></li><li><span>预览校验</span><svg aria-hidden=\"true\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></li><li><span>保存场景</span></li></ol></div><a class=\"ds-agent-link\" href=\"/instructions/zh\">查看平台指南<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\"/><path d=\"M7 17 17 7\"/></svg></a></article>",
+      "css": ".ds-agent{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";color:hsl(var(--foreground));background:hsl(var(--background));padding:32px;border:1px solid hsl(var(--border));border-radius:12px;}.ds-agent h3{margin:0 0 14px;font-size:1.5rem;font-weight:600;line-height:1.375;text-wrap:balance;}.ds-agent>p{margin:0;font-size:1rem;line-height:1.75rem;color:hsl(var(--muted-foreground));}@media(max-width:767px){.ds-agent{padding:24px;}}.ds-agent-process{margin-top:26px;font-size:.875rem;line-height:1.5;}.ds-agent-process>p{margin:0;font-weight:500;}.ds-agent-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:10px 0 0;padding:0;list-style:none;color:hsl(var(--muted-foreground));}.ds-agent-flow li{display:flex;align-items:center;gap:12px;}.ds-agent-flow svg{flex-shrink:0;}.ds-agent-link{display:inline-flex;align-items:center;gap:10px;margin-top:24px;color:hsl(var(--primary));font-size:.875rem;line-height:1.5;text-decoration:none;text-underline-offset:.3em;}.ds-agent-link:hover{text-decoration:underline;}.ds-agent-link:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}@media(max-width:767px){.ds-agent-flow{gap:8px 10px;}}"
+    },
+    {
+      "name": "Footer navigation",
+      "kind": "nav",
+      "refersTo": "footer-nav",
+      "description": "The simple navigation inside the homepage footer; the global navbar is outside this scoped record and remains unchanged.",
+      "html": "<nav class=\"ds-footer-nav\" aria-label=\"页脚导航\"><a href=\"/instructions/zh\">使用指南</a><a href=\"/auth/login\">登录</a><a href=\"/auth/sign-up\">注册</a></nav>",
+      "css": ".ds-footer-nav{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:flex;align-items:flex-start;gap:28px;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;line-height:1.5;color:hsl(var(--muted-foreground));}.ds-footer-nav a{color:inherit;text-decoration:none;text-underline-offset:.3em;}.ds-footer-nav a:hover{color:hsl(var(--foreground));}.ds-footer-nav a:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}@media(max-width:767px){.ds-footer-nav{gap:24px;}}"
+    },
+    {
+      "name": "FAQ disclosure",
+      "kind": "custom",
+      "refersTo": "faq-trigger",
+      "description": "Self-contained native disclosure preview of the FAQ appearance. The application retains its shared Radix Accordion with single-item expansion.",
+      "html": "<details class=\"ds-faq\"><summary>观众需要下载专门的 App 吗？<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></summary><p>不需要额外下载 App。观众通过微信扫码进入小程序，再按提示使用相机和位置能力。实际 AR 效果取决于设备、现场环境与内容设置。</p></details>",
+      "css": ".ds-faq{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";color:hsl(var(--foreground));}.ds-faq summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding:16px 0;border-radius:6px;font-size:1rem;font-weight:500;line-height:1.25rem;list-style:none;cursor:pointer;transition:all 150ms cubic-bezier(.4,0,.2,1);}.ds-faq summary::-webkit-details-marker{display:none;}.ds-faq summary:hover{text-decoration:underline;}.ds-faq summary svg{flex-shrink:0;color:hsl(var(--muted-foreground));transform:translateY(2px);transition:transform 200ms cubic-bezier(.4,0,.2,1);}.ds-faq[open] summary svg{transform:translateY(2px) rotate(180deg);}.ds-faq p{margin:0;padding:0 0 16px;color:hsl(var(--muted-foreground));font-size:1rem;line-height:1.75rem;}.ds-faq summary:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-faq summary:focus-visible{box-shadow:0 0 0 3px hsl(var(--ring) / .5);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Digital exhibition wall",
+    "overview": "A continuous white canvas presents real places, product screenshots and mobile AR imagery. Black headings and actions establish hierarchy; gray supporting copy, generous spacing and fine dividers make the page easy to scan. The interface stays restrained so the product and its spatial content carry the visual detail.\n\nThis is a record of the implemented homepage, scoped to the `main.landing-page` subtree in [LandingPage](app/components/LandingPage.tsx), [LandingCta](app/components/LandingCta.tsx) and [the homepage stylesheet](app/components/landing-page.css). The shared authority remains [docs/design-system.md](docs/design-system.md), with typography and primitives defined in [Tailwind configuration](tailwind.config.ts), [Text](components/ui/typography.tsx) and [global styles](app/globals.css). These homepage tokens do not redefine console routes. The global navbar is rendered outside this subtree by [the root layout](app/layout.tsx) and retains its existing implementation, appearance and behavior.",
+    "keyCharacteristics": [
+      "White section backgrounds with black, white and gray interface colors.",
+      "Shared bilingual sans typography with a distinct marketing display scale.",
+      "Real Dongming workspaces and retained mobile AR photographs.",
+      "Open content rows, fine dividers and rectangular image frames.",
+      "Responsive composition and visible keyboard focus."
+    ],
+    "rules": [
+      {
+        "name": "The Local Canvas Rule",
+        "body": "Keep the white marketing palette inside the homepage subtree. Console themes and the unchanged global navbar continue to use the shared system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Shared Type Rule",
+        "body": "Preserve the bilingual font chain, semantic heading order and Text variants. Marketing display sizes belong to marketing content; do not carry them into console interfaces or tighten Chinese letter spacing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Image Depth Rule",
+        "body": "Use the implemented soft depth to separate overlapping image layers; keep the surrounding section canvas white and visually quiet.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Real Evidence Rule",
+        "body": "Preserve actual Dongming workspace images, their map attribution, the existing mobile AR images and their translated alternative text. Do not manufacture interface content or product metrics for the homepage.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** keep homepage section backgrounds white and use typography, spacing and neutral dividers for hierarchy.",
+      "**Do** reuse shared Text, Button, Tabs and Accordion components and preserve their keyboard behavior.",
+      "**Do** verify both Chinese and English layouts at desktop and mobile widths.",
+      "**Do** preserve real screenshot proportions, attribution, mobile AR imagery and the lab credit."
+    ],
+    "donts": [
+      "**Don't** apply the homepage palette or display sizes to console routes.",
+      "**Don't** change the global navbar as part of this homepage visual system.",
+      "**Don't** alternate dark and light homepage section backgrounds.",
+      "**Don't** replace real product evidence with invented controls, statistics or claims."
+    ]
+  }
+}

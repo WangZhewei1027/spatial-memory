@@ -8,7 +8,7 @@
 - **Assets** are reusable images, text, audio, video, models and other content.
 - A **scene** combines assets and spatial text into a composition with positions, animation and a timeline.
 - A **map collection** organizes placements. The same asset or scene can appear on several maps, with a separate position and display settings for each placement.
-- An **activity** provides shop check-ins or visitor messages. It can be linked to several maps, with participation records kept separately for each placement.
+- An **activity** provides shop check-ins or visitor messages. It can be linked to one map at a time. Remove the current association before linking another map; historical participation records are retained.
 
 A new team can create assets, scenes and activities before creating a map. Collections do not have separate membership permissions.
 
@@ -51,7 +51,7 @@ Create or open a map from the collection list. Its editor provides a placement c
 
 List selection and map markers stay in sync. Ordinary placements can be repositioned through map interaction. Moving one placement does not move other placements of the same asset.
 
-The map's Activities tab manages activity associations and their status. Edit activity locations in the activity content page; dragging an activity marker does not change its location.
+The Activities button at the top of the map opens a dialog for managing activity associations and their status. Edit activity locations in the activity content page; dragging an activity marker does not change its location.
 
 Archiving a collection stops public discovery and placement edits on that map. Team assets and scenes remain available.
 
@@ -78,12 +78,12 @@ Choose a team and map within the on-site upload page, then allow browser locatio
 
 ## Managing activities
 
-Create a **shop check-in** or **visitor-message** activity, then associate it with target maps. New placements start as drafts and become discoverable after activation. Pausing one placement only stops that map's entry.
+Create a **shop check-in** or **visitor-message** activity, then associate it with a target map. New associations start paused and become discoverable when enabled. Each activity can be linked to one map at a time. Remove its current association before switching maps; this keeps the activity and participation records.
 
-- **Shop check-in:** one activity contains several check-in points. Enter each point's details, select images and an optional reward image, and set its fixed location on the activity's map. Every associated map uses the same locations and rules.
+- **Shop check-in:** one activity contains several check-in points. Enter each point's details, select images and an optional reward image, and set its fixed location on the activity's map. After saving, the associated map uses these locations and rules.
 - **Visitor messages:** set the message length limit and participation area. A limited area uses a center and radius; visitors can submit within the permitted area.
 
-The participation data view filters messages and check-ins by placement. Members with write access can hide or restore records. Progress and messages remain separate across maps; ordinary text assets remain in the asset library.
+The activity editor's Records tab filters messages and check-ins by placement. Members with write access can hide or restore records. Historical records remain available after switching the map association; ordinary text assets remain in the asset library.
 
 ## QR codes and the mini-program
 
