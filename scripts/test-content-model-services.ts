@@ -775,6 +775,20 @@ async function main(): Promise<void> {
       }
     });
 
+    await check("T11 discovery identifies linked content for hybrid mode without changing GPS results", async () => {
+      const anchor = await seedRuntimeProjectionFixture(client, f, { kind: "anchor", payload: { kind: "anchor" } });
+      const linked = await seedRuntimeProjectionFixture(client, f, { kind: "model", payload: { kind: "model" }, anchorId: anchor.asset, renderConfig: { is_huge: true } });
+      const unlinked = await seedRuntimeProjectionFixture(client, f, { kind: "model", payload: { kind: "model" }, renderConfig: { is_huge: true } });
+      const scope = { workspaceId: f.workspaces.a, organizationId: f.organizations.team };
+      for (const rows of [await runtime.nearbyPlacements(scope, 31.2, 121.5, 100), await runtime.hugePlacements(scope)]) {
+        assert.equal(rows.find(row => row.id === linked.placement)?.anchor_id, anchor.asset);
+        assert.equal(rows.find(row => row.id === unlinked.placement)?.anchor_id, null);
+      }
+      const matched = await runtime.anchorPlacements(f.workspaces.a, anchor.asset);
+      assert.ok(matched.some(row => row.id === linked.placement));
+      assert.ok(!matched.some(row => row.id === unlinked.placement));
+    });
+
     await check("T11 new link projection remains readable by the existing link consumer", async () => {
       const fresh = await placementService.createPlacement(actors.editor, f.workspaces.b, {
         asset: { name: "new link", fileType: "link", payload: { kind: "link", url: "https://example.test/article" }, resources: [] },

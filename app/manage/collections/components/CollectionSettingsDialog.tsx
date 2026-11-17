@@ -7,6 +7,7 @@ import type { CollectionDto } from "@/lib/content-model/contracts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContentFailureNotice } from "../../content/ContentFeedback";
@@ -54,7 +55,7 @@ export function CollectionSettingsDialog({ collection, onSaved }: { collection: 
 
   return <Dialog open={open} onOpenChange={changeOpen}>
     <DialogTrigger asChild><Button variant="ghost" size="sm" title={t("collectionSettings.trigger")}><Settings aria-hidden /><span className="max-sm:sr-only">{t("collectionSettings.trigger")}</span></Button></DialogTrigger>
-    <DialogContent className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-md" showCloseButton={false}>
+    <DialogContent className="flex flex-col gap-0 overflow-visible p-0 sm:max-w-md" showCloseButton={false}>
       <div className="flex shrink-0 items-center gap-3 border-b px-5 py-3">
         <DialogHeader className="min-w-0 flex-1 text-start">
           <DialogTitle>{t("collectionSettings.title")}</DialogTitle>
@@ -65,10 +66,15 @@ export function CollectionSettingsDialog({ collection, onSaved }: { collection: 
       {open && <form className="flex min-h-0 flex-col" onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <div className="min-h-0 space-y-5 overflow-y-auto p-5">
           <div className="space-y-2">
-            <Label htmlFor="collection-retrieval-mode">{t("collectionSettings.retrievalMode")}</Label>
-            <Select value={draft.retrieval_mode} disabled={disabled} onValueChange={(value: "gps" | "anchor") => setDraft({ ...draft, retrieval_mode: value })}>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="collection-retrieval-mode">{t("collectionSettings.retrievalMode")}</Label>
+              <InfoTooltip label={t("collectionSettings.retrievalModeHelp")}>
+                {t("collectionSettings.retrievalModeHint")}
+              </InfoTooltip>
+            </div>
+            <Select value={draft.retrieval_mode} disabled={disabled} onValueChange={(value: CollectionDto["miniapp_config"]["retrieval_mode"]) => setDraft({ ...draft, retrieval_mode: value })}>
               <SelectTrigger id="collection-retrieval-mode" className="min-h-10 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>{["anchor", "gps"].map((mode) => <SelectItem key={mode} value={mode}>{t(`collectionSettings.modes.${mode}`)}</SelectItem>)}</SelectContent>
+              <SelectContent>{["hybrid", "anchor", "gps"].map((mode) => <SelectItem key={mode} value={mode}>{t(`collectionSettings.modes.${mode}`)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-2">

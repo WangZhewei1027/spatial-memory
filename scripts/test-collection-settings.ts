@@ -15,7 +15,7 @@ async function main() {
   const organizations = await import("../app/api/miniapp/organizations/route");
   const client = new Client({ connectionString: process.env.DATABASE_URL }); await client.connect();
   const f = fixtureIds();
-  const config = { ...DEFAULT_COLLECTION_MINIAPP_CONFIG, retrieval_mode: "anchor", text_asset_miniapp_style: "plain_white", confetti_enabled: true, footer_enabled: true };
+  const config = { ...DEFAULT_COLLECTION_MINIAPP_CONFIG, retrieval_mode: "hybrid", text_asset_miniapp_style: "plain_white", confetti_enabled: true, footer_enabled: true };
   const call = async (user: string | null, body?: unknown, id = f.workspaces.a) => {
     auth.setStubSessionUser(user ? { id: user, email: null, name: null, emailVerified: true } : null);
     const response = await (body === undefined ? route.GET : route.PATCH)(new Request(`http://localhost/api/collections/${id}`, {
@@ -43,6 +43,11 @@ async function main() {
     assert.equal(saved.status, 200); assert.equal(saved.body.data.config_lock_version, 2);
     assert.deepEqual(saved.body.data.miniapp_config, config);
     assert.deepEqual((await call(f.users.owner, undefined, f.workspaces.b)).body.data.miniapp_config, DEFAULT_COLLECTION_MINIAPP_CONFIG);
+    for (const [index, mode] of ["anchor", "gps"].entries()) {
+      const selected = { ...DEFAULT_COLLECTION_MINIAPP_CONFIG, retrieval_mode: mode };
+      assert.equal((await call(f.users.owner, { miniappConfig: selected, expectedLockVersion: index + 1 }, f.workspaces.b)).status, 200);
+      assert.deepEqual((await discover(f.workspaces.b))[0].config, selected);
+    }
     assert.deepEqual((await discover(f.workspaces.a))[0], { id: f.workspaces.a, name: original.name, organization_id: f.organizations.team, config });
     assert.deepEqual(await discover(f.workspaces.a, f.organizations.foreign), []);
     const list = await (await maps.GET(new Request(`http://localhost/api/miniapp/workspaces?organization_id=${f.organizations.team}`))).json();

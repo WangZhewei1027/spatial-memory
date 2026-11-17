@@ -38,12 +38,16 @@ Asset 文件取当前 `asset_resource`，Scene 取当前 `scene.document` 并解
 
 | 字段 | 取值 | 新地图默认值 |
 | --- | --- | --- |
-| `retrieval_mode` | `gps` / `anchor`（匹配识别） | `gps` |
+| `retrieval_mode` | `hybrid`（混合） / `gps` / `anchor`（匹配识别） | `hybrid` |
 | `text_asset_miniapp_style` | `plain_white` / `dialog_decorated` | `dialog_decorated` |
 | `confetti_enabled` | boolean | false |
 | `footer_enabled` | boolean | false |
 
-管理端在地图 navbar 的“设置”弹窗保存这四项；团队设置不再提供这些控件。小程序进入或重新显示 AR 页时，先读取并校验当前地图的完整配置，再启动 v2 SLAM 会话，按识别方式进行 GPS 发现或图像识别；页面不再提供识别模式切换。读取失败、配置无效或地图已归档时保留重试，不回退到 GPS 或旧团队缓存。首页水印也读取当前地图。仅团队入口先选择一个具体地图；独立 Scene 预览不读取此配置。
+管理端在地图 navbar 的“设置”弹窗保存这四项；团队设置不再提供这些控件。小程序进入或重新显示 AR 页时，先读取并校验当前地图的完整配置，再启动 v2 SLAM 会话，按识别方式进行 GPS 发现、图像识别或两者并行；页面不再提供识别模式切换。读取失败、配置无效或地图已归档时保留重试，不回退到 GPS 或旧团队缓存。首页水印也读取当前地图。仅团队入口先选择一个具体地图；独立 Scene 预览不读取此配置。
+
+混合模式中，未关联识别目标的 active 投放按 GPS 规则发现；关联投放仅在命中对应目标后显示。`assets/nearby` 与 `assets/huge` 均返回 `anchor_id`（目标素材 ID 或 null），混合模式只接收其中明确为 null 的投放；GPS 模式仍接收范围内全部投放。识别命中、重扫、移动刷新只替换匹配来源的节点和队列，保留 GPS 与活动内容；切换模式、隐藏与退出仍清理所有内容。两种来源共用现有容量限制。
+
+`20261117000000_hybrid_retrieval_mode.sql` 扩展配置约束并将新地图默认值改为混合；已有地图（含归档地图）的设置和配置锁版本不变。发布需配套迁移、Web 和小程序，旧小程序不支持 `hybrid`。下述 2026-11-08 迁移的 GPS 初始化行为保留为历史升级规则。
 
 发布顺序：先备份数据库并执行 `20261108000000_collection_miniapp_config.sql`，再发布 Web，最后发布配套小程序。迁移把每个团队原有的三个显示设置一次性复制到其全部地图（含已归档地图），识别方式初始化为 GPS；之后各地图独立保存，新地图使用表中默认值。原组织 JSON 只保留作回滚依据，新配置不会双写回组织。旧小程序不能执行服务端识别方式，必须配套升级；新小程序访问未升级 Web 会提示配置加载失败。迁移回归见 `scripts/test-collection-config-migration.ts`，真实路由见 `scripts/test-collection-settings.ts`。
 

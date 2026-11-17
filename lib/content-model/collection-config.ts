@@ -2,14 +2,14 @@ import { invalid } from "./errors";
 import { rejectUnknown, requireEnum, requireRecord } from "./input";
 
 export interface CollectionMiniappConfig {
-  retrieval_mode: "gps" | "anchor";
+  retrieval_mode: "hybrid" | "gps" | "anchor";
   text_asset_miniapp_style: "plain_white" | "dialog_decorated";
   confetti_enabled: boolean;
   footer_enabled: boolean;
 }
 
 export const DEFAULT_COLLECTION_MINIAPP_CONFIG: Readonly<CollectionMiniappConfig> = {
-  retrieval_mode: "gps",
+  retrieval_mode: "hybrid",
   text_asset_miniapp_style: "dialog_decorated",
   confetti_enabled: false,
   footer_enabled: false,
@@ -22,7 +22,7 @@ export function parseCollectionMiniappConfig(value: unknown): CollectionMiniappC
   if (typeof config.confetti_enabled !== "boolean" || typeof config.footer_enabled !== "boolean")
     throw invalid("彩带与水印设置必须是布尔值");
   return {
-    retrieval_mode: requireEnum(config.retrieval_mode, "retrieval_mode", ["gps", "anchor"]),
+    retrieval_mode: requireEnum(config.retrieval_mode, "retrieval_mode", ["hybrid", "gps", "anchor"]),
     text_asset_miniapp_style: requireEnum(config.text_asset_miniapp_style, "text_asset_miniapp_style", ["plain_white", "dialog_decorated"]),
     confetti_enabled: config.confetti_enabled,
     footer_enabled: config.footer_enabled,

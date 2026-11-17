@@ -18,7 +18,7 @@ try {
     const t = locale.collectionSettings;
     const context = await browser.newContext({ viewport: { width, height: width === 320 ? 568 : 900 } });
     const collection = { id: mapId, organization_id: teamId, name: "Map fixture", archived_at: archived ? "2026-11-01T00:00:00Z" : null,
-      config_lock_version: 1, miniapp_config: { retrieval_mode: "gps", text_asset_miniapp_style: "dialog_decorated", confetti_enabled: false, footer_enabled: false },
+      config_lock_version: 1, miniapp_config: { retrieval_mode: "hybrid", text_asset_miniapp_style: "dialog_decorated", confetti_enabled: false, footer_enabled: false },
       capabilities: { can_read: true, can_edit: writable, can_archive: writable } };
     let failure = 0, writes = 0;
     await context.addCookies([{ name: "better-auth.session_token", value: "map-settings-fixture", url: origin }, { name: "language", value: language, url: origin }]);
@@ -69,10 +69,10 @@ try {
       assert.equal(await dialog.getByRole("button", { name: locale.common.save, exact: true }).count(), 0);
     } else {
       const choose = async (control, name) => { await control.click(); await page.getByRole("option", { name, exact: true }).click(); };
-      await mode.click(); assert.deepEqual(await page.getByRole("option").allTextContents(), [t.modes.anchor, t.modes.gps]);
+      await mode.click(); assert.deepEqual(await page.getByRole("option").allTextContents(), [t.modes.hybrid, t.modes.anchor, t.modes.gps]);
       await page.getByRole("option", { name: t.modes.anchor, exact: true }).click();
       await page.keyboard.press("Escape"); await trigger.click();
-      assert.equal(await mode.innerText(), t.modes.gps, "closing discards unsaved changes"); assert.equal(writes, 0);
+      assert.equal(await mode.innerText(), t.modes.hybrid, "closing discards unsaved changes"); assert.equal(writes, 0);
       await choose(mode, t.modes.anchor); await choose(style, t.styles.plain_white);
       await dialog.getByRole("checkbox", { name: t.confetti_enabled, exact: true }).check();
       await dialog.getByRole("checkbox", { name: t.footer_enabled, exact: true }).check();
@@ -85,7 +85,7 @@ try {
         failure = 0; collection.config_lock_version = 2;
         await dialog.getByRole("button", { name: locale.contentModel.action.reload, exact: true }).click();
         await page.waitForFunction(() => !document.querySelector('#collection-retrieval-mode')?.disabled);
-        assert.equal(await mode.innerText(), t.modes.gps);
+        assert.equal(await mode.innerText(), t.modes.hybrid);
         await choose(mode, t.modes.anchor); await choose(style, t.styles.plain_white);
         await dialog.getByRole("checkbox", { name: t.confetti_enabled, exact: true }).check();
         await dialog.getByRole("checkbox", { name: t.footer_enabled, exact: true }).check();
@@ -94,6 +94,9 @@ try {
       assert.equal(await mode.innerText(), t.modes.anchor); assert.equal(await style.innerText(), t.styles.plain_white);
       assert.equal(await dialog.getByRole("checkbox", { name: t.footer_enabled, exact: true }).isChecked(), true);
       assert.equal(await save.isDisabled(), true, "saved settings survive reopening");
+      await choose(mode, t.modes.hybrid);
+      await save.click(); await dialog.waitFor({ state: "hidden" }); await trigger.click();
+      assert.equal(await mode.innerText(), t.modes.hybrid, "hybrid mode can be selected and saved after another mode");
     }
     await page.keyboard.press("Escape"); await dialog.waitFor({ state: "hidden" });
     assert.deepEqual(await frame.boundingBox(), bounds); assert.deepEqual(errors, []);

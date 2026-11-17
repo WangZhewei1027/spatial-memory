@@ -148,7 +148,7 @@ export async function nearbyPlacements(scope: RuntimeScope, lat: number, lng: nu
   const ctx = await projectionContext(db, rows);
   return rows.map((row) => {
     const c = placementContent(row, ctx);
-    return { id: row.public_id, file_type: c.file_type, file_url: c.file_url, text_content: c.text_content, metadata: c.metadata, config: c.config, is_huge: c.is_huge, distance: Number(row.distance) };
+    return { id: row.public_id, anchor_id: row.anchor_id, file_type: c.file_type, file_url: c.file_url, text_content: c.text_content, metadata: c.metadata, config: c.config, is_huge: c.is_huge, distance: Number(row.distance) };
   });
 }
 
@@ -158,7 +158,7 @@ export async function hugePlacements(scope: RuntimeScope) {
   return rows.flatMap((row) => {
     const c = placementContent(row, ctx);
     if (!c.is_huge || c.file_type !== "model") return [];
-    return [{ id: row.public_id, file_type: c.file_type, file_url: c.file_url, text_content: c.text_content, metadata: c.metadata, config: c.config, latitude: row.latitude, longitude: row.longitude }];
+    return [{ id: row.public_id, anchor_id: row.anchor_id, file_type: c.file_type, file_url: c.file_url, text_content: c.text_content, metadata: c.metadata, config: c.config, latitude: row.latitude, longitude: row.longitude }];
   });
 }
 
