@@ -50,7 +50,7 @@
 
 **Display 档**：`text-display`(36px) / `text-display-lg`(48px) 仅限营销页（首页、hero）的展示性大字，utility 直写、不进入 Text variant；console 路由（/manage、/admin、/super-admin 等）禁用。
 
-首页商业展示补充：`text-display-xl`(72px) 仅用于首页桌面主标题，手机回落到 display 档。首页展示标题可直接使用语义 h1/h2 与 display utility，正文仍使用 Text。首页在 `app/components/landing-page.css` 的 `.landing-page` 中定义局部语义色：全页统一白底、黑色标题与主操作、灰色正文和浅灰分隔线；这些 token 在明暗偏好中保持一致，不覆盖工作台主题。区块不交替使用深浅背景。首页 navbar 保持原有实现，不做视觉或行为改动。截图保留真实产品界面与地图署名，不拼造功能数据。
+首页商业展示补充：`text-display-xl`(72px) 仅用于首页桌面主标题，手机回落到 display 档。首页展示标题可直接使用语义 h1/h2 与 display utility，正文仍使用 Text。首页在 `app/components/landing-page.css` 的 `.landing-page` 中定义局部语义色：全页统一白底、黑色标题与主操作、灰色正文和浅灰分隔线；这些 token 在明暗偏好中保持一致，不覆盖工作台主题。区块不交替使用深浅背景。首页顶栏在共享导航浮岛中展示产品、方案、教程和开发者文档。宽屏使用下拉菜单，窄屏使用可滚动的导航抽屉。站内教程定位到当前语言的章节，外链标识新标签页。截图保留真实产品界面与地图署名，不拼造功能数据。
 
 ### Text 组件 API
 

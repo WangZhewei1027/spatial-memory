@@ -154,6 +154,25 @@
     }
   },
   "home": {
+    "nav": {
+      "menu": "网站导航",
+      "product": "产品功能",
+      "tools": "五个工作台",
+      "workflow": "创作流程",
+      "solutions": "解决方案",
+      "useCases": "应用场景",
+      "dongming": "东明社区案例",
+      "labProjects": "实验室项目",
+      "guides": "文档与教程",
+      "sceneGuide": "场景编排教程",
+      "mapGuide": "地图投放教程",
+      "wechatGuide": "微信扫码体验指南",
+      "developers": "开发者",
+      "miniappApi": "小程序 API 参考",
+      "cli": "CLI 使用手册",
+      "agent": "Agent 场景编排",
+      "newTab": "（在新标签页打开）"
+    },
     "hero": {
       "line1": "让每个空间，",
       "line2": "都有新的故事。",

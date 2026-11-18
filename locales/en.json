@@ -154,6 +154,25 @@
     }
   },
   "home": {
+    "nav": {
+      "menu": "Site navigation",
+      "product": "Product",
+      "tools": "Platform tools",
+      "workflow": "Creation workflow",
+      "solutions": "Solutions",
+      "useCases": "Use cases",
+      "dongming": "Dongming community project",
+      "labProjects": "Lab projects",
+      "guides": "Docs & tutorials",
+      "sceneGuide": "Scene editing tutorial",
+      "mapGuide": "Map placement tutorial",
+      "wechatGuide": "WeChat QR guide",
+      "developers": "Developers",
+      "miniappApi": "Mini-program API reference",
+      "cli": "CLI manual",
+      "agent": "Agent-assisted scenes",
+      "newTab": " (opens in a new tab)"
+    },
     "hero": {
       "line1": "Every place.",
       "line2": "A new story.",

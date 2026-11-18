@@ -30,7 +30,7 @@ web
 
 ## Brand Commitments
 
-Spatial Memory；保留上海纽约大学文化遗产数字化实验室署名与备案信息。用户要求商业化、清晰简洁、易理解的信息层级；全页白色背景，不做黑白 section 交替，使用黑白灰配色，navbar 保持原样。保留已有手机 AR 图片，Web 图片从 localhost:3000 的东明组织重新截取。
+Spatial Memory；保留上海纽约大学文化遗产数字化实验室署名与备案信息。用户要求商业化、清晰简洁、易理解的信息层级；全页白色背景，不做黑白 section 交替，使用黑白灰配色，首页 navbar 提供站内教程、案例与开发文档分组入口。保留已有手机 AR 图片，Web 图片从 localhost:3000 的东明组织重新截取。
 
 ## Evidence on Hand
 

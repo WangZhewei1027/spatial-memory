@@ -25,4 +25,6 @@ export function SaveButton() {
 
 服务端布局读取 cookie，向 I18nProvider 传入语言；Provider 在首帧渲染前同步 i18next。根 html 的 lang 静态默认 zh，挂载后校正。仅有旧 localStorage 偏好而没有 cookie 时，客户端会迁移保存。
 
+使用指南共用 `/instructions` 入口，由全站语言设置决定正文语言；旧的中英文地址会转至该入口，章节链接继续有效。
+
 语言切换影响翻译展示，不改变路由、团队选择或资源归属。

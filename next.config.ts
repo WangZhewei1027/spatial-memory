@@ -47,6 +47,13 @@ const nextConfig: NextConfig = {
       "./node_modules/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm",
     ],
   },
+  async redirects() {
+    return ["/instructions/zh", "/instructions/en"].map(source => ({
+      source,
+      destination: "/instructions",
+      permanent: true,
+    }));
+  },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   env: { NEXT_PUBLIC_APP_RELEASE: resolveRelease() },
   // Client source maps without a sourceMappingURL comment; the build moves them
