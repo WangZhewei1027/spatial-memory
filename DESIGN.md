@@ -58,6 +58,7 @@ rounded:
   frame: "12px"
   stage: "16px"
   phone-image: "20px"
+  phone-frame: "25px"
 spacing:
   inline-sm: "8px"
   inline: "12px"
@@ -65,7 +66,7 @@ spacing:
   group: "24px"
   column: "32px"
   split: "64px"
-  section: "104px"
+  section: "clamp(60px, 6.5vw, 96px)"
   section-mobile: "60px"
 components:
   button-primary:
@@ -86,21 +87,12 @@ components:
     height: "40px"
   button-outline-hover:
     backgroundColor: "{colors.accent}"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.primary}"
-    typography: "{typography.control-label}"
-    rounded: "{rounded.action}"
-    padding: "0 22px"
-    height: "48px"
-  button-ghost-hover:
-    backgroundColor: "{colors.accent}"
   chapter-tab:
     backgroundColor: "transparent"
     textColor: "{colors.muted-foreground}"
     typography: "{typography.control-label}"
-    rounded: "8px 8px 0 0"
-    padding: "16px 12px"
+    rounded: "{rounded.control}"
+    padding: "8px 16px"
   chapter-tab-active:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.background}"
@@ -112,7 +104,7 @@ components:
   screenshot-frame:
     backgroundColor: "{colors.background}"
     rounded: "{rounded.frame}"
-    padding: "14px 14px 0"
+    padding: "0"
   footer-nav:
     textColor: "{colors.muted-foreground}"
   faq-trigger:
@@ -130,7 +122,7 @@ components:
 
 A continuous white canvas presents real places, product screenshots and mobile AR imagery. Black headings and actions establish hierarchy; gray supporting copy, generous spacing and fine dividers make the page easy to scan. The interface stays restrained so the product and its spatial content carry the visual detail.
 
-This is a record of the implemented homepage, scoped to the `main.landing-page` subtree in [LandingPage](app/components/LandingPage.tsx), [LandingCta](app/components/LandingCta.tsx) and [the homepage stylesheet](app/components/landing-page.css). The shared authority remains [docs/design-system.md](docs/design-system.md), with typography and primitives defined in [Tailwind configuration](tailwind.config.ts), [Text](components/ui/typography.tsx) and [global styles](app/globals.css). These homepage tokens do not redefine console routes. The global navbar is rendered outside this subtree by [the root layout](app/layout.tsx) and retains its existing implementation, appearance and behavior.
+This is a record of the implemented homepage, scoped to the `main.landing-page` subtree in [LandingPage](app/components/LandingPage.tsx), [LandingCta](app/components/LandingCta.tsx) and [the homepage stylesheet](app/components/landing-page.css). The shared authority remains [docs/design-system.md](docs/design-system.md), with typography and primitives defined in [Tailwind configuration](tailwind.config.ts), [Text](components/ui/typography.tsx) and [global styles](app/globals.css). These homepage tokens do not redefine console routes. The global navbar is rendered outside this subtree by [the root layout](app/layout.tsx) and provides grouped public navigation on the homepage.
 
 **Key Characteristics:**
 
@@ -153,14 +145,14 @@ The interface palette is neutral. Photographs and product screenshots retain the
 ### Neutral
 
 - **White canvas** (`background`) continues through every homepage section and screenshot surround; it also provides inverse text on dark controls. The local stage, paper and primary-foreground aliases share this value.
-- **Soft control gray** (`secondary`) distinguishes inactive mobile tabs and desktop tab hover. The local muted alias shares this value.
+- **Soft control gray** (`secondary`) groups the workbench selector controls.
 - **Supporting gray** (`muted-foreground`) separates descriptions, footer navigation and captions from headings.
 - **Hover gray** (`accent`) provides outline and ghost button hover feedback.
 - **Divider gray** (`border`) separates sections, open articles, screenshot frames and operation modules.
-- **Focus gray** (`ring`) marks keyboard focus. **Frame-caption gray** (`landing-paper-muted`) belongs to the hero screenshot caption.
+- **Focus gray** (`ring`) marks keyboard focus.
 - **Shadow black** (`landing-shadow`) is used with opacity for image and device depth.
 
-**The Local Canvas Rule.** Keep the white marketing palette inside the homepage subtree. Console themes and the unchanged global navbar continue to use the shared system.
+**The Local Canvas Rule.** Keep the white marketing palette inside the homepage subtree. Console themes and the global navbar continue to use the shared system.
 
 ## Typography
 
@@ -168,7 +160,7 @@ All roles inherit the shared font stack recorded on `display-xl`: Geist for Lati
 
 The frontmatter captures the observed homepage ramp: `display-xl` for the desktop hero, `display-lg` for major section headings, `display` for smaller section headings and narrow-screen display text, `heading-lg` for product and operation titles, and `heading-md` for workflow steps. Descriptions use `body-md`; short support copy uses `body-sm`; attribution and compact metadata use `body-xs`. Buttons and tabs use `control-label`. The shared console `headingXl` remains part of the shared system but is not a homepage display role.
 
-The hero uses the largest display size above 1100px. Between 768px and 1100px, its size becomes 3rem while retaining the desktop hero line height; below 768px it uses the smaller display role. Major section display headings switch at the shared 768px breakpoint; the workflow, operations and FAQ headings retain the smaller display role throughout. Headings balance their wrapping, and the hero has an explicit break between its two translated lines. Workflow body copy uses a tighter line height (1.6) on mobile.
+The hero uses 72px display type from 1280px, 48px from 768px, and 36px on smaller screens. Keep its explicit break between the translated lines. The sections introducing use cases, workflow and workspaces pair centered headings with short descriptions.
 
 **The Shared Type Rule.** Preserve the bilingual font chain, semantic heading order and Text variants. Marketing display sizes belong to marketing content; do not carry them into console interfaces or tighten Chinese letter spacing.
 
@@ -176,21 +168,21 @@ The hero uses the largest display size above 1100px. Between 768px and 1100px, i
 
 The centered shell has a maximum width (1280px), with desktop side margins (48px). At 1100px and below the side margins become 32px, then 20px below 768px. Common sections use the `section` spacing on both block edges, reducing to `section-mobile` on narrow screens. Specialized workflow, AR and final-action sections keep their own observed spacing rather than forcing every block onto one height.
 
-Wide screens generally pair headlines with supporting copy. The operations heading and introduction instead form one left-aligned block (maximum width 720px). Product descriptions occupy three columns; at 1100px they become two columns with capabilities below. The workflow has four columns, while operations and use cases use two. Below 768px, these content pairs stack, the workflow retains two columns, and the five product tabs form a three-column grid. Product-copy containers grow with translated content; they are not fixed-height text boxes. Actions and the Agent workflow wrap.
+The desktop hero pairs the introduction with the AR phone and neighborhood mesh. Three illustrated use cases come next. The four-step workflow sits beside the Dongming map, followed by the workbench tabs with a screenshot and capability list. The workflow and workbench panels stack at 900px. Below 640px the gallery and workflow steps use a single column, and the tabs fit in two columns with the last tab across the row.
 
 Product screenshots fill their frames with natural height. Their declared width is 1512px; the scene screenshot is 805px high and the other four workspace screenshots are 749px high. Preserve those intrinsic ratios. The real mobile AR image retains its portrait ratio; the AR collage rearranges within a smaller gallery on mobile. These are evidence assets, not recreations of a working console.
 
 ## Elevation & Depth
 
-The page is mostly flat: white surfaces, spacing and thin borders organize the content. Soft shadows separate the hero screenshot and mobile device imagery. Shared buttons retain their existing subtle shadows. The global navigation shadow belongs to the shared navigation system outside the homepage scope.
+White surfaces, fine borders and spacing organize the page. Device frames cast soft shadows over the imagery. The global navigation uses the shared navigation system.
 
-The exact shadow and motion values are recorded in the sidecar. The hero image stage has one entrance animation (850ms), moving upward from a small offset (20px) while opening its clip. It runs only when the user has no reduced-motion preference. Buttons and tabs retain shared state transitions; the page has no scroll-driven animation system.
+The hero phone rises 14px and rotates into place over 700ms. Reduced-motion preferences disable the entrance and select static first frames for the AR photographs.
 
 **The Image Depth Rule.** Use the implemented soft depth to separate overlapping image layers; keep the surrounding section canvas white and visually quiet.
 
 ## Shapes
 
-Controls use gently curved corners. Main action rows use the larger `action` radius, screenshot frames and operation modules use `frame`, and the hero stage uses `stage`. Product screenshots have smaller inner corners (`control`). The phone imagery has a rounded device surround and uses `phone-image` for the inner image on desktop. Narrow screens reduce the hero stage and phone corners to fit their smaller dimensions.
+Action links, case images, and screenshot frames use rounded corners. The phone has a dark surround and rounded screen, with smaller radii on narrow screens.
 
 Dividers, screenshot frames and operation modules use fine strokes (1px). Workflow and use-case rows remain open; the two operation modules use outlined white containers. Dark device surrounds and the caption attached to the AR landscape image are part of image presentation; they do not create dark page sections.
 
@@ -198,17 +190,17 @@ Dividers, screenshot frames and operation modules use fine strokes (1px). Workfl
 
 ### Buttons
 
-The primary CTA reuses the shared Button and links to the workbench when authenticated, otherwise sign-in. Its label is translated. Primary and ghost actions in the hero and final action rows have a minimum height (48px) and the frontmatter's action padding; narrow screens reduce horizontal padding to 17px. The standalone outline guide action retains the shared large-button dimensions; outline buttons inside action rows adopt the row dimensions. Primary hover uses the same ink with lower opacity; outline and ghost hover use `accent`.
+The primary CTA reuses the shared Button and links to the workbench when authenticated, otherwise sign-in. Hero and closing action rows pair it with an outlined secondary link. The row controls have a minimum height of 48px and wrap on narrow screens.
 
 Homepage links and buttons receive a visible focus outline (2px) with an offset (5px). Shared component focus rings remain present. Inline SVG icons accompany readable labels and are hidden from assistive technology when decorative.
 
 ### Product chapters
 
-Shared Radix-backed Tabs provide the five workspaces and default to the scene chapter. Desktop tabs have a minimum height (56px); mobile tabs use a minimum height (44px). The active tab is ink with white text and no shadow. Each panel combines a title, description, three concrete capabilities and the corresponding real screenshot. Retain the tab semantics and keyboard behavior from the shared component.
+Shared Radix-backed Tabs provide the five workspaces and default to the scene chapter. Tabs have a minimum height of 44px. Each panel pairs the real screenshot with its title, description and capabilities.
 
 ### Screenshot frames and mobile imagery
 
-The repeated product frame uses a white fill, fine border, compact inset and caption row. At narrow widths the inset becomes 5px and the repeated workspace label in the caption is hidden. Images use `next/image` with actual dimensions and responsive size hints. The hero map and mobile image load with priority; later gallery images retain ordinary loading behavior.
+The screenshot frames preserve the full image and attribution above a wrapping caption row. The hero prioritizes the neighborhood mesh and the phone image. The AR gallery uses the original animated WebPs or their first frames according to the visitor’s motion preference.
 
 **The Real Evidence Rule.** Preserve actual Dongming workspace images, their map attribution, the existing mobile AR images and their translated alternative text. Do not manufacture interface content or product metrics for the homepage.
 
@@ -216,7 +208,7 @@ The repeated product frame uses a white fill, fine border, compact inset and cap
 
 Team and Agent information use two equal white outlined modules, with a gap (24px) and internal padding (32px). Below 768px they stack, reducing the gap (16px) and padding (24px). Each module leads with its title, then description, then supporting facts. Team roles and saved-content behavior use a semantic description list; its label-and-value grid stacks on mobile. Roles are plain text, not controls. The Agent workflow is an ordered list of text steps with small arrow icons and natural wrapping, followed by a guide link. It has no detached step numbers or standalone decorative module icons.
 
-The separate four-step product workflow retains small tabular indices beside titles and body copy. Use-case articles remain open rows with fine separators. Both patterns retain the continuous white canvas.
+The workflow uses small numbered markers beside each step. The use-case gallery pairs existing project imagery with the descriptions and tags for tourism, commercial districts and communities.
 
 ### FAQ and footer navigation
 
@@ -226,6 +218,7 @@ The FAQ reuses the shared Accordion with one item open at a time and supports co
 
 ### Do:
 
+- **Do** use the shared navigation island and account controls for the public resource menu.
 - **Do** keep homepage section backgrounds white and use typography, spacing and neutral dividers for hierarchy.
 - **Do** reuse shared Text, Button, Tabs and Accordion components and preserve their keyboard behavior.
 - **Do** verify both Chinese and English layouts at desktop and mobile widths.
@@ -234,6 +227,5 @@ The FAQ reuses the shared Accordion with one item open at a time and supports co
 ### Don't:
 
 - **Don't** apply the homepage palette or display sizes to console routes.
-- **Don't** change the global navbar as part of this homepage visual system.
 - **Don't** alternate dark and light homepage section backgrounds.
 - **Don't** replace real product evidence with invented controls, statistics or claims.

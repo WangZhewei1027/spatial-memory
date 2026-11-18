@@ -231,6 +231,7 @@ export interface Organization {
   created_by: string | null;
   description: string | null;
   id: Generated<string>;
+  is_official_template_library: Generated<boolean>;
   map_center: Json | null;
   name: string;
 }
@@ -323,6 +324,15 @@ export interface Tag {
   workspace_id: string;
 }
 
+export interface TemplatePreview {
+  asset_id: string | null;
+  lock_version: number;
+  mime_type: string | null;
+  scene_id: string | null;
+  storage_key: string | null;
+  workspace_id: string | null;
+}
+
 export interface UploadReceipt {
   consumed_at: Timestamp | null;
   content_hash: string;
@@ -363,7 +373,6 @@ export interface Workspace {
   create_date: Generated<Timestamp | null>;
   description: string | null;
   id: Generated<string>;
-  legacy_spatial_content_mode_20261011: Generated<string>;
   miniapp_config: Generated<Json>;
   name: string;
   organization_id: string;
@@ -396,6 +405,7 @@ export interface DB {
   schema_migrations: SchemaMigrations;
   storage_hold: StorageHold;
   tag: Tag;
+  template_preview: TemplatePreview;
   upload_receipt: UploadReceipt;
   user_organization_pin: UserOrganizationPin;
   users: Users;

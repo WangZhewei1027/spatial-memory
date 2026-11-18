@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-16T07:32:05.647Z",
+  "generatedAt": "2026-11-18T06:02:48.524Z",
   "title": "Design System: Spatial Memory — Homepage",
   "extensions": {
     "colorMeta": {
@@ -142,7 +142,7 @@
       },
       "display": {
         "displayName": "Compact display",
-        "purpose": "Mobile display text and workflow, operations and FAQ headings."
+        "purpose": "Mobile display text and the operations and FAQ headings."
       },
       "heading-lg": {
         "displayName": "Module title",
@@ -171,18 +171,13 @@
     },
     "shadows": [
       {
-        "name": "hero-map",
-        "value": "0 12px 36px hsl(var(--landing-shadow) / .1)",
-        "purpose": "Separates the hero screenshot from the white stage."
-      },
-      {
         "name": "hero-phone",
-        "value": "0 18px 40px hsl(var(--landing-shadow) / .16)",
-        "purpose": "Lifts the mobile AR image over the hero map."
+        "value": "0 16px 32px hsl(var(--landing-shadow) / .18)",
+        "purpose": "Lifts the AR phone over the neighborhood mesh."
       },
       {
         "name": "ar-phone",
-        "value": "0 20px 40px hsl(var(--landing-shadow) / .2)",
+        "value": "0 16px 32px hsl(var(--landing-shadow) / .18)",
         "purpose": "Separates overlapping imagery in the AR gallery."
       },
       {
@@ -199,13 +194,13 @@
     "motion": [
       {
         "name": "stage-duration",
-        "value": "850ms",
-        "purpose": "Single hero-stage entrance; enabled only under prefers-reduced-motion: no-preference."
+        "value": "700ms",
+        "purpose": "Hero phone entrance when motion is enabled."
       },
       {
         "name": "stage-easing",
         "value": "cubic-bezier(.16, 1, .3, 1)",
-        "purpose": "Hero translateY moves from 20px to zero while clip-path opens from inset(2% 0 0 0 round 16px) to inset(0 round 16px)."
+        "purpose": "The phone moves up 14px as its rotation changes from 4 to 7 degrees."
       },
       {
         "name": "shared-state-duration",
@@ -235,6 +230,18 @@
       {
         "name": "shared-md-min",
         "value": "768px"
+      },
+      {
+        "name": "homepage-panel-max",
+        "value": "900px"
+      },
+      {
+        "name": "homepage-gallery-single-max",
+        "value": "639px"
+      },
+      {
+        "name": "hero-display-xl-min",
+        "value": "1280px"
       }
     ]
   },
@@ -245,7 +252,7 @@
       "refersTo": "button-primary",
       "description": "Unauthenticated CTA in the hero and final action row; application routing and translation remain in LandingCta.",
       "html": "<a class=\"ds-primary\" href=\"/auth/login\">开始创作<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\"/><path d=\"M7 17 17 7\"/></svg></a>",
-      "css": ".ds-primary{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-primary svg{flex-shrink:0;margin-left:8px;}.ds-primary:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-primary:disabled{pointer-events:none;opacity:.5;}.ds-primary{min-height:48px;padding:0 22px;border-radius:8px;border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1);}.ds-primary:hover{background:hsl(var(--primary) / .9);}.ds-primary:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}@media(max-width:767px){.ds-primary{padding-inline:17px;}}"
+      "css": ".ds-primary{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-primary svg{flex-shrink:0;margin-left:8px;}.ds-primary:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-primary:disabled{pointer-events:none;opacity:.5;}.ds-primary{min-height:48px;padding:0 22px;border-radius:8px;border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1);}.ds-primary:hover{background:hsl(var(--primary) / .9);}.ds-primary:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}@media(max-width:767px){.ds-primary{padding-inline:16px;}}"
     },
     {
       "name": "Standalone outline guide action",
@@ -256,20 +263,12 @@
       "css": ".ds-outline{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-outline svg{flex-shrink:0;margin-left:8px;}.ds-outline:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-outline:disabled{pointer-events:none;opacity:.5;}.ds-outline{height:40px;padding:0 32px;border-radius:6px;border:1px solid hsl(var(--input,0 0% 89.8%));background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);}.ds-outline:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground));}.ds-outline:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}"
     },
     {
-      "name": "Homepage ghost action",
-      "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "Quiet secondary action that links from the hero to the product chapter section.",
-      "html": "<a class=\"ds-ghost\" href=\"#platform\">探索产品<svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/></svg></a>",
-      "css": ".ds-ghost{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;text-decoration:none;transition:color 150ms cubic-bezier(.4,0,.2,1),background-color 150ms cubic-bezier(.4,0,.2,1),border-color 150ms cubic-bezier(.4,0,.2,1);}.ds-ghost svg{flex-shrink:0;margin-left:8px;}.ds-ghost:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-ghost:disabled{pointer-events:none;opacity:.5;}.ds-ghost{min-height:48px;padding:0 22px;border-radius:8px;border:0;background:transparent;color:hsl(var(--foreground));}.ds-ghost:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground));}.ds-ghost:focus-visible{box-shadow:0 0 0 1px hsl(var(--ring));}@media(max-width:767px){.ds-ghost{padding-inline:17px;}}"
-    },
-    {
       "name": "Product chapter tab states",
       "kind": "custom",
       "refersTo": "chapter-tab",
       "description": "Selected and resting state specimens. The live page uses shared Radix Tabs for all five workspaces and their keyboard behavior.",
       "html": "<div class=\"ds-chapters\"><button type=\"button\" class=\"ds-chapter\" data-state=\"active\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/><path d=\"m3.3 7 8.7 5 8.7-5\"/><path d=\"M12 22V12\"/></svg>场景编排</button><button type=\"button\" class=\"ds-chapter\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>地图投放</button></div>",
-      "css": ".ds-chapters{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:flex;gap:4px;border-bottom:1px solid hsl(var(--border));}.ds-chapter{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:10px;min-height:56px;padding:16px 12px;border:0;border-radius:8px 8px 0 0;background:transparent;color:hsl(var(--muted-foreground));font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;white-space:nowrap;transition:all 150ms cubic-bezier(.4,0,.2,1);}.ds-chapter svg{flex-shrink:0;}.ds-chapter[data-state=active]{background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:none;}.ds-chapter:hover:not([data-state=active]){background:hsl(var(--secondary));color:hsl(var(--foreground));}.ds-chapter:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-chapter:focus-visible{box-shadow:0 0 0 3px hsl(var(--ring) / .5);}.ds-chapter:disabled{pointer-events:none;opacity:.5;}@media(max-width:767px){.ds-chapters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;border:0;}.ds-chapter{min-height:44px;padding:12px 4px;gap:6px;border-radius:6px;background:hsl(var(--secondary));}}"
+      "css": ".ds-chapters{--background:0 0% 100%;--foreground:0 0% 10%;--primary:0 0% 10%;--primary-foreground:0 0% 100%;--secondary:0 0% 96%;--muted-foreground:0 0% 40%;--accent:0 0% 94%;--accent-foreground:0 0% 10%;--border:0 0% 88%;--ring:0 0% 25%;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:4px;border-radius:12px;background:hsl(var(--secondary));}.ds-chapter{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border:0;border-radius:6px;background:transparent;color:hsl(var(--muted-foreground));font-family:var(--font-geist-sans), \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";font-size:.875rem;font-weight:500;line-height:1.25rem;white-space:nowrap;transition:all 150ms cubic-bezier(.4,0,.2,1);}.ds-chapter svg{flex-shrink:0;}.ds-chapter[data-state=active]{background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:none;}.ds-chapter:hover:not([data-state=active]){background:hsl(var(--secondary));color:hsl(var(--foreground));}.ds-chapter:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:5px;}.ds-chapter:focus-visible{box-shadow:0 0 0 3px hsl(var(--ring) / .5);}.ds-chapter:disabled{pointer-events:none;opacity:.5;}"
     },
     {
       "name": "Team operation module",
@@ -306,7 +305,7 @@
   ],
   "narrative": {
     "northStar": "Digital exhibition wall",
-    "overview": "A continuous white canvas presents real places, product screenshots and mobile AR imagery. Black headings and actions establish hierarchy; gray supporting copy, generous spacing and fine dividers make the page easy to scan. The interface stays restrained so the product and its spatial content carry the visual detail.\n\nThis is a record of the implemented homepage, scoped to the `main.landing-page` subtree in [LandingPage](app/components/LandingPage.tsx), [LandingCta](app/components/LandingCta.tsx) and [the homepage stylesheet](app/components/landing-page.css). The shared authority remains [docs/design-system.md](docs/design-system.md), with typography and primitives defined in [Tailwind configuration](tailwind.config.ts), [Text](components/ui/typography.tsx) and [global styles](app/globals.css). These homepage tokens do not redefine console routes. The global navbar is rendered outside this subtree by [the root layout](app/layout.tsx) and retains its existing implementation, appearance and behavior.",
+    "overview": "A continuous white canvas presents real places, product screenshots and mobile AR imagery. Black headings and actions establish hierarchy; gray supporting copy, generous spacing and fine dividers make the page easy to scan. The interface stays restrained so the product and its spatial content carry the visual detail.\n\nThis is a record of the implemented homepage, scoped to the `main.landing-page` subtree in [LandingPage](app/components/LandingPage.tsx), [LandingCta](app/components/LandingCta.tsx) and [the homepage stylesheet](app/components/landing-page.css). The shared authority remains [docs/design-system.md](docs/design-system.md), with typography and primitives defined in [Tailwind configuration](tailwind.config.ts), [Text](components/ui/typography.tsx) and [global styles](app/globals.css). These homepage tokens do not redefine console routes. The global navbar is rendered outside this subtree by [the root layout](app/layout.tsx) and provides grouped public navigation on the homepage.",
     "keyCharacteristics": [
       "White section backgrounds with black, white and gray interface colors.",
       "Shared bilingual sans typography with a distinct marketing display scale.",
@@ -317,7 +316,7 @@
     "rules": [
       {
         "name": "The Local Canvas Rule",
-        "body": "Keep the white marketing palette inside the homepage subtree. Console themes and the unchanged global navbar continue to use the shared system.",
+        "body": "Keep the white marketing palette inside the homepage subtree. Console themes and the global navbar continue to use the shared system.",
         "section": "colors"
       },
       {
@@ -337,6 +336,7 @@
       }
     ],
     "dos": [
+      "**Do** use the shared navigation island and account controls for the public resource menu.",
       "**Do** keep homepage section backgrounds white and use typography, spacing and neutral dividers for hierarchy.",
       "**Do** reuse shared Text, Button, Tabs and Accordion components and preserve their keyboard behavior.",
       "**Do** verify both Chinese and English layouts at desktop and mobile widths.",
@@ -344,7 +344,6 @@
     ],
     "donts": [
       "**Don't** apply the homepage palette or display sizes to console routes.",
-      "**Don't** change the global navbar as part of this homepage visual system.",
       "**Don't** alternate dark and light homepage section backgrounds.",
       "**Don't** replace real product evidence with invented controls, statistics or claims."
     ]

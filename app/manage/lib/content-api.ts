@@ -1,3 +1,6 @@
+import type { TemplateLibraryKind } from "../content/types";
+import type { DuplicateContentResult } from "@/lib/content-model/duplicate-contracts";
+import type { DuplicateTemplateRequest, TemplateCard } from "@/lib/content-model/template-contracts";
 import type { ActivityDto } from "@/lib/activities/contracts";
 import { readUploadEvents, UPLOAD_STREAM_CONTENT_TYPE, type UploadStageListener } from "@/lib/upload/progress";
 import { notifyContentChange } from "./content-events";
@@ -196,6 +199,13 @@ export const collectionApi = {
 };
 
 // ───────────────────────── assets ─────────────────────────
+
+export const templateApi = {
+  list: (type: TemplateLibraryKind, q: string, offset: number, limit: number, signal: AbortSignal) =>
+    get<LibraryPage<TemplateCard>>("/api/templates", { type, excludeAnchors: type === "asset" ? true : undefined, q, offset, limit }, signal),
+  duplicate: (request: DuplicateTemplateRequest) =>
+    send<Data<DuplicateContentResult>>("POST", "/api/templates/duplicate", request).then(body => body.data),
+};
 
 export const assetApi = {
   get: (assetId: string, signal?: AbortSignal) => get<Data<AssetDetailDto>>(`/api/assets/${id(assetId)}`, undefined, signal).then((body) => body.data),

@@ -19,6 +19,9 @@ async function main() {
     client = new Client({ connectionString: url.toString() }); await client.connect();
     const migrationName = "20261108000000_collection_miniapp_config.sql";
     const migration = readFileSync(`db/migrations/${migrationName}`, "utf8");
+    const hybridMigrationName = "20261117000000_hybrid_retrieval_mode.sql";
+    const hybridMigration = readFileSync(`db/migrations/${hybridMigrationName}`, "utf8");
+    const legacyDefaults = { ...DEFAULT_COLLECTION_MINIAPP_CONFIG, retrieval_mode: "gps" };
     const baseline = readFileSync("db/schema.sql", "utf8");
     const marker = "-- Copy the effective team display settings once.";
     assert.equal(baseline.split(marker).length, 2);
@@ -31,18 +34,31 @@ async function main() {
     for (let i = 0; i < maps.length; i++) await client.query("insert into workspace(id,organization_id,name,archived_at) values($1,$2,'retained map',case when $3 then now() else null end)",
       [maps[i], teams[Math.max(0, i - 1)], i === 1]);
     const read = async (id: string) => (await client!.query("select miniapp_config from workspace where id=$1", [id])).rows[0].miniapp_config;
-    const inherited = { ...DEFAULT_COLLECTION_MINIAPP_CONFIG, text_asset_miniapp_style: "plain_white", confetti_enabled: true, footer_enabled: true };
+    const inherited = { ...legacyDefaults, text_asset_miniapp_style: "plain_white", confetti_enabled: true, footer_enabled: true };
     await client.query("begin");
     await client.query(migration);
     assert.deepEqual(await read(maps[0]), inherited);
     assert.deepEqual(await read(maps[1]), inherited, "archived maps retain their existing display configuration too");
-    assert.deepEqual(await read(maps[2]), DEFAULT_COLLECTION_MINIAPP_CONFIG);
-    assert.deepEqual(await read(maps[3]), DEFAULT_COLLECTION_MINIAPP_CONFIG);
+    assert.deepEqual(await read(maps[2]), legacyDefaults);
+    assert.deepEqual(await read(maps[3]), legacyDefaults);
     const independent = { ...inherited, retrieval_mode: "anchor", footer_enabled: false };
     await client.query("update workspace set miniapp_config=$2 where id=$1", [maps[0], independent]);
     assert.deepEqual(await read(maps[1]), inherited, "maps in the same team must be independent");
     const added = (await client.query("insert into workspace(organization_id,name) values($1,'new map') returning id", [teams[0]])).rows[0].id;
-    assert.deepEqual(await read(added), DEFAULT_COLLECTION_MINIAPP_CONFIG, "new maps do not inherit retired team configuration");
+    assert.deepEqual(await read(added), legacyDefaults, "the historical migration keeps its original GPS default");
+    await client.query("savepoint before_hybrid");
+    await client.query(hybridMigration);
+    assert.deepEqual(await read(maps[0]), independent, "existing anchor choices and display settings survive");
+    assert.deepEqual(await read(maps[1]), inherited, "archived maps keep their saved GPS choice");
+    assert.equal((await client.query("select config_lock_version from workspace where id=$1", [maps[0]])).rows[0].config_lock_version, 1);
+    const hybrid = (await client.query("insert into workspace(organization_id,name) values($1,'hybrid default') returning id", [teams[0]])).rows[0].id;
+    assert.deepEqual(await read(hybrid), DEFAULT_COLLECTION_MINIAPP_CONFIG);
+    await client.query("update workspace set miniapp_config=$2 where id=$1", [maps[0], { ...independent, retrieval_mode: "hybrid" }]);
+    await client.query("rollback to savepoint before_hybrid");
+    assert.deepEqual(await read(maps[0]), independent, "rolling back the migration restores saved configuration");
+    const rollbackDefault = (await client.query("insert into workspace(organization_id,name) values($1,'rollback default') returning miniapp_config", [teams[0]])).rows[0].miniapp_config;
+    assert.deepEqual(rollbackDefault, legacyDefaults);
+    await client.query(hybridMigration);
     for (const config of [{}, { ...inherited, retrieval_mode: null }, { ...inherited, confetti_enabled: "true" }, { ...inherited, private_setting: true }]) {
       await client.query("savepoint invalid_config");
       await assert.rejects(client.query("update workspace set miniapp_config=$2 where id=$1", [maps[0], config]), /workspace_miniapp_config_check/);
@@ -59,6 +75,9 @@ async function main() {
     assert.deepEqual(await read(maps[0]), inherited);
     assert.equal((await client.query("select count(*)::int n from workspace where id=any($1::uuid[]) and name='retained map'", [maps])).rows[0].n, 4);
     assert.equal((await client.query("select count(*)::int n from schema_migrations where name=$1", [migrationName])).rows[0].n, 1);
+    assert.equal((await client.query("select count(*)::int n from schema_migrations where name=$1", [hybridMigrationName])).rows[0].n, 1);
+    const currentDefault = (await client.query("insert into workspace(organization_id,name) values($1,'current default') returning miniapp_config", [teams[0]])).rows[0].miniapp_config;
+    assert.deepEqual(currentDefault, DEFAULT_COLLECTION_MINIAPP_CONFIG);
     console.log("PASS map settings migration: inherited values, defaults, independent maps, validation, rollback and repeatable upgrade");
   } finally {
     await client?.end();

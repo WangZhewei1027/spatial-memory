@@ -27,9 +27,9 @@ interface PageState<T> {
 }
 
 /** One request at a time per filter set. Changing the loader cancels its entire paging session. */
-export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | null) {
+export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | null, pageSize = PAGE_SIZE) {
   const [version, setVersion] = useState(0);
-  const session = useMemo(() => ({ load, version }), [load, version]);
+  const session = useMemo(() => ({ load, version, pageSize }), [load, version, pageSize]);
   const [result, setResult] = useState<(PageState<T> & { session: typeof session }) | null>(null);
   const next = useRef<(() => void) | null>(null);
   const refreshLoaded = useRef<(() => void) | null>(null);
@@ -54,7 +54,7 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
         let nextOffset = 0;
         let morePages = true;
         do {
-          const { data, page } = await load(nextOffset, PAGE_SIZE, controller.signal);
+          const { data, page } = await load(nextOffset, pageSize, controller.signal);
           if (controller.signal.aborted) return;
           nextOffset += data.length;
           morePages = data.length > 0 && ("total" in page ? nextOffset < page.total : page.hasMore);
@@ -81,7 +81,7 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
       const first = offset === 0;
       if (!first) setResult(prev => prev?.session === session ? { ...prev, loadingMore: true, moreError: null } : prev);
       try {
-        const { data, page } = await load(offset, PAGE_SIZE, controller.signal);
+        const { data, page } = await load(offset, pageSize, controller.signal);
         if (controller.signal.aborted) return;
         const nextOffset = offset + data.length;
         const morePages = data.length > 0 && ("total" in page ? nextOffset < page.total : page.hasMore);
@@ -108,7 +108,7 @@ export function useLibraryPages<T extends { id: string }>(load: PageLoader<T> | 
     refreshLoaded.current = refresh;
     void read();
     return () => { controller.abort(); next.current = null; refreshLoaded.current = null; };
-  }, [load, session]);
+  }, [load, pageSize, session]);
 
   const reload = useCallback(() => setVersion(value => value + 1), []);
   const refresh = useCallback(() => refreshLoaded.current?.(), []);

@@ -5,6 +5,7 @@ export function openAssetInspector(assetId: string) {
   const url = new URL(window.location.href);
   if (!/^\/manage\/(assets|anchors)\/?$/.test(url.pathname)) return;
   const replacing = url.searchParams.has(ASSET_INSPECTOR_PARAM);
+  url.searchParams.delete("tab");
   url.searchParams.set(ASSET_INSPECTOR_PARAM, assetId);
   if (replacing) window.history.replaceState(null, "", url);
   else window.history.pushState(null, "", url);

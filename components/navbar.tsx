@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
+import { PublicNavigation } from "@/app/components/PublicNavigation";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { NavbarSidebar } from "@/components/navbar-sidebar";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -17,9 +18,13 @@ export function Navbar() {
   return (
     <header className="app-navbar">
       <NavigationIsland className="navigation-row justify-between text-sm">
-        <Suspense>
-          <BreadcrumbNav />
-        </Suspense>
+        {pathname === "/" ? (
+          <PublicNavigation />
+        ) : (
+          <Suspense>
+            <BreadcrumbNav />
+          </Suspense>
+        )}
         <div className="flex items-center gap-2 flex-shrink-0">
           <LanguageSwitcher />
           {/* Desktop: avatar dropdown */}

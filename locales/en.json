@@ -154,6 +154,25 @@
     }
   },
   "home": {
+    "nav": {
+      "menu": "Site navigation",
+      "product": "Product",
+      "tools": "Platform tools",
+      "workflow": "Creation workflow",
+      "solutions": "Solutions",
+      "useCases": "Use cases",
+      "dongming": "Dongming community project",
+      "labProjects": "Lab projects",
+      "guides": "Docs & tutorials",
+      "sceneGuide": "Scene editing tutorial",
+      "mapGuide": "Map placement tutorial",
+      "wechatGuide": "WeChat QR guide",
+      "developers": "Developers",
+      "miniappApi": "Mini-program API reference",
+      "cli": "CLI manual",
+      "agent": "Agent-assisted scenes",
+      "newTab": " (opens in a new tab)"
+    },
     "hero": {
       "line1": "Every place.",
       "line2": "A new story.",
@@ -1395,14 +1414,25 @@
     "library": {
       "team": "Team content",
       "browse": "Browse content",
+      "teamTab": "This team",
+      "copyToTeam": "Copy to team",
+      "copiedTo": "Copied to {{team}}",
+      "openCopy": "View team copy",
       "asset": {
         "title": "Assets",
+        "publicTab": "Public",
+        "publicEmpty": "No public assets yet",
+        "untitled": "Untitled asset",
         "emptyTitle": "No assets yet",
         "viewerBody": "Assets appear here once team members upload them.",
         "archivedBody": "Archived assets appear here. Open an asset to restore it."
       },
       "scene": {
         "title": "Scenes",
+        "publicTab": "Public",
+        "browsePublic": "Explore public scenes",
+        "publicEmpty": "No public scenes yet",
+        "untitled": "Untitled scene",
         "viewerBody": "Scenes appear here once team members create them.",
         "archivedBody": "Archived scenes appear here and can be restored at any time."
       },
@@ -1450,7 +1480,10 @@
     "trigger": "Settings",
     "title": "Map settings",
     "retrievalMode": "Recognition mode",
+    "retrievalModeHelp": "About recognition modes",
+    "retrievalModeHint": "Hybrid (default): In mini-program AR, active placements without a recognition target appear by GPS distance. Linked placements appear only after their target is recognized.\n\nImage recognition: Uses GPS to find nearby targets, then shows only active placements on this map linked to the recognized target.\n\nGPS recognition: Finds active placements with coordinates on this map by distance, whether or not they are linked to a target.",
     "modes": {
+      "hybrid": "Hybrid (default)",
       "anchor": "Image recognition",
       "gps": "GPS recognition"
     },

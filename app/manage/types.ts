@@ -7,6 +7,7 @@ export interface LocationData {
 }
 
 export interface Organization {
+  is_official_template_library?: boolean;
   archived_at?: string | null;
   id: string;
   name: string;

@@ -38,7 +38,11 @@ export function InfoTooltip({ label, children }: { label: string; children: stri
               if (event.target instanceof Node && trigger?.contains(event.target)) event.preventDefault();
             }}
           >
-            <Text as="p" variant="bodySm">{children}</Text>
+            <div className="space-y-2">
+              {children.split("\n\n").map((paragraph) => (
+                <Text key={paragraph} as="p" variant="bodySm">{paragraph}</Text>
+              ))}
+            </div>
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>

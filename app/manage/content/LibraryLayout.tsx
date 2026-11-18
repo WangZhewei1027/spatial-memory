@@ -17,6 +17,8 @@ export interface LibraryPagination {
 
 interface LibraryLayoutProps {
   title: string;
+  /** A tabbed library supplies its page heading above the active panel. */
+  headingId?: string;
   actions?: ReactNode;
   readOnlyReason?: string;
   toolbar: ReactNode;
@@ -25,9 +27,10 @@ interface LibraryLayoutProps {
 }
 
 /** All team libraries share the stationary heading, scroll boundary and paging controls. */
-export function LibraryLayout({ title, actions, readOnlyReason, toolbar, pagination, children }: LibraryLayoutProps) {
+export function LibraryLayout({ title, headingId: externalHeadingId, actions, readOnlyReason, toolbar, pagination, children }: LibraryLayoutProps) {
   const { t } = useTranslation();
-  const headingId = useId();
+  const ownHeadingId = useId();
+  const headingId = externalHeadingId ?? ownHeadingId;
   const results = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -50,11 +53,11 @@ export function LibraryLayout({ title, actions, readOnlyReason, toolbar, paginat
     <section aria-labelledby={headingId} className="team-library flex min-h-0 flex-1 flex-col">
       <header data-scrolled={scrolled} className="relative z-10 flex shrink-0 flex-col gap-4 border-b border-transparent bg-background px-3 pb-4 pt-3 data-[scrolled=true]:border-border data-[scrolled=true]:shadow-sm sm:px-4 sm:pt-4 lg:px-5 lg:pt-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Text as="h1" id={headingId} variant="headingLg" breakWord>{title}</Text>
+          {externalHeadingId ? <div className="min-w-0 flex-auto">{toolbar}</div> : <Text as="h1" id={headingId} variant="headingLg" breakWord>{title}</Text>}
           {actions}
           {readOnlyReason && <p className="flex max-w-sm items-start gap-1.5 text-sm text-muted-foreground"><Eye className="mt-0.5 size-4 shrink-0" aria-hidden />{readOnlyReason}</p>}
         </div>
-        {toolbar}
+        {!externalHeadingId && toolbar}
       </header>
 
       <div ref={results} role="region" aria-labelledby={headingId} tabIndex={0}

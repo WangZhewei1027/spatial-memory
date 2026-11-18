@@ -190,7 +190,7 @@ export async function purgeOrganizations(orgIds: string[]): Promise<PurgeResult>
   }
 
   const candidateKeys = new Set<string>();
-  const [resources, receipts] = await Promise.all([
+  const [resources, receipts, covers] = await Promise.all([
     db
       .selectFrom("asset_resource as r")
       .innerJoin("asset as v", "v.id", "r.asset_id")
@@ -199,7 +199,11 @@ export async function purgeOrganizations(orgIds: string[]): Promise<PurgeResult>
       .where("r.storage_key", "is not", null)
       .execute(),
     db.selectFrom("upload_receipt").select("storage_key").where("organization_id", "in", orgIds).execute(),
+    db.selectFrom("template_preview as p").leftJoin("asset as a", "a.id", "p.asset_id")
+      .leftJoin("scene as s", "s.id", "p.scene_id").leftJoin("workspace as w", "w.id", "p.workspace_id")
+      .select("p.storage_key").where(eb => eb.or([eb("a.organization_id", "in", orgIds), eb("s.organization_id", "in", orgIds), eb("w.organization_id", "in", orgIds)])).execute(),
   ]);
+  for (const row of covers) if (row.storage_key) candidateKeys.add(row.storage_key);
   for (const row of resources) if (row.storage_key) candidateKeys.add(row.storage_key);
   for (const row of receipts) candidateKeys.add(row.storage_key);
 

@@ -18,7 +18,7 @@ const PUBLIC_PREFIXES = [
 ];
 
 function isPublic(pathname: string): boolean {
-  if (pathname === "/") return true;
+  if (pathname === "/" || pathname === "/api/templates" || pathname === "/api/templates/duplicate") return true;
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true;
   // Reference-feature endpoint is intentionally public.
   return /^\/api\/assets\/[^/]+\/matching$/.test(pathname);

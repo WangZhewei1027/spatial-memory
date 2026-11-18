@@ -1,3 +1,4 @@
+import { officialTemplateOrg } from "@/lib/content-model/templates.server";
 import { loadActor } from "@/lib/content-model/access.server";
 import type { UploadPurpose, UploadResponse } from "@/lib/content-model/contracts";
 import { ContentError } from "@/lib/content-model/errors";
@@ -83,10 +84,15 @@ export async function POST(request: Request) {
     if (!organizationId && !workspaceId) throw new ContentError("VALIDATION_FAILED", "需要指定团队或地图合集");
 
     const scope = await resolveUploadScope(db, actor, { organizationId, workspaceId });
+    const preview = formText(form, "template_preview");
+    if (preview !== null && (preview !== "true" || (type !== "image" && type !== "video")))
+      throw new ContentError("VALIDATION_FAILED", "模板封面需要图片、动图或视频");
+    if (preview && scope.org.org.id !== await officialTemplateOrg(db))
+      throw new ContentError("FORBIDDEN", "只有官方模板团队可以上传模板封面");
     const finish = async (report: (stage: ServerUploadStage) => void): Promise<UploadResponse> => {
       try {
         report(type === "image" || type === "anchor" ? "compressingImage" : type === "audio" ? "compressingAudio" : type === "video" ? "compressingVideo" : "preparing");
-        const media = await processUploadMedia(file, type);
+        const media = await processUploadMedia(file, type, { preserveAnimation: preview === "true" });
         const { buffer } = media;
         if (buffer.length === 0) throw new ContentError("VALIDATION_FAILED", "处理后的文件为空");
         if (type !== "video" && buffer.length > STORED_FILE_MAX_BYTES) {
