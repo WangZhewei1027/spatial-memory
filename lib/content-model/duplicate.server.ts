@@ -16,12 +16,14 @@ import {
 import { archived, forbidden, invalid, notFound } from "./errors";
 import { rejectUnknown, requireEnum, requireIdempotencyKey, requireString, requireUuid, type JsonRecord } from "./input";
 import { audit, claimIdempotency, declareWriter, lockKeys, recordIdempotency, requestHash, type Trx } from "./tx.server";
+import { TEMPLATE_TYPES } from "./template-contracts";
+import { officialTemplateOrg } from "./templates.server";
 
 const SOURCE_TABLES = { asset: "asset", scene: "scene", activity: "activity", collection: "workspace", placement: "placement" } as const;
 
-function parseRequest(body: JsonRecord): DuplicateContentRequest {
+function parseRequest(body: JsonRecord, types: readonly DuplicateContentSourceType[] = DUPLICATE_CONTENT_SOURCE_TYPES): DuplicateContentRequest {
   rejectUnknown(body, ["sourceType", "sourceId", "targetOrganizationId", "targetWorkspaceId", "name", "idempotencyKey"]);
-  const sourceType = requireEnum(body.sourceType, "sourceType", DUPLICATE_CONTENT_SOURCE_TYPES);
+  const sourceType = requireEnum(body.sourceType, "sourceType", types);
   const targetWorkspaceId = body.targetWorkspaceId === undefined ? undefined : requireUuid(body.targetWorkspaceId, "targetWorkspaceId");
   if (sourceType === "placement" && !targetWorkspaceId) throw invalid("复制投放需要指定目标合集");
   if ((sourceType === "collection" || sourceType === "activity") && targetWorkspaceId) throw invalid("该内容类型不接受目标合集");
@@ -161,6 +163,14 @@ class DuplicateGraph {
     return created.id;
   }
 
+  private async sourceWorkspace(id: string) {
+    const row = await this.trx.selectFrom("workspace").select(["organization_id", "name", "description", "miniapp_config", "archived_at"])
+      .where("id", "=", id).where("organization_id", "=", this.sourceOrganizationId).forShare().executeTakeFirst();
+    if (!row) throw notFound("来源合集不存在");
+    this.assertSource(row);
+    return row;
+  }
+
   async placement(sourceId: string, name?: string): Promise<string> {
     const previous = this.placements.get(sourceId);
     if (previous) return previous;
@@ -172,8 +182,7 @@ class DuplicateGraph {
       .where("id", "=", sourceId).forShare().executeTakeFirst();
     this.assertSource(source);
     if (!source) throw notFound();
-    const sourceWorkspace = await requireWorkspaceEdit(this.trx, this.actor, source.workspace_id);
-    await lockWorkspaceForWrite(this.trx, sourceWorkspace);
+    await this.sourceWorkspace(source.workspace_id);
     let anchorId: string | null = null;
     if (source.anchor_id) {
       anchorId = await this.asset(source.anchor_id);
@@ -206,12 +215,10 @@ class DuplicateGraph {
   }
 
   async collection(sourceId: string, name?: string): Promise<string> {
-    const source = await requireWorkspaceEdit(this.trx, this.actor, sourceId);
-    this.assertSource(source.workspace);
-    await lockWorkspaceForWrite(this.trx, source);
+    const source = await this.sourceWorkspace(sourceId);
     const created = await this.trx.insertInto("workspace").values({
-      organization_id: this.target.org.id, name: name ?? source.workspace.name,
-      description: source.workspace.description, miniapp_config: JSON.stringify(source.workspace.miniapp_config),
+      organization_id: this.target.org.id, name: name ?? source.name,
+      description: source.description, miniapp_config: JSON.stringify(source.miniapp_config),
     }).returning("id").executeTakeFirstOrThrow();
     this.workspace = await requireWorkspaceEdit(this.trx, this.actor, created.id);
     const tags = await this.trx.selectFrom("tag").select("id").where("workspace_id", "=", sourceId).orderBy("id").execute();
@@ -243,8 +250,15 @@ function retryable(error: unknown): boolean {
 
 export async function duplicateContent(actor: Actor, body: JsonRecord): Promise<DuplicateContentResult> {
   if (!actor.superAdmin) throw forbidden("只有超级管理员可以跨组织复制内容");
-  const input = parseRequest(body);
-  const scope = { actorId: actor.userId, command: "content.duplicate", key: input.idempotencyKey, hash: requestHash(input) };
+  return duplicate(actor, parseRequest(body), "content.duplicate");
+}
+
+export async function duplicateTemplate(actor: Actor, body: JsonRecord): Promise<DuplicateContentResult> {
+  return duplicate(actor, parseRequest(body, TEMPLATE_TYPES), "template.duplicate");
+}
+
+async function duplicate(actor: Actor, input: DuplicateContentRequest, command: "content.duplicate" | "template.duplicate"): Promise<DuplicateContentResult> {
+  const scope = { actorId: actor.userId, command, key: input.idempotencyKey, hash: requestHash(input) };
   for (let attempt = 0; ; attempt++) {
     try {
       // A stable snapshot prevents a map or scene from mixing references read
@@ -256,10 +270,16 @@ export async function duplicateContent(actor: Actor, body: JsonRecord): Promise<
         await lockOrgForWrite(trx, target.org.id);
         const replay = await claimIdempotency(trx, scope);
         if (replay) return { id: replay, sourceType: input.sourceType, organizationId: target.org.id, created: false };
-        const source = await trx.selectFrom(SOURCE_TABLES[input.sourceType]).select(["organization_id", "name"])
-          .where("id", "=", input.sourceId).executeTakeFirst();
+        let sourceQuery = trx.selectFrom(SOURCE_TABLES[input.sourceType]).select(["organization_id", "name"])
+          .where("id", "=", input.sourceId);
+        if (command === "template.duplicate") {
+          const officialId = await officialTemplateOrg(trx);
+          if (officialId === target.org.id) throw invalid("模板副本需要保存到其他团队");
+          sourceQuery = sourceQuery.where("organization_id", "=", officialId);
+        }
+        const source = await sourceQuery.executeTakeFirst();
         if (!source) throw notFound("来源内容不存在");
-        await requireOrgWrite(trx, actor, source.organization_id);
+        if (command === "content.duplicate") await requireOrgWrite(trx, actor, source.organization_id);
         await lockOrgForWrite(trx, source.organization_id);
         const workspace = input.targetWorkspaceId ? await requireWorkspaceEdit(trx, actor, input.targetWorkspaceId) : undefined;
         if (workspace && workspace.org.id !== target.org.id) throw invalid("目标合集必须属于目标组织");

@@ -64,6 +64,8 @@ export async function isKeyProtected(exec: Executor, key: string): Promise<boole
     .limit(1)
     .executeTakeFirst();
   if (resource) return true;
+  const cover = await exec.selectFrom("template_preview").select("storage_key").where("storage_key", "in", keys).limit(1).executeTakeFirst();
+  if (cover) return true;
 
   const receipt = await exec
     .selectFrom("upload_receipt")
@@ -172,6 +174,8 @@ export async function collectProtectedKeys(): Promise<Set<string>> {
   const keys = new Set<string>();
   const resources = await db.selectFrom("asset_resource").select("storage_key").where("storage_key", "is not", null).execute();
   for (const row of resources) if (row.storage_key) keys.add(row.storage_key);
+  const covers = await db.selectFrom("template_preview").select("storage_key").where("storage_key", "is not", null).execute();
+  for (const row of covers) if (row.storage_key) keys.add(row.storage_key);
   const receipts = await db.selectFrom("upload_receipt").select("storage_key").where("expires_at", ">", sql<Date>`now()`).execute();
   for (const row of receipts) keys.add(row.storage_key);
   const anchors = await db.selectFrom("anchor_embedding").select("image_url").execute();

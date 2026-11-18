@@ -14,6 +14,8 @@ interface UserOrganizationRow {
   map_center: { lat: number; lng: number } | null;
   allowed_file_types: string[] | null;
   pinned_at: Date | null;
+  archived_at: Date | null;
+  is_official_template_library: boolean;
 }
 
 // 获取用户可访问的所有 organization
@@ -26,7 +28,7 @@ export async function GET() {
     }
 
     const { rows: data } = await sql<UserOrganizationRow>`
-      select teams.*, organization.archived_at from public.get_user_organizations(${user.id}::uuid) teams
+      select teams.*, organization.archived_at, organization.is_official_template_library from public.get_user_organizations(${user.id}::uuid) teams
       join organization on organization.id = teams.id
     `.execute(db);
 

@@ -53,6 +53,22 @@ The result is `{ data: { id, sourceType, organizationId, created } }`, with HTTP
 
 Organization memberships, participant history, upload receipts, old audits and derived recognition caches are not copied. The operation writes its own audit entry. No schema migration or mini-program protocol change is required.
 
+## Official templates
+
+Migration `20261118000000_official_templates.sql` creates a new team named 官方模板库. Each database has its own ID. A unique index limits `organization.is_official_template_library` to one true row. Team lists and details expose this field so maintainers can identify the library after a rename. A super-admin can manage the new team and add maintainers through the usual team APIs. Existing teams keep their memberships, management permissions and mini-program behavior.
+
+| Endpoint | Contract |
+| --- | --- |
+| `GET /api/templates` | Public paged list of active assets, scenes and open maps in the open official team. Optional `type=asset\|scene\|collection`, literal name search `q`, `limit` (1–200, default 30), and `offset`. Returns `{ data: [{ id, type, name, thumbnail }], page: { limit, offset, hasMore } }`. |
+| `POST /api/upload` | Send multipart fields `file`, `organization_id` and `template_preview=true` as an official team writer. Upload a static image, animated GIF/WebP or video. Animated GIF/WebP retains motion as WebP, video uses the existing MP4 pipeline. Use the returned primary `data.id` as the receipt. |
+| `GET /api/templates/[type]/[id]/preview` | Official team readers can retrieve the manually assigned cover as `{ data: { thumbnail, lock_version } }`. The initial state is `null` and version 0. |
+| `PUT /api/templates/[type]/[id]/preview` | Official team writers submit `{ receiptId, expectedLockVersion }` to replace the manual cover. Supply `receiptId: null` to clear it. Returns the updated manual cover and version. Archived teams and resources are read-only. A missing version returns 428 and a stale version returns 409. |
+| `POST /api/templates/duplicate` | Signed-in writers may copy a catalog item to another open team they can edit. Accepts `{ sourceType, sourceId, targetOrganizationId, idempotencyKey, name?, targetWorkspaceId? }`. The three accepted source types match the catalog. Status 201 on creation, 200 on replay, with the same result shape as the admin copy endpoint. |
+
+A thumbnail is `{ kind: "image" | "video", url }` or `null`. The catalog prioritizes the manual cover. Assets can fall back to an existing thumbnail resource. Scenes and maps without a manual cover return `null`. The manual cover has its own concurrency counter and file retention. Saving it leaves the scene document, map settings and normal playback alone.
+
+Template copies use the [cross-team duplication](#cross-team-duplication) rules, including new team-owned dependencies and fresh IDs. A map template includes draft and paused content placements as well as active ones. Copied activity links start paused. Template display media stays with the official item. The destination uses its ordinary team editors. QR playback and map discovery continue to use the existing mini-program contracts in both teams.
+
 ## Consistency
 
 Asset/scene/placement writes require `expectedLockVersion` (428 if missing, 409 if stale). It is a concurrency counter, not an asset content version. Asset PATCH accepts `payload` and `resources` together, replacing both atomically. Creation supports idempotency keys. Scene saves take effect immediately.

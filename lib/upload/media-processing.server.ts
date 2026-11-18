@@ -205,7 +205,7 @@ async function transcodeVideo(file: File): Promise<ProcessedUploadMedia> {
   }
 }
 
-async function compressImage(buffer: Buffer, name: string, anchor: boolean): Promise<ProcessedUploadMedia> {
+async function compressImage(buffer: Buffer, name: string, anchor: boolean, preserveAnimation: boolean): Promise<ProcessedUploadMedia> {
   try {
     const metadata = await sharp(buffer, IMAGE_OPTIONS).metadata();
     if (anchor && !["jpeg", "png", "webp"].includes(metadata.format ?? ""))
@@ -213,6 +213,14 @@ async function compressImage(buffer: Buffer, name: string, anchor: boolean): Pro
     // SVG is deliberately not a raster upload: it can contain external sources.
     if (!["jpeg", "png", "webp", "gif", "tiff", "heif", "avif"].includes(metadata.format ?? ""))
       throw new ContentError("VALIDATION_FAILED", "不支持此图片格式，请上传 JPEG、PNG 或 WebP 图片");
+    if (preserveAnimation && (metadata.pages ?? 1) > 1 && (metadata.format === "gif" || metadata.format === "webp")) {
+      const animated = await sharp(buffer, { ...IMAGE_OPTIONS, animated: true })
+        .resize({ width: 768, height: 768, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 75, effort: 3 }).timeout({ seconds: 10 }).toBuffer();
+      if (animated.length > STORED_FILE_MAX_BYTES)
+        throw new ContentError("VALIDATION_FAILED", "处理后的动图超过 5 MiB，请缩短动图或降低分辨率", undefined, 413);
+      return { buffer: animated, fileName: outputName(name, "webp"), mimeType: "image/webp" };
+    }
     const alpha = metadata.hasAlpha === true;
     const profile = IMAGE_PROFILES[anchor ? "anchor" : "image"];
     const maxBytes = anchor ? MAX_MATCH_IMAGE_BYTES : STORED_FILE_MAX_BYTES;
@@ -244,7 +252,7 @@ async function withMediaSlot<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 /** Receipts and hashes must describe these final bytes, never the source file. */
-export async function processUploadMedia(file: File, type: UploadType): Promise<ProcessedUploadMedia> {
+export async function processUploadMedia(file: File, type: UploadType, options: { preserveAnimation?: boolean } = {}): Promise<ProcessedUploadMedia> {
   if (!["audio", "image", "anchor", "video", "model"].includes(type))
     return { buffer: Buffer.from(await file.arrayBuffer()), fileName: file.name, mimeType: file.type || "application/octet-stream" };
   return withMediaSlot(async () => {
@@ -253,6 +261,6 @@ export async function processUploadMedia(file: File, type: UploadType): Promise<
     if (type === "model") return { buffer, fileName: file.name, mimeType: file.type || "model/gltf-binary",
       thumbnail: { buffer: await generateModelThumbnail(buffer), fileName: outputName(file.name, "thumbnail.png"), mimeType: "image/png" } };
     if (type === "audio") return await transcodeAudio(buffer, file.name);
-    return await compressImage(buffer, file.name, type === "anchor");
+    return await compressImage(buffer, file.name, type === "anchor", type === "image" && options.preserveAnimation === true);
   });
 }

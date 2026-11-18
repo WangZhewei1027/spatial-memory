@@ -37,6 +37,7 @@ export async function GET() {
       .select((eb) => [
         "organization.id",
         "organization.name",
+        "organization.is_official_template_library",
         "organization.description",
         "organization.created_at",
         "organization.created_by",

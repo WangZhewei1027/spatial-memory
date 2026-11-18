@@ -29,7 +29,8 @@ BEGIN
     ('activity_point','reward_asset_id'), ('activity_point','location'),
     ('activity_placement','activity_id'),
     ('activity_record','placement_id'), ('activity_record','kind'),
-    ('workspace','archived_at'), ('organization','archived_at')) AS r(table_name,column_name)
+    ('workspace','archived_at'), ('organization','archived_at'),
+    ('organization','is_official_template_library'), ('template_preview','storage_key')) AS r(table_name,column_name)
   WHERE NOT EXISTS (SELECT 1 FROM information_schema.columns c
     WHERE c.table_schema='public' AND c.table_name=r.table_name AND c.column_name=r.column_name);
   IF missing IS NOT NULL THEN
