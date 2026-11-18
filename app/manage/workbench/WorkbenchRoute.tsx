@@ -32,7 +32,7 @@ function readType(value: string | null): WorkbenchTypeFilter {
 }
 
 /** Separate libraries; the URL carries the team, asset type and optional inspector selection. */
-export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: ContentLibraryKind }) {
+export function WorkbenchRoute({ team, kind, headingId, active = true }: { team: TeamContext; kind: ContentLibraryKind; headingId?: string; active?: boolean }) {
   const { t } = useTranslation();
   const tx = useIntegrationText(ASSET_TEXTS);
   const router = useRouter();
@@ -49,7 +49,7 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const [importOpen, setImportOpen] = useState(false);
   const createKey = useRef<string | null>(null);
 
-  const data = useWorkbenchData(organizationId, kind, filters);
+  const data = useWorkbenchData(organizationId, kind, filters, active);
   const canWrite = teamCanWrite({ archivedAt: team.organization?.archived_at, orgRole: team.organization?.role, globalRole: team.currentUserRole });
   const teamName = team.organization?.name ?? tx("contentModel.integration.assets.unknownOrganization");
   const types = useMemo(() => {
@@ -83,9 +83,11 @@ export function WorkbenchRoute({ team, kind }: { team: TeamContext; kind: Conten
   const readOnlyReason = team.organization?.role === "viewer" ? t("contentModel.workbench.readOnlyViewer") : t("contentModel.workbench.readOnlyOther");
   const listError = data.error ? (isEndpointMissing(data.error) ? tx("contentModel.integration.assets.endpointMissing") : errorMessage(data.error, tx)) : undefined;
 
+  if (!active) return null;
   return (
     <>
       <ContentWorkbench
+        headingId={headingId}
         kind={kind}
         filters={filters}
         onFiltersChange={changeFilters}

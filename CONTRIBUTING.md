@@ -90,7 +90,9 @@ UI 改动按 [设计系统](docs/design-system.md) 检查受影响页面。消�
 
 `/manage` 的共享布局改动运行 `node scripts/test-manage-navigation.mjs`：先启动本地 Next 服务（默认 `http://localhost:3000`，可用 `MANAGE_TEST_ORIGIN` 指定本机端口）。脚本用隔离的会话和 API fixture 验证列表切换、慢响应及前进/后退期间导航与工作面保持稳定，不读取或修改业务数据；不放入无需运行服务的默认测试组。
 
-基础素材详情浮岛运行 `node scripts/test-asset-inspector.mjs`，沿用同一本地服务与隔离 fixture。覆盖中英文、明暗主题、桌面/窄屏、列表筛选与滚动保留、历史导航和重命名后的列表同步；设置 `INSPECTOR_SCREENSHOTS` 可保存检查截图。
+基础素材详情浮岛运行 `node scripts/test-asset-inspector.mjs`，沿用同一本地服务与隔离 fixture。覆盖中英文、明暗主题、桌面/窄屏、列表筛选与滚动保留、历史导航和重命名后的列表同步；同一脚本也覆盖公共页签切换、搜索分页、普通成员复制与失败重试，以及只读、归档和官方团队的复制限制。设置 `INSPECTOR_SCREENSHOTS` 可保存检查截图。
+
+公共场景页签运行 `node scripts/test-public-scenes.mjs`，使用同一本地服务和隔离 fixture 验证中英文、明暗主题、桌面和窄屏下的搜索、普通成员复制、在编辑器中打开并保存副本，以及官方团队和只读成员的限制。
 
 地图首屏布局运行 `node scripts/test-map-layout.mjs`，需要本地服务，API 与 viewer 使用隔离 fixture。逐帧比较加载占位到正式内容的三栏位置、尺寸与顶栏，覆盖直接进入、刷新和从地图列表打开、中英文、明暗主题、桌面/平板/手机及矮视口；不只检查加载完成后的截图。设置 `MAP_LAYOUT_SCREENSHOTS` 可保存截图。
 

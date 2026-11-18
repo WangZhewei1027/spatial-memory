@@ -22,10 +22,11 @@ const serverSnapshot = () => true;
 /** Independent island next to the library; narrow screens use the same single column in a sheet. */
 export function AssetInspector({ library = "asset" }: { library?: "asset" | "anchor" }) {
   const { t } = useTranslation();
-  const assetId = useSearchParams().get(ASSET_INSPECTOR_PARAM);
+  const params = useSearchParams();
+  const assetId = params.get(ASSET_INSPECTOR_PARAM);
   const desktop = useSyncExternalStore(subscribe, desktopSnapshot, serverSnapshot);
   const title = t(library === "anchor" ? "contentModel.library.anchor.detailTitle" : "assetInspector.title");
-  if (!assetId) return null;
+  if (!assetId || (library === "asset" && params.get("tab") === "public")) return null;
   const body = <div key={`${library}:${assetId}`} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4"><AssetDetailView id={assetId} inspector library={library} /></div>;
   if (!desktop) return <Sheet open onOpenChange={(open) => { if (!open) closeAssetInspector(); }}>
     <SheetContent aria-describedby={undefined} closeLabel={t("common.close")} className="inset-2 h-auto w-auto gap-0 rounded-[var(--navigation-radius)] border-0 sm:max-w-none">

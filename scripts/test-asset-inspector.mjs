@@ -1,6 +1,6 @@
 /** Real browser UI against a local Next server; all API reads/writes use disposable fixtures. */
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
 
 const origin = process.env.MANAGE_TEST_ORIGIN ?? "http://localhost:3000";
@@ -9,9 +9,14 @@ const teamId = "11111111-1111-4111-8111-111111111111";
 const id = (n) => `33333333-3333-4333-8333-${String(n).padStart(12, "0")}`;
 const captureDir = process.env.INSPECTOR_SCREENSHOTS;
 if (captureDir) await mkdir(captureDir, { recursive: true });
+const darkTheme = (await readFile(new URL("../app/globals.css", import.meta.url), "utf8")).match(/\.dark\s*\{[^}]+\}/)[0];
+async function applyTheme(page, dark) {
+  await page.addStyleTag({ content: `nextjs-portal{display:none!important}${dark ? darkTheme : ""}` });
+  await page.evaluate(enabled => document.documentElement.classList.toggle("dark", enabled), dark);
+}
 const browser = await chromium.launch();
 try {
-  for (const [language, dark, width] of [["en", false, 1440], ["zh", true, 1440], ["en", true, 390], ["zh", false, 390]]) {
+  for (const [language, dark, width, restriction] of [["en", false, 1440, "viewer"], ["zh", true, 1440, "official"], ["en", true, 390, "archived"], ["zh", false, 390, "official"]]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const rows = Array.from({ length: 45 }, (_, n) => ({
       id: id(n), organization_id: teamId, name: `Fixture asset ${n}`, file_type: n === 0 ? "image" : "text",
@@ -22,14 +27,41 @@ try {
       capabilities: { can_read: true, can_maintain: true, can_use_in_workspace: true },
     }));
     let failListRead = false;
+    let copyRestricted = false;
+    const templateAttempts = [];
+    const templates = Array.from({ length: 32 }, (_, n) => ({
+      id: id(100 + n), type: "asset", name: `Public asset ${n}`,
+      thumbnail: n === 0 ? { kind: "image", url: "/images/landing/dongming-assets.webp" } : null,
+    }));
     await context.addCookies([{ name: "better-auth.session_token", value: "inspector-fixture", url: origin }, { name: "language", value: language, url: origin }]);
     await context.route("**/api/**", async (route) => {
       const request = route.request(), url = new URL(request.url()), path = url.pathname;
       let status = 200, body = { data: [], page: { total: 0, hasMore: false, limit: 30, offset: 0 } };
       if (path === "/api/auth/get-session") body = { user: { id: "fixture", name: "Fixture", email: "fixture@example.invalid" }, session: { id: "fixture", expiresAt: "2099-01-01" } };
-      else if (path === "/api/auth/role") body = { role: "user" };
-      else if (path === "/api/organizations") body = { data: [{ id: teamId, name: "Fixture team", role: "owner", allowed_file_types: ["image", "text"] }] };
-      else if (path === `/api/organizations/${teamId}/assets`) {
+      else if (path === "/api/auth/role") body = { role: copyRestricted && restriction === "official" ? "super_admin" : "user" };
+      else if (path === "/api/organizations") body = { data: [{ id: teamId, name: "Fixture team", role: copyRestricted && restriction === "viewer" ? "viewer" : "member",
+        is_official_template_library: copyRestricted && restriction === "official", archived_at: copyRestricted && restriction === "archived" ? "2026-01-01" : null, allowed_file_types: ["image", "text"] }] };
+      else if (path === "/api/templates") {
+        assert.equal(url.searchParams.get("type"), "asset");
+        assert.equal(url.searchParams.get("excludeAnchors"), "true");
+        const matches = templates.filter(item => item.name.includes(url.searchParams.get("q") ?? ""));
+        const offset = Number(url.searchParams.get("offset")), limit = Number(url.searchParams.get("limit"));
+        body = { data: matches.slice(offset, offset + limit), page: { offset, limit, hasMore: matches.length > offset + limit } };
+      } else if (path === "/api/templates/duplicate") {
+        assert.equal(request.method(), "POST");
+        assert.equal(copyRestricted, false);
+        const input = request.postDataJSON();
+        assert.equal(input.sourceType, "asset");
+        assert.equal(input.sourceId, templates[0].id);
+        assert.equal(input.targetOrganizationId, teamId);
+        templateAttempts.push(input);
+        if (templateAttempts.length === 1) { status = 503; body = { error: "Retry copy", code: "INTERNAL" }; }
+        else {
+          assert.deepEqual(input, templateAttempts[0]);
+          rows.push({ ...rows[0], id: id(99), name: "Public asset 0 copy" });
+          body = { data: { id: id(99), organizationId: teamId, sourceType: "asset", created: true } };
+        }
+      } else if (path === `/api/organizations/${teamId}/assets`) {
         let filtered = rows.filter((row) => row.name.toLowerCase().includes((url.searchParams.get("q") ?? "").toLowerCase()));
         const type = url.searchParams.get("file_type");
         if (type) filtered = filtered.filter((row) => row.file_type === type);
@@ -55,8 +87,7 @@ try {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${origin}/manage/assets?organizationId=${teamId}`, { waitUntil: "networkidle" });
-    await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
-    if (dark) await page.evaluate(() => document.documentElement.classList.add("dark"));
+    await applyTheme(page, dark);
     const search = page.getByPlaceholder(language === "en" ? "Search by name" : "按名称搜索");
     await search.fill("Fixture");
     await page.waitForResponse((response) => response.url().includes("/assets?") && new URL(response.url()).searchParams.get("q") === "Fixture");
@@ -133,10 +164,51 @@ try {
         await page.locator(`#library-asset-${id(8)}`).filter({ hasText: "Fixture retry" }).waitFor({ state: "attached" });
       }
       await close();
+      await page.waitForFunction(linkId => document.activeElement?.id === linkId, `library-asset-${id(8)}`);
     }
+    const en = language === "en";
+    const publicTab = page.getByRole("tab", { name: en ? "Public" : "公共素材", exact: true });
+    const teamTab = page.getByRole("tab", { name: en ? "This team" : "本团队", exact: true });
+    const copyLabel = en ? "Copy to team" : "复制到本团队";
+    await teamTab.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("heading", { name: "Public asset 0", exact: true }).waitFor();
+    assert.equal(await publicTab.getAttribute("aria-selected"), "true");
+    assert.equal(new URL(page.url()).searchParams.get("tab"), "public");
+    assert.equal(await page.getByRole("tabpanel").getByRole("combobox").count(), 0);
+    assert.equal(await search.inputValue(), "");
+    if (captureDir) await page.screenshot({ path: `${captureDir}/copy-${language}-${width}.png`, animations: "disabled" });
+    await page.locator(".team-library [role=region]").evaluate(node => { node.scrollTop = node.scrollHeight; });
+    await page.getByRole("heading", { name: "Public asset 31" }).waitFor({ state: "attached" });
+    await search.fill("no such public asset");
+    await page.getByRole("heading", { name: en ? "Nothing matches" : "没有符合条件的内容" }).waitFor();
+    await search.fill("Public asset 0");
+    const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Public asset 0", exact: true }) });
+    const copy = card.getByRole("button", { name: copyLabel });
+    await copy.click();
+    await page.getByText("Retry copy", { exact: true }).waitFor();
+    await teamTab.click();
+    assert.equal(await search.inputValue(), "Fixture");
+    await page.goBack();
+    await copy.waitFor();
+    assert.equal(await search.inputValue(), "Public asset 0");
+    await copy.click();
+    assert.ok(templateAttempts[0].idempotencyKey);
+    await card.getByRole("link", { name: en ? "View team copy" : "查看团队副本" }).click();
+    await panel.getByRole("heading", { name: "Public asset 0 copy", exact: true }).waitFor();
+    assert.equal(new URL(page.url()).searchParams.get("assetId"), id(99));
+    await close();
+    assert.equal(await teamTab.getAttribute("aria-selected"), "true");
+    copyRestricted = true;
+    await page.goto(`${origin}/manage/assets?organizationId=${teamId}&tab=public&assetId=${templates[0].id}`, { waitUntil: "networkidle" });
+    await applyTheme(page, dark);
+    await page.getByRole("heading", { name: "Public asset 0", exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: copyLabel }).count(), 0);
+    assert.equal(await panel.isVisible(), false);
+    if (captureDir) await page.screenshot({ path: `${captureDir}/public-${language}-${dark ? "dark" : "light"}-${width}.png`, animations: "disabled" });
     assert.deepEqual(errors, []);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    console.log(`PASS asset inspector ${language} ${dark ? "dark" : "light"} ${width}`);
+    console.log(`PASS asset inspector and public library ${language} ${dark ? "dark" : "light"} ${width}`);
     await context.close();
   }
 } finally { await browser.close(); }

@@ -17,6 +17,28 @@ export interface WorkbenchToolbarProps {
   onFiltersChange: (filters: WorkbenchFilters) => void;
 }
 
+export function LibrarySearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-36 sm:max-w-sm">
+      <Search className="pointer-events-none absolute start-2.5 top-2.5 size-4 text-muted-foreground" aria-hidden />
+      <Input
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t("contentModel.workbench.search")}
+        aria-label={t("contentModel.workbench.search")}
+        className="ps-8 pe-8"
+      />
+      {value && (
+        <Button variant="ghost" size="icon" className="absolute end-0.5 top-0.5 size-8" onClick={() => onChange("")} aria-label={t("contentModel.action.clearSearch")}>
+          <X aria-hidden />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** Compact library tools; the asset type selector is omitted in the scene library. */
 export function WorkbenchToolbar({ kind, filters, onFiltersChange }: WorkbenchToolbarProps) {
   const { t } = useTranslation();
@@ -24,22 +46,7 @@ export function WorkbenchToolbar({ kind, filters, onFiltersChange }: WorkbenchTo
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-36 sm:max-w-sm">
-        <Search className="pointer-events-none absolute start-2.5 top-2.5 size-4 text-muted-foreground" aria-hidden />
-        <Input
-          type="search"
-          value={filters.query}
-          onChange={(event) => set("query", event.target.value)}
-          placeholder={t("contentModel.workbench.search")}
-          aria-label={t("contentModel.workbench.search")}
-          className="ps-8 pe-8"
-        />
-        {filters.query && (
-          <Button variant="ghost" size="icon" className="absolute end-0.5 top-0.5 size-8" onClick={() => set("query", "")} aria-label={t("contentModel.action.clearSearch")}>
-            <X aria-hidden />
-          </Button>
-        )}
-      </div>
+      <LibrarySearch value={filters.query} onChange={value => set("query", value)} />
       {kind === "asset" && (
         <Select value={filters.type} onValueChange={(value) => set("type", value as WorkbenchTypeFilter)}>
           <SelectTrigger aria-label={t("contentModel.workbench.typeLabel")} className="w-auto sm:w-32 lg:w-36">

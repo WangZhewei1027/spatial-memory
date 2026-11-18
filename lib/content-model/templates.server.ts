@@ -22,7 +22,7 @@ function media(url: string, mime: string | null): TemplateMedia | null {
   return url ? { kind: mime === "video/mp4" ? "video" : "image", url } : null;
 }
 
-export async function listTemplates(options: { type?: TemplateType; q?: string; limit: number; offset: number }): Promise<TemplateCard[]> {
+export async function listTemplates(options: { type?: TemplateType; q?: string; excludeAnchors?: boolean; limit: number; offset: number }): Promise<TemplateCard[]> {
   const { rows } = await sql<Omit<TemplateCard, "thumbnail"> & { storage_key: string | null; external_url: string | null; mime_type: string | null }>`
     with official as (
       select id from organization where is_official_template_library and archived_at is null
@@ -32,6 +32,7 @@ export async function listTemplates(options: { type?: TemplateType; q?: string; 
       left join template_preview p on p.asset_id = a.id
       left join asset_resource r on r.asset_id = a.id and r.role = 'thumbnail' and r.ordinal = 0
       where a.organization_id in (select id from official) and a.state = 'active'
+        ${options.excludeAnchors ? sql`and a.file_type <> 'anchor'` : sql``}
       union all
       select s.id, 'scene', s.name, p.storage_key, null, p.mime_type from scene s
       left join template_preview p on p.scene_id = s.id

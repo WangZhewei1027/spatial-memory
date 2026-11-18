@@ -1414,14 +1414,25 @@
     "library": {
       "team": "Team content",
       "browse": "Browse content",
+      "teamTab": "This team",
+      "copyToTeam": "Copy to team",
+      "copiedTo": "Copied to {{team}}",
+      "openCopy": "View team copy",
       "asset": {
         "title": "Assets",
+        "publicTab": "Public",
+        "publicEmpty": "No public assets yet",
+        "untitled": "Untitled asset",
         "emptyTitle": "No assets yet",
         "viewerBody": "Assets appear here once team members upload them.",
         "archivedBody": "Archived assets appear here. Open an asset to restore it."
       },
       "scene": {
         "title": "Scenes",
+        "publicTab": "Public",
+        "browsePublic": "Explore public scenes",
+        "publicEmpty": "No public scenes yet",
+        "untitled": "Untitled scene",
         "viewerBody": "Scenes appear here once team members create them.",
         "archivedBody": "Archived scenes appear here and can be restored at any time."
       },

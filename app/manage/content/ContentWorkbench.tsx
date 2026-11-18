@@ -25,6 +25,7 @@ import {
 } from "./types";
 
 export interface ContentWorkbenchProps {
+  headingId?: string;
   kind: ContentLibraryKind;
   filters: WorkbenchFilters;
   onFiltersChange: (filters: WorkbenchFilters) => void;
@@ -87,6 +88,7 @@ export function ContentWorkbench(props: ContentWorkbenchProps) {
   return (
     <>
       <LibraryLayout
+        headingId={props.headingId}
         title={t(`contentModel.library.${kind}.title`)}
         readOnlyReason={canWrite ? undefined : props.readOnlyReason}
         actions={canWrite && (

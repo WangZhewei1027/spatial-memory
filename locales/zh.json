@@ -1402,14 +1402,25 @@
     "library": {
       "team": "团队内容",
       "browse": "浏览内容",
+      "teamTab": "本团队",
+      "copyToTeam": "复制到本团队",
+      "copiedTo": "已复制到「{{team}}」",
+      "openCopy": "查看团队副本",
       "asset": {
         "title": "基础素材",
+        "publicTab": "公共素材",
+        "publicEmpty": "暂无公共素材",
+        "untitled": "未命名素材",
         "emptyTitle": "还没有基础素材",
         "viewerBody": "团队成员上传素材后，会显示在这里。",
         "archivedBody": "已归档的基础素材会显示在这里，可在详情页恢复。"
       },
       "scene": {
         "title": "场景",
+        "publicTab": "公共场景",
+        "browsePublic": "浏览公共场景",
+        "publicEmpty": "暂无公共场景",
+        "untitled": "未命名场景",
         "viewerBody": "团队成员创建场景后，会显示在这里。",
         "archivedBody": "已归档的场景会显示在这里，可以随时恢复。"
       },

@@ -23,7 +23,8 @@ export interface ContentPerson {
 
 // ───────────────────────── workbench ─────────────────────────
 
-export type ContentLibraryKind = "asset" | "anchor" | "scene";
+export type TemplateLibraryKind = "asset" | "scene";
+export type ContentLibraryKind = TemplateLibraryKind | "anchor";
 
 /** Content tile shared by the separate asset and scene libraries. */
 export type WorkbenchType = "scene" | ContentAssetType;

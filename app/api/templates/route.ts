@@ -8,10 +8,11 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   try {
     const type = optionalEnum(params.get("type") ?? undefined, "type", TEMPLATE_TYPES);
+    const excludeAnchors = optionalEnum(params.get("excludeAnchors") ?? undefined, "excludeAnchors", ["true", "false"] as const) === "true";
     const q = optionalString(params.get("q"), "q") ?? undefined;
     const limit = queryInt(params, "limit", 30, 1, 200);
     const offset = queryInt(params, "offset", 0, 0, 1000000);
-    const rows = await listTemplates({ type, q, limit: limit + 1, offset });
+    const rows = await listTemplates({ type, q, excludeAnchors, limit: limit + 1, offset });
     return ok(rows.slice(0, limit), 200, { page: { limit, offset, hasMore: rows.length > limit } });
   } catch (error) {
     return failure(error, { method: "GET", path: "/api/templates" });

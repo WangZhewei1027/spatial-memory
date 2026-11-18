@@ -25,6 +25,7 @@ async function main() {
   const f = fixtureIds();
   const official = (await db.selectFrom("organization").select("id").where("is_official_template_library", "=", true).executeTakeFirstOrThrow()).id;
   const ids = { asset: randomUUID(), scene: randomUUID(), collection: randomUUID() };
+  const anchorId = randomUUID();
   const session = (id: string | null) => auth.setStubSessionUser(id ? { id, name: null, email: null, emailVerified: true } : null);
   async function response(result: Promise<Response>, status: number) {
     const res = await result;
@@ -65,6 +66,11 @@ async function main() {
     assert.equal((await cards("&type=scene")).data[0].thumbnail, null);
     assert.equal((await cards("&limit=1")).page.hasMore, true);
     assert.equal((await cards("&limit=1&offset=2")).page.hasMore, false);
+    await client.query("insert into asset(id,organization_id,name,file_type,payload) values($1,$2,$3,'anchor',$4)", [anchorId, official, f.run, { kind: "anchor" }]);
+    assert.equal((await cards("&type=asset")).data.length, 2);
+    const basicAssets = await cards("&type=asset&excludeAnchors=true&limit=1");
+    assert.deepEqual(basicAssets.data.map((card: { id: string }) => card.id), [ids.asset]);
+    assert.equal(basicAssets.page.hasMore, false);
     await previewSceneManifest(ids.scene, official); // Regular QR playback of the original still works.
     const intent = { sourceType: "scene", sourceId: ids.scene, targetOrganizationId: f.organizations.foreign, idempotencyKey: randomUUID() };
     await copy(intent, 401);
@@ -75,6 +81,13 @@ async function main() {
     await set("scene", null, 0, 403);
     await copy({ ...intent, sourceId: f.scenes.a }, 404);
     await copy({ ...intent, sourceType: "activity" }, 400);
+    const assetCopy = (await copy({ ...intent, sourceType: "asset", sourceId: ids.asset, idempotencyKey: randomUUID() }, 201)).data;
+    const { GET: readAsset } = await import("../app/api/assets/[id]/route");
+    const ownedAsset = (await response(readAsset(new Request("http://localhost/asset"), { params: Promise.resolve({ id: assetCopy.id }) }), 200)).data;
+    assert.notEqual(ownedAsset.id, ids.asset);
+    assert.equal(ownedAsset.organization_id, intent.targetOrganizationId);
+    assert.equal(ownedAsset.capabilities.can_maintain, true);
+    assert.equal(ownedAsset.resources.find((resource: { role: string }) => resource.role === "primary").url, "https://fixture.invalid/private.glb");
     const created = (await copy(intent, 201)).data;
     assert.equal((await copy(intent, 200)).data.id, created.id);
     const { loadActor } = await import("../lib/content-model/access.server");
@@ -87,6 +100,7 @@ async function main() {
     assert.equal((await db.selectFrom("placement").select("status").where("workspace_id", "=", mapCopy).executeTakeFirstOrThrow()).status, "draft");
 
     session(f.users.editor);
+    await copy({ ...intent, sourceType: "asset", sourceId: ids.asset, targetOrganizationId: official, idempotencyKey: randomUUID() }, 400);
     await set("scene", null, 0, 404, f.scenes.a);
     await set("asset", f.receipts.active, 0, 400);
     const animation = execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "testsrc2=size=48x48:rate=5:duration=1", "-f", "gif", "pipe:1"]);
@@ -106,7 +120,7 @@ async function main() {
     assert.deepEqual((await cards("&type=collection")).data[0].thumbnail, { url: videoReceipt.url, kind: "video" });
     await set("asset", videoReceipt.id, 0);
     await set("asset", null, 1);
-    assert.equal((await cards("&type=asset")).data[0].thumbnail.url, "https://fixture.invalid/cover.jpg");
+    assert.equal((await cards("&type=asset&excludeAnchors=true")).data[0].thumbnail.url, "https://fixture.invalid/cover.jpg");
     await client.query("update upload_receipt set expires_at=clock_timestamp() where id=$1", [gifReceipt.id]);
     assert.equal(await isKeyProtected(db, gifReceipt.storage_key), true);
     assert.ok((await collectProtectedKeys()).has(gifReceipt.storage_key));
@@ -126,7 +140,7 @@ async function main() {
       await client.query("delete from placement where workspace_id=$1", [ids.collection]);
       await client.query("delete from scene_asset_ref where scene_id=$1", [ids.scene]);
       await client.query("delete from scene where id=$1", [ids.scene]);
-      await client.query("delete from asset where id=$1", [ids.asset]);
+      await client.query("delete from asset where id in ($1,$2)", [ids.asset, anchorId]);
       await client.query("delete from workspace where id=$1", [ids.collection]);
       await client.query("delete from upload_receipt where created_by=$1 and organization_id=$2", [f.users.editor, official]);
       await client.query("delete from content_audit_log where actor_id=$1 and organization_id=$2", [f.users.editor, official]);
