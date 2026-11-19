@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Building2, Check, ChevronsUpDown, Pin } from "lucide-react";
+import { BadgeCheck, Building2, Check, ChevronsUpDown, Pin } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -91,6 +91,22 @@ export function OrgSwitcher({ className }: { className?: string }) {
     .sort((a, b) => (a.pinned_at! < b.pinned_at! ? -1 : 1));
   const otherOrgs = organizations.filter((o) => !o.pinned_at);
 
+  const renderOrgLabel = (org: Organization | null, nameClassName?: string) => {
+    const official = org?.is_official_template_library;
+    return (
+      <>
+        {official ? (
+          <BadgeCheck className="size-4 shrink-0 text-primary" role="img" aria-label={t("organization.official")} />
+        ) : (
+          <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        )}
+        <span className={cn("truncate", official && "font-bold", nameClassName)} title={org?.name}>
+          {org?.name || t("organization.selectPlaceholder", "Select organization")}
+        </span>
+      </>
+    );
+  };
+
   const renderItem = (org: Organization) => {
     const pinned = !!org.pinned_at;
     return (
@@ -101,8 +117,7 @@ export function OrgSwitcher({ className }: { className?: string }) {
         onSelect={() => handleSelect(org.id)}
         className="group cursor-pointer"
       >
-        <Building2 className="text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate">{org.name}</span>
+        {renderOrgLabel(org, "min-w-0 flex-1")}
         {org.id === selectedOrganizationId && <Check className="text-primary" />}
         <button
           type="button"
@@ -144,11 +159,7 @@ export function OrgSwitcher({ className }: { className?: string }) {
             className,
           )}
         >
-          <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          <span className="truncate">
-            {selectedOrganization?.name ||
-              t("organization.selectPlaceholder", "Select organization")}
-          </span>
+          {renderOrgLabel(selectedOrganization)}
           <ChevronsUpDown className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>

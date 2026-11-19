@@ -27,18 +27,18 @@ export async function listTemplates(options: { type?: TemplateType; q?: string; 
     with official as (
       select id from organization where is_official_template_library and archived_at is null
     ), cards as (
-      select a.id, 'asset' as type, a.name, coalesce(p.storage_key, r.storage_key) as storage_key,
+      select a.id, 'asset' as type, a.organization_id, a.name, coalesce(p.storage_key, r.storage_key) as storage_key,
         r.external_url, p.mime_type from asset a
       left join template_preview p on p.asset_id = a.id
       left join asset_resource r on r.asset_id = a.id and r.role = 'thumbnail' and r.ordinal = 0
       where a.organization_id in (select id from official) and a.state = 'active'
         ${options.excludeAnchors ? sql`and a.file_type <> 'anchor'` : sql``}
       union all
-      select s.id, 'scene', s.name, p.storage_key, null, p.mime_type from scene s
+      select s.id, 'scene', s.organization_id, s.name, p.storage_key, null, p.mime_type from scene s
       left join template_preview p on p.scene_id = s.id
       where s.organization_id in (select id from official) and s.state = 'active'
       union all
-      select w.id, 'collection', w.name, p.storage_key, null, p.mime_type from workspace w
+      select w.id, 'collection', w.organization_id, w.name, p.storage_key, null, p.mime_type from workspace w
       left join template_preview p on p.workspace_id = w.id
       where w.organization_id in (select id from official) and w.archived_at is null
     )
@@ -47,7 +47,7 @@ export async function listTemplates(options: { type?: TemplateType; q?: string; 
       ${options.q ? sql`and name ilike ${nameContainsPattern(options.q)}` : sql``}
     order by name nulls last, type, id limit ${options.limit} offset ${options.offset}
   `.execute(db);
-  return rows.map(({ id, type, name, ...row }) => ({ id, type, name, thumbnail: media(resourceUrl(row), row.mime_type) }));
+  return rows.map(({ id, type, organization_id, name, ...row }) => ({ id, type, organization_id, name, thumbnail: media(resourceUrl(row), row.mime_type) }));
 }
 
 async function previewTarget(exec: Executor, orgId: string, type: TemplateType, id: string, writing: boolean) {

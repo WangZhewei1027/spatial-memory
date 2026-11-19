@@ -60,10 +60,12 @@ async function main() {
     const page = await cards();
     assert.equal(page.data.length, 3);
     assert.deepEqual(page.data.find((c: { type: string }) => c.type === "asset"), {
-      type: "asset", id: ids.asset, name: f.run, thumbnail: { kind: "image", url: "https://fixture.invalid/cover.jpg" },
+      type: "asset", id: ids.asset, organization_id: official, name: f.run, thumbnail: { kind: "image", url: "https://fixture.invalid/cover.jpg" },
     });
     assert.ok(!JSON.stringify(page).includes("private.glb"));
-    assert.equal((await cards("&type=scene")).data[0].thumbnail, null);
+    const sceneCard = (await cards("&type=scene")).data[0];
+    assert.equal(sceneCard.thumbnail, null);
+    assert.equal(sceneCard.organization_id, official);
     assert.equal((await cards("&limit=1")).page.hasMore, true);
     assert.equal((await cards("&limit=1&offset=2")).page.hasMore, false);
     await client.query("insert into asset(id,organization_id,name,file_type,payload) values($1,$2,$3,'anchor',$4)", [anchorId, official, f.run, { kind: "anchor" }]);
@@ -71,7 +73,7 @@ async function main() {
     const basicAssets = await cards("&type=asset&excludeAnchors=true&limit=1");
     assert.deepEqual(basicAssets.data.map((card: { id: string }) => card.id), [ids.asset]);
     assert.equal(basicAssets.page.hasMore, false);
-    await previewSceneManifest(ids.scene, official); // Regular QR playback of the original still works.
+    await previewSceneManifest(sceneCard.id, sceneCard.organization_id);
     const intent = { sourceType: "scene", sourceId: ids.scene, targetOrganizationId: f.organizations.foreign, idempotencyKey: randomUUID() };
     await copy(intent, 401);
     session(f.users.viewer);
