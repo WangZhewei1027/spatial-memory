@@ -21,7 +21,7 @@ try {
   ]) {
     const labels = JSON.parse(await readFile(new URL(`../locales/${language}.json`, import.meta.url), "utf8"));
     const library = labels.contentModel.library;
-    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: width < 640 });
     await context.addCookies([{ name: "better-auth.session_token", value: "scenes-fixture", url: origin }, { name: "language", value: language, url: origin }]);
     const publicScenes = [template, ...Array.from({ length: role === "viewer" ? 1 : 11 }, (_, n) => ({
       id: `22222222-2222-4222-8222-${String(n + 1).padStart(12, "0")}`, type: "scene",
@@ -83,12 +83,31 @@ try {
     assert.equal(await strip.locator("img").count(), 1);
     const videoCover = strip.locator("video");
     assert.ok(await videoCover.evaluate(v => v.autoplay && v.loop && v.muted && !v.controls));
+    const videoTrigger = previews.first();
+    if (width >= 640) await videoTrigger.hover();
+    else await videoTrigger.focus();
+    const popup = page.locator("[data-radix-popper-content-wrapper]").filter({ has: page.getByRole("tooltip", { name: template.name }) });
+    const enlarged = popup.locator("video");
+    await enlarged.waitFor();
+    await page.waitForFunction(() => document.querySelector("[data-radix-popper-content-wrapper] video")?.currentTime > 0);
+    assert.ok(await enlarged.evaluate(v => v.autoplay && v.loop && v.muted && v.playsInline && !v.controls));
+    const box = await enlarged.boundingBox(), triggerBox = await videoTrigger.boundingBox();
+    assert.ok(box.width > triggerBox.width && box.x >= 0 && box.x + box.width <= width);
+    if (width >= 640) {
+      assert.ok(box.x >= triggerBox.x + triggerBox.width || box.x + box.width <= triggerBox.x);
+      await enlarged.hover();
+      await page.mouse.move(0, 0, { steps: 12 });
+    } else {
+      await page.keyboard.press("Escape");
+    }
+    await enlarged.waitFor({ state: "detached" });
     if (publicScenes.length > 10) {
       const row = strip.getByRole("list");
       assert.ok(await row.evaluate(node => node.scrollWidth > node.clientWidth));
       await previews.last().focus();
       assert.ok(await row.evaluate(node => node.scrollLeft > 0));
-      await page.keyboard.press("Enter");
+      if (width < 640) await videoTrigger.tap();
+      else await page.keyboard.press("Enter");
     } else {
       await strip.getByRole("button", { name: library.scene.browsePublic }).click();
     }

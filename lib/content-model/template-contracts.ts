@@ -11,6 +11,7 @@ export interface TemplateMedia {
 export interface TemplateCard {
   id: string;
   type: TemplateType;
+  organization_id: string;
   name: string | null;
   thumbnail: TemplateMedia | null;
 }

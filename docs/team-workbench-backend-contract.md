@@ -59,7 +59,7 @@ Migration `20261118000000_official_templates.sql` creates a new team named 官�
 
 | Endpoint | Contract |
 | --- | --- |
-| `GET /api/templates` | Public paged list of active assets, scenes and open maps in the open official team. Optional `type=asset\|scene\|collection`, literal name search `q`, `excludeAnchors=true` to omit recognition targets before pagination, `limit` (1–200, default 30), and `offset`. Returns `{ data: [{ id, type, name, thumbnail }], page: { limit, offset, hasMore } }`. |
+| `GET /api/templates` | Public paged list of active assets, scenes and open maps in the open official team. Optional `type=asset\|scene\|collection`, literal name search `q`, `excludeAnchors=true` to omit recognition targets before pagination, `limit` (1–200, default 30), and `offset`. Returns `{ data: [{ id, type, organization_id, name, thumbnail }], page: { limit, offset, hasMore } }`. |
 | `POST /api/upload` | Send multipart fields `file`, `organization_id` and `template_preview=true` as an official team writer. Upload a static image, animated GIF/WebP or video. Animated GIF/WebP retains motion as WebP, video uses the existing MP4 pipeline. Use the returned primary `data.id` as the receipt. |
 | `GET /api/templates/[type]/[id]/preview` | Official team readers can retrieve the manually assigned cover as `{ data: { thumbnail, lock_version } }`. The initial state is `null` and version 0. |
 | `PUT /api/templates/[type]/[id]/preview` | Official team writers submit `{ receiptId, expectedLockVersion }` to replace the manual cover. Supply `receiptId: null` to clear it. Returns the updated manual cover and version. Archived teams and resources are read-only. A missing version returns 428 and a stale version returns 409. |

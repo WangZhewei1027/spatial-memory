@@ -366,6 +366,7 @@
     }
   },
   "organization": {
+    "official": "官方团队",
     "selectPlaceholder": "选择团队...",
     "switchTitle": "团队列表",
     "searchPlaceholder": "搜索团队",

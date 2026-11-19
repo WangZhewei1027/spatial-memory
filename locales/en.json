@@ -366,6 +366,7 @@
     }
   },
   "organization": {
+    "official": "Official team",
     "selectPlaceholder": "Select team...",
     "switchTitle": "Teams",
     "searchPlaceholder": "Search teams",
