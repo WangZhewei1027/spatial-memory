@@ -3,12 +3,14 @@
 import { useId, useRef, useState, type FormEvent, type MutableRefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { CopyPlus, Loader2 } from "lucide-react";
+import { Check, ChevronDown, CopyPlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -67,16 +69,26 @@ function CrossOrganizationDuplicateDialog(props: DuplicateSource & { targets: Or
   const fieldId = useId();
   const [name, setName] = useState(() => t("contentModel.crossCopy.defaultName", { name: props.name }).slice(0, 200));
   const [organizationId, setOrganizationId] = useState("");
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState("");
   const needsMap = props.sourceType === "placement";
   const collections = useCollections(organizationId || null, "active", needsMap);
   const maps = collections.collections.filter(collection => !collection.archived_at && collection.capabilities.can_edit);
   const action = useContentAction();
   const inFlight = useRef(false);
-  const validTeam = props.targets.some(team => team.id === organizationId);
+  const selectedTeam = props.targets.find(team => team.id === organizationId);
+  const teamLabel = t("contentModel.crossCopy.team");
+  const teamSearchLabel = t("organization.searchPlaceholder");
   const validMap = !needsMap || (collections.status === "ready" && maps.some(map => map.id === workspaceId));
-  const canSubmit = !!name.trim() && validTeam && validMap;
+  const canSubmit = !!name.trim() && !!selectedTeam && validMap;
   const close = () => { if (!inFlight.current) props.onClose(); };
+  const selectTeam = (id: string) => {
+    setTeamPickerOpen(false);
+    if (id === organizationId) return;
+    setOrganizationId(id);
+    setWorkspaceId("");
+    action.reset();
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canSubmit || inFlight.current) return;
@@ -119,11 +131,36 @@ function CrossOrganizationDuplicateDialog(props: DuplicateSource & { targets: Or
           <Input id={`${fieldId}-name`} value={name} onChange={event => setName(event.target.value)} maxLength={200} disabled={action.pending} required autoFocus />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${fieldId}-team`}>{t("contentModel.crossCopy.team")}</Label>
-          <Select value={organizationId} onValueChange={value => { setOrganizationId(value); setWorkspaceId(""); action.reset(); }} disabled={action.pending || !props.targets.length}>
-            <SelectTrigger id={`${fieldId}-team`} className="w-full min-w-0"><SelectValue placeholder={t("contentModel.crossCopy.chooseTeam")} /></SelectTrigger>
-            <SelectContent>{props.targets.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}</SelectContent>
-          </Select>
+          <Label htmlFor={`${fieldId}-team`}>{teamLabel}</Label>
+          {/* A modal popover owns scrolling while its portalled list is open inside the dialog. */}
+          <Popover modal open={teamPickerOpen} onOpenChange={setTeamPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button id={`${fieldId}-team`} type="button" variant="outline"
+                aria-describedby={`${fieldId}-team-value`} disabled={action.pending || !props.targets.length}
+                className="w-full min-w-0 justify-between px-3 font-normal">
+                <span id={`${fieldId}-team-value`} className={selectedTeam ? "truncate" : "truncate text-muted-foreground"} title={selectedTeam?.name}>
+                  {selectedTeam?.name ?? t("contentModel.crossCopy.chooseTeam")}
+                </span>
+                <ChevronDown aria-hidden className="text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent aria-label={teamLabel} align="start" collisionPadding={8}
+              className="flex max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] p-0">
+              <Command label={teamSearchLabel} className="h-auto min-h-0"
+                filter={(_value, search, [teamName] = []) => teamName?.toLowerCase().includes(search.trim().toLowerCase()) ? 1 : 0}>
+                <CommandInput placeholder={teamSearchLabel} />
+                <CommandList label={teamLabel} className="min-h-0 max-h-64 overscroll-contain">
+                  <CommandEmpty>{t("organization.noResults")}</CommandEmpty>
+                  <CommandGroup>
+                    {props.targets.map(team => <CommandItem key={team.id} value={team.id} keywords={[team.name]} onSelect={() => selectTeam(team.id)}>
+                      <span className="min-w-0 flex-1 truncate" title={team.name}>{team.name}</span>
+                      {team.id === organizationId && <Check aria-hidden />}
+                    </CommandItem>)}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           {!props.targets.length && <Text as="p" variant="bodySm" tone="subdued">{t("contentModel.crossCopy.noTeams")}</Text>}
         </div>
         {needsMap && organizationId && <div className="space-y-1.5">
