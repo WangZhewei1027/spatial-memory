@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/auth/server";
 import { getUserContext } from "@/lib/permissions.server";
 import { hasOrgPermission, isSuperAdmin } from "@/lib/permissions";
 import { logError } from "@/lib/log-error";
+import { releaseObjectsIfUnreferenced } from "@/lib/storage/retention.server";
 
 // 获取单个 organization 详情
 export async function GET(
@@ -170,8 +171,8 @@ export async function DELETE(
 
     // 只能删除空团队：仍有合集、团队素材、场景或投放时拒绝（409），绝不级联删除团队内容。
     // 在组织行锁内复核，避免与并发创建内容交错；外键（scene/asset → organization）兜底。
-    const blocked = await db.transaction().execute(async (trx) => {
-      const org = await trx.selectFrom("organization").select("id").where("id", "=", id).forUpdate().executeTakeFirst();
+    const deletion = await db.transaction().execute(async (trx) => {
+      const org = await trx.selectFrom("organization").select("wechat_qr_center_image_key").where("id", "=", id).forUpdate().executeTakeFirst();
       if (!org) return null;
       const { rows } = await sql<{ workspaces: number; assets: number; scenes: number; placements: number; activities: number; activity_records: number }>`
         select
@@ -183,12 +184,13 @@ export async function DELETE(
           (select count(*) from activity_record where organization_id = ${id}::uuid)::int as activity_records
       `.execute(trx);
       const counts = rows[0];
-      if (counts.workspaces + counts.assets + counts.scenes + counts.placements + counts.activities + counts.activity_records > 0) return counts;
+      if (counts.workspaces + counts.assets + counts.scenes + counts.placements + counts.activities + counts.activity_records > 0) return { counts };
       await trx.deleteFrom("organization").where("id", "=", id).execute();
-      return false;
+      return { retiredKey: org.wechat_qr_center_image_key };
     });
-    if (blocked === null) return NextResponse.json({ error: "组织不存在" }, { status: 404 });
-    if (blocked) {
+    if (deletion === null) return NextResponse.json({ error: "组织不存在" }, { status: 404 });
+    if (deletion.counts) {
+      const blocked = deletion.counts;
       return NextResponse.json(
         {
           error: `无法删除：该团队仍保留内容（合集 ${blocked.workspaces}、素材 ${blocked.assets}、场景 ${blocked.scenes}、投放 ${blocked.placements}、活动 ${blocked.activities}、活动记录 ${blocked.activity_records}）。归档内容也会阻止删除。`,
@@ -199,6 +201,7 @@ export async function DELETE(
       );
     }
 
+    if (deletion.retiredKey) await releaseObjectsIfUnreferenced([deletion.retiredKey], { userId: user.id, method: "DELETE", path: `/api/organizations/${id}` });
     return NextResponse.json({ success: true });
   } catch (error) {
     // A concurrent content write that committed first still trips the tenant FKs.

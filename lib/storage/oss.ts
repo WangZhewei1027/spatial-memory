@@ -17,14 +17,16 @@ function getClient(): OSS {
   const bucket = process.env.OSS_BUCKET;
   const region = process.env.OSS_REGION;
   if (!bucket || !region) throw new Error("OSS_BUCKET / OSS_REGION are not set");
+  const internal = process.env.OSS_INTERNAL === "true";
+  const dualStack = !internal && process.env.OSS_USE_DUALSTACK === "true";
   client = new OSS({
     region,
     bucket,
+    internal,
+    endpoint: dualStack ? `https://${region.replace(/^oss-/, "")}.oss.aliyuncs.com` : undefined,
     accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID!,
     accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET!,
     secure: true,
-    // Same-region servers reach OSS over the free internal endpoint.
-    internal: process.env.OSS_INTERNAL === "true",
     timeout: 60_000,
   });
   return client;

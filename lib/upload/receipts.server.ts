@@ -5,7 +5,7 @@ import { ContentError, notFound } from "@/lib/content-model/errors";
 import { isUuid } from "@/lib/content-model/input";
 import { toIsoRequired, type Executor, type Trx } from "@/lib/content-model/tx.server";
 import { sql } from "@/lib/db";
-import { UPLOAD_RECEIPT_TTL_MS } from "@/lib/storage/retention.server";
+import { lockObjectKeys, UPLOAD_RECEIPT_TTL_MS } from "@/lib/storage/retention.server";
 import "server-only";
 
 /**
@@ -203,6 +203,14 @@ export async function loadCommitReceipts(trx: Trx, userId: string, organizationI
     if (row.purpose !== "asset") throw new ContentError("RECEIPT_INVALID", "上传回执用途不匹配");
   }
   return byId;
+}
+
+/** Recheck the lease under the collector's object lock before committing a single file. */
+export async function loadLockedCommitReceipt(trx: Trx, userId: string, organizationId: string, id: string) {
+  const leased = await trx.selectFrom("upload_receipt").select("storage_key").where("id", "=", id).executeTakeFirst();
+  if (!leased) throw new ContentError("RECEIPT_INVALID", "上传回执不存在，请重新上传");
+  await lockObjectKeys(trx, [leased.storage_key]);
+  return (await loadCommitReceipts(trx, userId, organizationId, [id])).get(id)!;
 }
 
 export async function markReceiptsConsumed(trx: Trx, ids: string[]): Promise<void> {

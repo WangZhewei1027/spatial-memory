@@ -26,6 +26,7 @@ Asset 属于团队，当前内容在 `asset.payload`，当前文件清单在 `as
 
 | 来源 | 必须保留的内容 |
 | --- | --- |
+| `organization.wechat_qr_center_image_key` | 团队当前二维码中心图片 |
 | `asset_resource` | 所有当前素材引用的 storage_key |
 | `asset.payload` | 内容中仍然引用的受管文件 |
 | `activity_record` | 留言正文及记录元数据中仍然引用的受管文件 |

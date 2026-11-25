@@ -79,6 +79,7 @@ async function main(): Promise<void> {
     adminClean: await import("../app/api/admin/clean/route"),
     adminMapScanModel: await import("../app/api/admin/map-scan-model/route"),
     mapScanModel: await import("../app/api/organizations/[id]/map-scan-model/route"),
+    qrCenter: await import("../app/api/organizations/[id]/wechat-qr-center-image/route"),
     organizations: await import("../app/api/organizations/route"),
     organization: await import("../app/api/organizations/[id]/route"),
     tags: await import("../app/api/tags/route"),
@@ -136,6 +137,47 @@ async function main(): Promise<void> {
       ] as const) {
         expect(await call(handler, { user: null, method, url, params, body: method === "GET" ? undefined : {} }), 401, "UNAUTHENTICATED");
       }
+    });
+
+    await check("team QR center images use processed uploads, scoped receipts and retained OSS objects", async () => {
+      const orgId = f.organizations.team;
+      const setImage = (user: string | null, receiptId: string | null, expectedKey: string | null, team = orgId) =>
+        call(routes.qrCenter.PUT, { user, method: "PUT", url: `/api/organizations/${team}/wechat-qr-center-image`,
+          params: { id: team }, body: { receiptId, expectedKey } });
+      const sharp = (await import("sharp")).default;
+      const form = new FormData();
+      const bytes = await sharp({ create: { width: 192, height: 192, channels: 3, background: "red" } }).png().toBuffer();
+      form.set("file", new File([Uint8Array.from(bytes)], "qr-center.png", { type: "image/png" }));
+      form.set("type", "image");
+      form.set("organization_id", orgId);
+      const receipt = expect(await call(routes.upload.POST, { user: u.owner, method: "POST", url: "/api/upload", form }), 200).data;
+      const key = receipt.storage_key;
+      assert.equal(oss.stubObjects.get(key)?.contentType, "image/jpeg");
+      expect(await setImage(null, receipt.id, null), 401);
+      expect(await setImage(u.viewer, receipt.id, null), 403);
+      expect(await setImage(u.editor, receipt.id, null), 403);
+      expect(await setImage(u.foreign, receipt.id, null), 403);
+      expect(await setImage(u.owner, receipt.id, null, f.organizations.solo), 400, "RECEIPT_INVALID");
+      assert.equal(expect(await setImage(u.owner, receipt.id, null), 200).data.key, key);
+      const detail = expect(await call(routes.organization.GET, { user: u.viewer, url: `/api/organizations/${orgId}`, params: { id: orgId } }), 200);
+      assert.equal(detail.data.wechat_qr_center_image_key, key);
+      const qr = await import("../app/manage/actions/wechat-qr");
+      const { buildQrObjectKey, buildSceneQrObjectKey } = await import("../lib/wechat-qr");
+      oss.seedStubObject(buildSceneQrObjectKey(orgId, f.scenes.a, "release"));
+      assert.equal((await qr.getOrCreateSceneQRCode(f.scenes.a, "release")).centerImageUrl, oss.mediaUrl(key));
+      for (const workspaceId of [null, f.workspaces.a]) {
+        oss.seedStubObject(buildQrObjectKey(orgId, workspaceId, "release"));
+        assert.equal((await qr.getOrCreateWorkspaceQRCode({ organizationId: orgId, workspaceId, environment: "release" })).centerImageUrl, oss.mediaUrl(key));
+      }
+      expect(await setImage(u.owner, null, null), 409, "LOCK_VERSION_CONFLICT");
+      await client.query("update upload_receipt set expires_at=now()-interval '1 minute' where id=$1", [receipt.id]);
+      expect(await setImage(u.owner, receipt.id, key), 400, "RECEIPT_INVALID");
+      const { isKeyProtected, collectProtectedKeys } = await import("../lib/storage/retention.server");
+      assert.equal(await isKeyProtected(db, key), true);
+      assert.ok((await collectProtectedKeys()).has(key));
+      assert.equal(expect(await setImage(u.owner, null, key), 200).data.key, null);
+      assert.equal(await isKeyProtected(db, key), false);
+      assert.equal((await qr.getOrCreateSceneQRCode(f.scenes.a, "release")).centerImageUrl, null);
     });
 
     await check("agent scene preflight route checks writer scope and returns resource facts without writes", async () => {

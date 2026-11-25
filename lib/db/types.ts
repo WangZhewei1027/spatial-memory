@@ -234,6 +234,7 @@ export interface Organization {
   is_official_template_library: Generated<boolean>;
   map_center: Json | null;
   name: string;
+  wechat_qr_center_image_key: string | null;
 }
 
 export interface OrganizationInvitation {
