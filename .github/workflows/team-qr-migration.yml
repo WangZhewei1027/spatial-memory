@@ -1,0 +1,51 @@
+name: Team QR center image production migration 20261125
+on:
+  push:
+    branches: [ops/team-qr-20261125]
+permissions:
+  contents: read
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+jobs:
+  migrate:
+    if: github.repository == 'WangZhewei1027/spatial-memory' && github.ref == 'refs/heads/ops/team-qr-20261125'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !/public/js/viewer/terra_b3dms/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Package the repository migration runner and read-only gate
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/qr"
+          mkdir -p "$dir/migrate"
+          npm ci --no-audit --no-fund
+          node_modules/.bin/esbuild scripts/db/migrate.ts --bundle --platform=node --target=node22 --format=cjs --external:pg-native --outfile="$dir/migrate/migrate.cjs"
+          cp -R db "$dir/migrate/db"
+          cp .github/release-qr/migrate-target.cjs "$dir/migrate/"
+          cp .github/release-qr/run.sh "$dir/"
+          node scripts/db/deployment-check.mjs > "$dir/gate.sql"
+      - name: Back up, rehearse, migrate production and verify schema
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          umask 077
+          dir="$RUNNER_TEMP/qr"
+          sshdir=$(mktemp -d)
+          trap 'rm -rf "$sshdir" "$dir"' EXIT
+          printf '%s\n' "$DEPLOY_KEY" > "$sshdir/key"
+          ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" > "$sshdir/known_hosts" 2>/dev/null
+          ssh-keygen -lf "$sshdir/known_hosts" | grep -F 'SHA256:pY9Lo5oimBqYZD/hvNKk1SVYVHXiXBWHmqIMSE60gtg' >/dev/null
+          tar -C "$dir" -czf - . | ssh -i "$sshdir/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$sshdir/known_hosts" -o ServerAliveInterval=25 "root@$DEPLOY_HOST" 'set -eu; umask 077; job=$(mktemp -d); trap '\''rm -rf "$job"'\'' EXIT; tar -xzf - -C "$job"; chmod -R a+rX "$job/migrate"; bash "$job/run.sh" "$job"'
