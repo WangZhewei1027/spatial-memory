@@ -36,6 +36,7 @@ DATABASE_URL=postgresql://spatial_memory:<password>@localhost:55432/spatial_memo
 BETTER_AUTH_SECRET=<使用 openssl rand -base64 32 生成>
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 OSS_INTERNAL=false
+OSS_USE_DUALSTACK=true
 ```
 
 将数据库连接替换为自己的本地配置。OSS、短信和 Google 登录所需的变量见 [环境变量模板](deploy/env.example)；按需要启用的功能填写。

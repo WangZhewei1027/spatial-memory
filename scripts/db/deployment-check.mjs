@@ -30,7 +30,8 @@ BEGIN
     ('activity_placement','activity_id'),
     ('activity_record','placement_id'), ('activity_record','kind'),
     ('workspace','archived_at'), ('organization','archived_at'),
-    ('organization','is_official_template_library'), ('template_preview','storage_key')) AS r(table_name,column_name)
+    ('organization','is_official_template_library'), ('organization','wechat_qr_center_image_key'),
+    ('template_preview','storage_key')) AS r(table_name,column_name)
   WHERE NOT EXISTS (SELECT 1 FROM information_schema.columns c
     WHERE c.table_schema='public' AND c.table_name=r.table_name AND c.column_name=r.column_name);
   IF missing IS NOT NULL THEN

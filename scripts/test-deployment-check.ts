@@ -40,6 +40,9 @@ async function main() {
     await db.query("alter table scene rename column document to draft_document");
     await reject(/ledger disagrees with schema/);
     await db.query("alter table scene rename column draft_document to document");
+    await db.query("alter table organization rename column wechat_qr_center_image_key to missing_center_image");
+    await reject(/missing organization\.wechat_qr_center_image_key/);
+    await db.query("alter table organization rename column missing_center_image to wechat_qr_center_image_key");
     await db.query("create table asset_version(id uuid)");
     await reject(/obsolete runtime content structures/);
     await db.query("drop table asset_version");

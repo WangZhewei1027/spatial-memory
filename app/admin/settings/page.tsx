@@ -11,6 +11,7 @@ import { isSuperAdmin, hasOrgPermission } from "@/lib/permissions";
 import { fetchJson } from "@/lib/fetch-json";
 import { OrgSettingsForm } from "@/components/org-settings/OrgSettingsForm";
 import { SettingsFormSkeleton } from "./components/SettingsFormSkeleton";
+import { WeChatQrCenterImageSettings } from "./components/WeChatQrCenterImageSettings";
 import { WeChatQrSettings } from "./components/WeChatQrSettings";
 import { useWeChatQrEnvironment } from "@/hooks/use-wechat-qr-environment";
 import type {
@@ -18,6 +19,8 @@ import type {
   OrgSettingsSource,
 } from "@/components/org-settings/types";
 import { Text } from "@/components/ui/typography";
+
+type TeamSettings = OrgSettingsSource & { id: string; wechat_qr_center_image_key: string | null; archived_at: string | null };
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -40,7 +43,7 @@ export default function SettingsPage() {
 
   // 表单需要完整组织行（map_center / allowed_file_types），
   // store 里的 selectedOrganization 不含这些字段，进页面时拉一次
-  const [org, setOrg] = useState<OrgSettingsSource | null>(null);
+  const [org, setOrg] = useState<TeamSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,7 +69,7 @@ export default function SettingsPage() {
   const save = useCallback(
     async (payload: OrgSettingsPayload): Promise<{ error?: string }> => {
       try {
-        const { data } = await fetchJson<{ data: OrgSettingsSource }>(
+        const { data } = await fetchJson<{ data: TeamSettings }>(
           `/api/organizations/${orgId}`,
           {
             method: "PUT",
@@ -143,7 +146,13 @@ export default function SettingsPage() {
       </div>
 
       <div className="mb-6">
-        <WeChatQrSettings environment={qrEnvironment} onEnvironmentChange={setQrEnvironment} />
+        <WeChatQrSettings environment={qrEnvironment} onEnvironmentChange={setQrEnvironment}>
+          {canEditSettings && org && org.id === orgId && !org.archived_at && (
+            <WeChatQrCenterImageSettings key={org.id} organizationId={org.id} savedKey={org.wechat_qr_center_image_key}
+              onSaved={(key) => setOrg((current) => current?.id === org.id ? { ...current, wechat_qr_center_image_key: key } : current)}
+            />
+          )}
+        </WeChatQrSettings>
       </div>
 
       {/* Org settings（与 super-admin 组织详情面板共用的表单） */}

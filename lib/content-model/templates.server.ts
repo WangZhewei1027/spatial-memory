@@ -1,8 +1,8 @@
 import "server-only";
 import { db, sql } from "@/lib/db";
 import { publicObjectUrl, resourceUrl } from "@/lib/assets/urls";
-import { lockObjectKeys, releaseObjectsIfUnreferenced } from "@/lib/storage/retention.server";
-import { loadCommitReceipts, markReceiptsConsumed } from "@/lib/upload/receipts.server";
+import { releaseObjectsIfUnreferenced } from "@/lib/storage/retention.server";
+import { loadLockedCommitReceipt, markReceiptsConsumed } from "@/lib/upload/receipts.server";
 import { lockOrgForWrite, requireOrgRead, requireOrgWrite, type Actor } from "./access.server";
 import { archived, checkLockVersion, invalid, notFound } from "./errors";
 import { nameContainsPattern, optionalInt, rejectUnknown, requireUuid, type JsonRecord } from "./input";
@@ -87,10 +87,7 @@ export async function setManualPreview(actor: Actor, type: TemplateType, id: str
     let key: string | null = null;
     let mime: string | null = null;
     if (receiptId) {
-      const leased = await trx.selectFrom("upload_receipt").select("storage_key").where("id", "=", receiptId).executeTakeFirst();
-      if (leased) await lockObjectKeys(trx, [leased.storage_key]);
-      const receipts = await loadCommitReceipts(trx, actor.userId, orgId, [receiptId]);
-      const receipt = receipts.get(receiptId)!;
+      const receipt = await loadLockedCommitReceipt(trx, actor.userId, orgId, receiptId);
       const image = receipt.upload_type === "image" && ["image/png", "image/jpeg", "image/gif", "image/webp"].includes(receipt.mime_type ?? "");
       const video = receipt.upload_type === "video" && receipt.mime_type === "video/mp4";
       if (!image && !video) throw invalid("封面需要图片、动图或视频上传回执");

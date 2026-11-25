@@ -66,6 +66,8 @@ export async function isKeyProtected(exec: Executor, key: string): Promise<boole
   if (resource) return true;
   const cover = await exec.selectFrom("template_preview").select("storage_key").where("storage_key", "in", keys).limit(1).executeTakeFirst();
   if (cover) return true;
+  const qrCenter = await exec.selectFrom("organization").select("id").where("wechat_qr_center_image_key", "in", keys).limit(1).executeTakeFirst();
+  if (qrCenter) return true;
 
   const receipt = await exec
     .selectFrom("upload_receipt")
@@ -176,6 +178,8 @@ export async function collectProtectedKeys(): Promise<Set<string>> {
   for (const row of resources) if (row.storage_key) keys.add(row.storage_key);
   const covers = await db.selectFrom("template_preview").select("storage_key").where("storage_key", "is not", null).execute();
   for (const row of covers) if (row.storage_key) keys.add(row.storage_key);
+  const qrCenters = await db.selectFrom("organization").select("wechat_qr_center_image_key").where("wechat_qr_center_image_key", "is not", null).execute();
+  for (const row of qrCenters) if (row.wechat_qr_center_image_key) keys.add(row.wechat_qr_center_image_key);
   const receipts = await db.selectFrom("upload_receipt").select("storage_key").where("expires_at", ">", sql<Date>`now()`).execute();
   for (const row of receipts) keys.add(row.storage_key);
   const anchors = await db.selectFrom("anchor_embedding").select("image_url").execute();

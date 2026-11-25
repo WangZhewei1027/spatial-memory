@@ -1,13 +1,14 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Text } from "@/components/ui/typography";
 import { WECHAT_QR_ENVIRONMENTS, isWeChatQrEnvironment, type WeChatQrEnvironment } from "@/lib/wechat-qr";
 
-export function WeChatQrSettings({ environment, onEnvironmentChange }: {
+export function WeChatQrSettings({ environment, onEnvironmentChange, children }: {
+  children: ReactNode;
   environment: WeChatQrEnvironment;
   onEnvironmentChange: (value: WeChatQrEnvironment) => void;
 }) {
@@ -36,6 +37,7 @@ export function WeChatQrSettings({ environment, onEnvironmentChange }: {
           {t("admin.settings.wechatQr.description")}
         </Text>
       </div>
+      {children}
     </section>
   );
 }
